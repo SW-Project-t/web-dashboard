@@ -1,16 +1,24 @@
-node_modules/
-/build
-.DS_Store
-Thumbs.db
-.env
-.env.local
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-# Firebase files
-.firebase/
-firebug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Environment variables (عشان هنحط فيها الـ Firebase API Keys)
-.env
-.env.local
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

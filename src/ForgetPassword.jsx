@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 function ForgetPassword() {
+  const [email, setEmail] = useState('');
+  const handleResetPassword = () => {
+    if (!email) {
+      alert("Please enter your email address");
+      return;
+    }
+  };
   return (
     <div className='container1'>
       <div className='container2'>
@@ -14,9 +21,12 @@ function ForgetPassword() {
           </p>
           
           <p>Email</p>
-          <input type="email" placeholder="example@mail.com"/>
+          <input type="email" 
+          placeholder="example@mail.com"
+          value = {email}
+          onChange={(e) => setEmail(e.target.value)}/>
           
-          <button className='login_button'>Send Reset Link</button>
+          <button className='login_button' onClick={handleResetPassword}>Send Reset Link</button>
           <Link to="/" className="forgot_password" style={{ textAlign: 'left', marginTop: '20px' }}>
             Back to Login
           </Link>

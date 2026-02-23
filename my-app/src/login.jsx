@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./firebase"; 
 function Login() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +31,7 @@ function Login() {
       if (response.data.success) {
         alert("Login Successful! Welcome " + response.data.profile.name);
         localStorage.setItem('token', response.data.token);
-        (navigate)
+        navigate('');
       }
     } catch (error) {
       console.error("Full Error Details:", error);

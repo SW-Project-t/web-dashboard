@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "./firebase"; 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -7,14 +10,33 @@ function Login() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-  const handleSignIn = () => {
+  
+  const handleSignIn = async () => {
     if (email === "" || password === "") {
-    alert("Please enter both email and password");
-    return;
+      alert("Please enter both email and password");
+      return;
     }
-  console.log("Login Attempt:", { email, password })
-  }
 
+    try {
+      console.log("1. Authenticating with Firebase...");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+      console.log("2. Real Token obtained!");
+      console.log("3. Sending Token to your server...");
+      const response = await axios.post('http://localhost:3000/verify-login', {
+        idToken: idToken 
+      });
+      if (response.data.success) {
+        alert("Login Successful! Welcome " + response.data.profile.name);
+        localStorage.setItem('token', response.data.token);
+        (navigate)
+      }
+    } catch (error) {
+      console.error("Full Error Details:", error);
+      const errorMessage = error.response?.data?.message || error.message;
+      alert("Login Failed: " + errorMessage);
+    }
+  };
   return (
     <div className='container1'>
       <div className='container2'>

@@ -7,27 +7,22 @@ function ForgetPassword() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const handleResetPassword = async () => {
-    // التأكد إن الإيميل مكتوب
     if (!email) {
       alert("Please enter your email address");
       return;
     }
 
     setIsLoading(true);
-    const auth = getAuth(); // استدعاء الـ auth بتاع فايربيز
+    const auth = getAuth();
 
     try {
-      // السطر ده بيكلم فايربيز مباشرة ويبعت الإيميل الحقيقي لليوزر فوراً
       await sendPasswordResetEmail(auth, email);
       
       alert("Password reset email sent! Please check your inbox.");
     } catch (error) {
-      console.error("Error sending reset email:", error);
-      
-      // رسالة خطأ واضحة لليوزر (زي لو الإيميل مش متسجل أصلاً)
+      console.error("Error sending reset email:", error)
       alert("Error: " + error.message);
     } finally {
-     // إيقاف علامة التحميل في كل الحالات (نجاح أو فشل)
       setIsLoading(false);
     }
 };

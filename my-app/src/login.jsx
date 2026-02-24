@@ -4,6 +4,10 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./firebase"; 
+import uniLogo from './assets/logo2.jpg';
+import teamLogo from './assets/yallaclass_logo.jpg';
+import { FiMail, FiLock, FiEye, FiEyeOff , FiLogIn } from 'react-icons/fi';
+
 function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -41,34 +45,51 @@ function Login() {
   };
   return (
     <div className='container1'>
+      <img src={uniLogo} alt="University Logo" className="page_logo" />
       <div className='container2'>
-        <h1 className='logo'>Yalla Class</h1>
+        <div className="header_brand">
+          <img src={teamLogo} alt="Yalla Class Logo" className="brand_logo" />
+          <h1 className='logo'>Yalla Class</h1>
+        </div>
         <div className='login_container'>
           <h1 className='login'>Login</h1>
           
           <p>Email</p>
-          <input type="email" 
-          placeholder="example@mail.com" 
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          />
+          <div className="input_wrapper">
+            <FiMail className="input_icon_left" />
+            <input 
+              type="email" 
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input_with_icon"
+            />
+          </div>
           
           <p>Password</p>
-          <div className="password_wrapper">
+          <div className="input_wrapper">
+            {/* أيقونة القفل اللي على الشمال */}
+            <FiLock className="input_icon_left" />
+            
             <input 
               type={showPassword ? "text" : "password"} 
-              placeholder="••••••••" 
+              placeholder="Enter your password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="input_with_icon input_with_right_icon" 
             />
-            <span className="eye_icon" onClick={togglePasswordVisibility}>
-              {showPassword ? "🙈" : "👁️"}
+            
+            {/* أيقونة العين اللي على اليمين (بتتغير حسب الـ State) */}
+            <span className="toggle_password_icon" onClick={togglePasswordVisibility}>
+              {showPassword ? <FiEyeOff /> : <FiEye />}
             </span>
           </div>
 
           <Link to="/forget-password" className="forgot_password">Forgot Password?</Link>
           
-          <button className="login_button" onClick={handleSignIn}>Sign in</button>
+          <button className='login_button' onClick={handleSignIn}>
+            Sign in <FiLogIn className="sign_in_icon" />
+          </button>
         </div>
       </div>
     </div>

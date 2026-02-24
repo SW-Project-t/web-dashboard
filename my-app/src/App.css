@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  background-image: url('./assets/back3.svg');
+  background-image: url('./assets/back5.svg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -136,4 +136,68 @@ body {
 }
 .eye_icon:hover {
   opacity: 1;
+}
+.page_logo {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  width: 60px;
+  border-radius: 10px;
+}
+.input_wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.input_icon_left {
+  position: absolute;
+  left: 15px;
+  color: #888;
+  font-size: 18px;
+}
+.input_with_icon {
+  width: 100%;
+  padding-left: 45px !important;
+}
+.input_with_right_icon {
+  padding-right: 45px !important; 
+}
+.toggle_password_icon {
+  position: absolute;
+  right: 15px;
+  color: #888; 
+  font-size: 18px;
+  cursor: pointer; 
+  display: flex;
+  align-items: center;
+}
+.header_brand {
+  display: flex;
+  align-items: center; 
+  justify-content: center; 
+  margin-bottom: 20px;
+}
+
+
+.brand_logo {
+  width: 27px;
+  height: auto;
+  margin-right: 7px;
+  border-radius: 8px;
+}
+.logo {
+  margin: 0 !important;
+}
+.login_button {
+  /* ... سيب الستايل القديم بتاعك زي ما هو (اللون والعرض وكده) ... */
+  display: flex;
+  align-items: center; /* بيسنترهم رأسياً */
+  justify-content: center; /* بيسنترهم أفقياً */
+  gap: 8px; /* دي بتعمل مسافة شيك جداً بين الكلمة والأيقونة */
+}
+
+/* ستايل الأيقونة نفسها عشان حجمها يظبط مع الكلام */
+.sign_in_icon {
+  font-size: 18px; 
 }

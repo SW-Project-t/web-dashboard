@@ -29,11 +29,11 @@ function Login() {
       const idToken = await userCredential.user.getIdToken();
       console.log("2. Real Token obtained!");
       console.log("3. Sending Token to your server...");
-      const response = await axios.post('http://localhost:3000/verify-login', {
+      const response = await axios.post('http://localhost:3001/verify-login', {
         idToken: idToken 
       });
       if (response.data.success) {
-        alert("Login Successful! Welcome " + response.data.profile.name);
+        alert("Login Successful! Welcome " + response.data.profile.fullName);
         localStorage.setItem('token', response.data.token);
         navigate('');
       }

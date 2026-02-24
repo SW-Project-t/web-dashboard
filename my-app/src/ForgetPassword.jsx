@@ -1,14 +1,36 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { getAuth, sendPasswordResetEmail } from "firebase/auth"
 
 function ForgetPassword() {
   const [email, setEmail] = useState('');
-  const handleResetPassword = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const handleResetPassword = async () => {
+    // التأكد إن الإيميل مكتوب
     if (!email) {
       alert("Please enter your email address");
       return;
     }
-  };
+
+    setIsLoading(true);
+    const auth = getAuth(); // استدعاء الـ auth بتاع فايربيز
+
+    try {
+      // السطر ده بيكلم فايربيز مباشرة ويبعت الإيميل الحقيقي لليوزر فوراً
+      await sendPasswordResetEmail(auth, email);
+      
+      alert("Password reset email sent! Please check your inbox.");
+    } catch (error) {
+      console.error("Error sending reset email:", error);
+      
+      // رسالة خطأ واضحة لليوزر (زي لو الإيميل مش متسجل أصلاً)
+      alert("Error: " + error.message);
+    } finally {
+     // إيقاف علامة التحميل في كل الحالات (نجاح أو فشل)
+      setIsLoading(false);
+    }
+};
   return (
     <div className='container1'>
       <div className='container2'>
@@ -26,7 +48,11 @@ function ForgetPassword() {
           value = {email}
           onChange={(e) => setEmail(e.target.value)}/>
           
-          <button className='login_button' onClick={handleResetPassword}>Send Reset Link</button>
+          <button className='login_button' 
+          onClick={handleResetPassword} 
+          disabled={isLoading}>
+          {isLoading ? "Sending..." : "Send Reset Link"}
+          </button>
           <Link to="/" className="forgot_password" style={{ textAlign: 'left', marginTop: '20px' }}>
             Back to Login
           </Link>

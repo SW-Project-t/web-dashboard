@@ -7,6 +7,7 @@ import { auth } from "./firebase";
 import uniLogo from './assets/logo2.jpg';
 import teamLogo from './assets/yallaclass_logo.jpg';
 import { FiMail, FiLock, FiEye, FiEyeOff , FiLogIn } from 'react-icons/fi';
+import ParticleBackground from './movingbackground';
 
 function Login() {
   const navigate = useNavigate();
@@ -29,11 +30,11 @@ function Login() {
       const idToken = await userCredential.user.getIdToken();
       console.log("2. Real Token obtained!");
       console.log("3. Sending Token to your server...");
-      const response = await axios.post('http://localhost:3000/verify-login', {
+      const response = await axios.post('http://localhost:3001/verify-login', {
         idToken: idToken 
       });
       if (response.data.success) {
-        alert("Login Successful! Welcome " + response.data.profile.name);
+        alert("Login Successful! Welcome " + response.data.profile.fullName);
         localStorage.setItem('token', response.data.token);
         navigate('');
       }
@@ -45,6 +46,9 @@ function Login() {
   };
   return (
     <div className='container1'>
+      <div>
+      <ParticleBackground />
+      </div>
       <img src={uniLogo} alt="University Logo" className="page_logo" />
       <div className='container2'>
         <div className="header_brand">
@@ -78,8 +82,6 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="input_with_icon input_with_right_icon" 
             />
-            
-            {/* أيقونة العين اللي على اليمين (بتتغير حسب الـ State) */}
             <span className="toggle_password_icon" onClick={togglePasswordVisibility}>
               {showPassword ? <FiEyeOff /> : <FiEye />}
             </span>

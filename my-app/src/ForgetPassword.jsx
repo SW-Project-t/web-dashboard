@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { getAuth, sendPasswordResetEmail } from "firebase/auth"
+import ParticleBackground from './movingbackground';
 
 function ForgetPassword() {
   const [email, setEmail] = useState('');
@@ -28,6 +29,9 @@ function ForgetPassword() {
 };
   return (
     <div className='container1'>
+      <div>
+            <ParticleBackground />
+      </div>
       <div className='container2'>
         <h1 className='logo'>Yalla Class</h1>
         <div className='login_container'>

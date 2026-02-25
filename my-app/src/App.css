@@ -1,6 +1,7 @@
 body {
   margin: 0;
-  background-image: url('./assets/freepik__abstract-technology-background-with-delicate-lumin__53901.jpeg');
+  /* background-image: url('./assets/back10.jpg'); */
+  background-color: black;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -190,14 +191,11 @@ body {
   margin: 0 !important;
 }
 .login_button {
-  /* ... سيب الستايل القديم بتاعك زي ما هو (اللون والعرض وكده) ... */
   display: flex;
-  align-items: center; /* بيسنترهم رأسياً */
-  justify-content: center; /* بيسنترهم أفقياً */
-  gap: 8px; /* دي بتعمل مسافة شيك جداً بين الكلمة والأيقونة */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
-
-/* ستايل الأيقونة نفسها عشان حجمها يظبط مع الكلام */
 .sign_in_icon {
   font-size: 18px; 
 }

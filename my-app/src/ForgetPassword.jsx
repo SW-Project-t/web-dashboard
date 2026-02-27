@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { getAuth, sendPasswordResetEmail } from "firebase/auth"
 import ParticleBackground from './movingbackground';
 
 function ForgetPassword() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+ 
   const handleResetPassword = async () => {
-    if (!email) {
+    if (email==="") {
       alert("Please enter your email address");
       return;
     }

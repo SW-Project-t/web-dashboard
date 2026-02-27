@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -10,7 +9,6 @@ import { FiMail, FiLock, FiEye, FiEyeOff , FiLogIn } from 'react-icons/fi';
 import ParticleBackground from './movingbackground';
 
 function Login() {
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,22 +21,17 @@ function Login() {
       alert("Please enter both email and password");
       return;
     }
-
     try {
-      console.log("1. Authenticating with Firebase...");
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
-      console.log("2. Real Token obtained!");
-      console.log("3. Sending Token to your server...");
       const response = await axios.post('http://localhost:3001/verify-login', {
         idToken: idToken 
       });
       if (response.data.success) {
         alert("Login Successful! Welcome " + response.data.profile.fullName);
         localStorage.setItem('token', response.data.token);
-        navigate('');
-      }
-    } catch (error) {
+       }
+      } catch (error) {
       console.error("Full Error Details:", error);
       const errorMessage = error.response?.data?.message || error.message;
       alert("Login Failed: " + errorMessage);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getAuth, sendPasswordResetEmail } from "firebase/auth"
+import {sendPasswordResetEmail } from "firebase/auth"
+import { auth } from './firebase';
 import ParticleBackground from './movingbackground';
 
 function ForgetPassword() {
@@ -14,7 +15,6 @@ function ForgetPassword() {
     }
 
     setIsLoading(true);
-    const auth = getAuth();
 
     try {
       await sendPasswordResetEmail(auth, email);

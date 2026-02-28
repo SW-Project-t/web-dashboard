@@ -65,7 +65,6 @@ function Login() {
           
           <p>Password</p>
           <div className="input_wrapper">
-            {/* أيقونة القفل اللي على الشمال */}
             <FiLock className="input_icon_left" />
             
             <input 

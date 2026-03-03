@@ -4,6 +4,31 @@ body {
   font-family: sans-serif;
 }
 
+.app {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #ffffff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.main-content {
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto; 
+    padding: 2rem 2.5rem;
+    background-color: #f0f2f5;
+}
+.sidebar {
+    width: 280px;
+    height: 100vh;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e9ecef;
+}
 .container1 {
   /* ده بقا واخد الشاشة كلها وفيه التدرج اللبني */
   height: 100vh;

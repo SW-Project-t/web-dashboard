@@ -22,8 +22,8 @@
 }
 
 .admin_page_wrapper {
-   height: 625px;
-    width: 1165px;
+   height: 100vh;
+  width: 100vw;
     display: flex;
     justify-content: center;
     align-items: center;

@@ -5,6 +5,8 @@ import ForgetPassword from './ForgetPassword';
 import './App.css';
 import Admin from './Admin';
 import AdminDashboard from './AdminDashboard';
+import StudentDashboard from './StudentDashboard';
+import ProfessorDashboard from './ProfessorDashboard';
 
 function App() {
   return (
@@ -17,6 +19,10 @@ function App() {
         <Route path="/admin" element={<Admin />} />
         
         <Route path="/AdminDashboard" element={<AdminDashboard />} />
+
+        <Route path="/StudentDashboard" element={<StudentDashboard />} />
+
+        <Route path="/ProfessorDashboard" element={<ProfessorDashboard />} />
       
       </Routes>
     </BrowserRouter>

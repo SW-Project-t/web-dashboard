@@ -74,7 +74,10 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <h2>Admin Dashboard</h2>
+          <h2>
+            Yalla<span>Class</span>  {/* تم التعديل: إضافة Yalla Class مع تنسيق */}
+          </h2>
+          <p className="sidebar-subtitle">Admin Panel</p>  {/* تم الإضافة: subtitle */}
         </div>
         
         <nav className="sidebar-nav">
@@ -118,7 +121,7 @@ const AdminDashboard = () => {
             ☰
           </button>
           <div className="header-left">
-            <h1>Welcome back, Admin User!</h1>
+             <p className="header-subtitle">Admin Dashboard & System Management</p>  {/* تم الإضافة */}
           </div>
           <div className="header-right">
             <div className="search-box">
@@ -312,6 +315,11 @@ const AdminDashboard = () => {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Footer with Yalla Class Copyright - تم الإضافة */}
+        <div className="dashboard-footer">
+          <p>© 2026 Yalla Class. All rights reserved.</p>
         </div>
       </main>
     </div>

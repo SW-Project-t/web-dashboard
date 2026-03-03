@@ -233,7 +233,7 @@ export default function StudentDashboard() {
             {/* المحتوى الرئيسي */}
             <div className="main-content">
                 <div className="header">
-                    <h1>Student Dashboard</h1>
+                    <h1> Dashboard </h1>
                     <p>Welcome back, {appState.user.name}!</p>
                 </div>
 

@@ -1,9 +1,8 @@
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 html, body, #root {
@@ -14,21 +13,20 @@ html, body, #root {
   overflow: hidden; 
 }
 
-
 .dashboard-container {
   display: flex;
   width: 100%;
   height: 100%;
-  background-color: #f5f7fa;
+  background-color: #f0f2f5;  /* تم التعديل */
   overflow: hidden;
   position: relative;
 }
 
-
+/* Sidebar - تم تغيير الألوان بالكامل */
 .sidebar {
   width: 250px;
-  background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
-  color: white;
+  background: #f8f9fa;  /* تم التعديل - خلفية فاتحة */
+  color: #1e293b;  /* تم التعديل - نص غامق */
   height: 100%;
   position: fixed;
   left: 0;
@@ -38,11 +36,12 @@ html, body, #root {
   transition: all 0.3s ease;
   z-index: 1000;
   box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  border-right: 1px solid #e9ecef;  /* تم الإضافة */
 }
 
 .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid #e9ecef;  /* تم التعديل */
   flex-shrink: 0;
 }
 
@@ -50,6 +49,11 @@ html, body, #root {
   font-size: 1.2rem;
   font-weight: 600;
   letter-spacing: 0.5px;
+  color: #1e293b;  /* تم التعديل */
+}
+
+.sidebar-header h2 span {
+  color: #4361ee;  /* تم الإضافة - لون مميز للـ span زي logo في prof */
 }
 
 .sidebar-nav {
@@ -71,16 +75,20 @@ html, body, #root {
   transition: all 0.3s;
   margin: 3px 10px;
   border-radius: 8px;
+  color: #4b5563;  /* تم التعديل */
 }
 
 .sidebar-nav li:hover {
-  background-color: rgba(255,255,255,0.15);
+  background-color: #e9ecef;  /* تم التعديل */
   transform: translateX(5px);
+  color: #4361ee;  /* تم الإضافة */
 }
 
 .sidebar-nav li.active {
-  background-color: #3949ab;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  background-color: #e9ecef;  /* تم التعديل */
+  color: #4361ee;  /* تم التعديل */
+  font-weight: 600;
+  box-shadow: none;  /* تم الإزالة */
 }
 
 .sidebar-nav .icon {
@@ -89,7 +97,7 @@ html, body, #root {
 
 .sidebar-footer {
   padding: 15px 20px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid #e9ecef;  /* تم التعديل */
   flex-shrink: 0;
 }
 
@@ -97,8 +105,8 @@ html, body, #root {
   width: 100%;
   padding: 10px;
   background-color: transparent;
-  border: 1px solid rgba(255,255,255,0.2);
-  color: white;
+  border: 1px solid #e9ecef;  /* تم التعديل */
+  color: #ef4444;  /* تم التعديل - أحمر logout زي prof */
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
@@ -107,8 +115,8 @@ html, body, #root {
 }
 
 .logout-btn:hover {
-  background-color: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.3);
+  background-color: #fee2e2;  /* تم التعديل - خلفية حمراء فاتحة */
+  border-color: #ef4444;  /* تم التعديل */
   transform: translateY(-2px);
 }
 
@@ -118,10 +126,9 @@ html, body, #root {
   padding: 20px;
   height: 100%;
   overflow-y: auto;
-  background-color: #f5f7fa;
+  background-color: #f0f2f5;  /* تم التعديل */
   transition: all 0.3s;
 }
-
 
 .main-content::-webkit-scrollbar {
   width: 8px;
@@ -151,6 +158,7 @@ html, body, #root {
   margin-bottom: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
   flex-shrink: 0;
+  border: 1px solid #e9ecef;  /* تم الإضافة */
 }
 
 .menu-toggle {
@@ -159,13 +167,19 @@ html, body, #root {
   background: none;
   border: none;
   cursor: pointer;
-  color: #333;
+  color: #1e293b;  /* تم التعديل */
 }
 
 .header-left h1 {
   font-size: 1.4rem;
-  color: #333;
+  color: #1e293b;  /* تم التعديل */
   font-weight: 600;
+}
+
+.header-left p {
+  color: #64748b;  /* تم الإضافة - للوصف تحت العنوان */
+  font-size: 0.9rem;
+  margin-top: 4px;
 }
 
 .header-right {
@@ -180,19 +194,19 @@ html, body, #root {
 
 .search-box input {
   padding: 10px 15px 10px 40px;
-  border: 1px solid #eef2f6;
+  border: 1px solid #e9ecef;  /* تم التعديل */
   border-radius: 10px;
   width: 280px;
   font-size: 0.9rem;
   transition: all 0.3s;
-  background-color: #f8fafc;
+  background-color: white;  /* تم التعديل */
 }
 
 .search-box input:focus {
   outline: none;
-  border-color: #3949ab;
+  border-color: #4361ee;  /* تم التعديل */
   background-color: white;
-  box-shadow: 0 4px 10px rgba(57,73,171,0.1);
+  box-shadow: 0 4px 10px rgba(67, 97, 238, 0.1);  /* تم التعديل */
 }
 
 .search-icon {
@@ -200,14 +214,14 @@ html, body, #root {
   left: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: #666;
+  color: #64748b;  /* تم التعديل */
   font-size: 1rem;
 }
 
 .user-avatar {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #3949ab, #1a237e);
+  background: #4361ee;  /* تم التعديل */
   color: white;
   border-radius: 50%;
   display: flex;
@@ -216,7 +230,7 @@ html, body, #root {
   font-size: 1.2rem;
   cursor: pointer;
   transition: transform 0.3s;
-  box-shadow: 0 4px 10px rgba(57,73,171,0.2);
+  box-shadow: 0 4px 10px rgba(67, 97, 238, 0.2);  /* تم التعديل */
 }
 
 .user-avatar:hover {
@@ -240,6 +254,7 @@ html, body, #root {
   flex-direction: column;
   height: fit-content;
   max-height: 100%;
+  border: 1px solid #e9ecef;  /* تم الإضافة */
 }
 
 .card:hover {
@@ -251,7 +266,7 @@ html, body, #root {
 }
 
 .card-title {
-  color: #333;
+  color: #1e293b;  /* تم التعديل */
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 15px;
@@ -274,6 +289,7 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+/* تحديث ألوان التنبيهات */
 .alerts-list {
   display: flex;
   flex-direction: column;
@@ -316,7 +332,7 @@ html, body, #root {
 
 .alert-item.info {
   background-color: #e3f2fd;
-  border-left-color: #2196f3;
+  border-left-color: #4361ee;  /* تم التعديل */
 }
 
 .alert-item.success {
@@ -333,20 +349,21 @@ html, body, #root {
 }
 
 .alert-message {
-  color: #333;
+  color: #1e293b;  /* تم التعديل */
   font-size: 0.9rem;
   font-weight: 500;
 }
 
 .alert-time {
-  color: #666;
+  color: #64748b;  /* تم التعديل */
   font-size: 0.8rem;
-  background: rgba(0,0,0,0.05);
+  background: #f1f5f9;  /* تم التعديل */
   padding: 3px 8px;
   border-radius: 20px;
   white-space: nowrap;
 }
 
+/* تحديث ألوان الإحصائيات */
 .stats-list {
   display: flex;
   flex-direction: column;
@@ -354,20 +371,6 @@ html, body, #root {
   max-height: 250px;
   overflow-y: auto;
   padding-right: 5px;
-}
-
-.stats-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.stats-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.stats-list::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 10px;
 }
 
 .stat-item {
@@ -383,14 +386,14 @@ html, body, #root {
 }
 
 .dept-name {
-  color: #555;
+  color: #64748b;  /* تم التعديل */
   font-weight: 500;
 }
 
 .dept-count {
   font-weight: 600;
-  color: #333;
-  background: #f0f2f5;
+  color: #1e293b;  /* تم التعديل */
+  background: #f1f5f9;  /* تم التعديل */
   padding: 2px 8px;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -398,7 +401,7 @@ html, body, #root {
 
 .progress-bar {
   height: 8px;
-  background-color: #eef2f6;
+  background-color: #e9ecef;  /* تم التعديل */
   border-radius: 4px;
   overflow: hidden;
 }
@@ -407,28 +410,15 @@ html, body, #root {
   height: 100%;
   border-radius: 4px;
   transition: width 0.6s ease;
+  background: #4361ee;  /* تم الإضافة */
 }
 
+/* تحديث الجداول */
 .table-responsive {
   overflow: auto;
   max-height: 300px;
   border-radius: 8px;
-  border: 1px solid #eef2f6;
-}
-
-.table-responsive::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.table-responsive::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 10px;
+  border: 1px solid #e9ecef;  /* تم التعديل */
 }
 
 .data-table {
@@ -440,33 +430,29 @@ html, body, #root {
 .data-table thead {
   position: sticky;
   top: 0;
-  background-color: #f8fafc;
+  background-color: #f8f9fa;  /* تم التعديل */
   z-index: 10;
 }
 
 .data-table th {
   text-align: left;
   padding: 12px 15px;
-  background-color: #f8fafc;
-  color: #555;
+  background-color: #f8f9fa;  /* تم التعديل */
+  color: #64748b;  /* تم التعديل */
   font-weight: 600;
   font-size: 0.85rem;
-  border-bottom: 2px solid #eef2f6;
+  border-bottom: 2px solid #e9ecef;  /* تم التعديل */
 }
 
 .data-table td {
   padding: 12px 15px;
-  border-bottom: 1px solid #eef2f6;
-  color: #333;
+  border-bottom: 1px solid #e9ecef;  /* تم التعديل */
+  color: #1e293b;  /* تم التعديل */
   font-size: 0.9rem;
 }
 
-.data-table tbody tr {
-  transition: background-color 0.3s;
-}
-
 .data-table tbody tr:hover {
-  background-color: #f8fafc;
+  background-color: #f8f9fa;  /* تم التعديل */
 }
 
 .status-badge {
@@ -483,11 +469,75 @@ html, body, #root {
   color: #2e7d32;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 5px;
+/* تحديث الأزرار - باستخدام #4361ee بدلاً من الأزرق الغامق */
+.btn-primary {
+  padding: 8px 16px;
+  background: #4361ee;  /* تم التعديل */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;  /* تم التعديل */
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);  /* تم التعديل */
+}
+
+.btn-success {
+  padding: 8px 16px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn-outline {  /* تم الإضافة - زر جديد من prof */
+  padding: 8px 16px;
+  background: white;
+  color: #4361ee;
+  border: 2px solid #4361ee;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn-outline:hover {
+  background: #4361ee;
+  color: white;
+}
+
+.btn-delete {  /* تم الإضافة - زر جديد من prof */
+  padding: 8px 16px;
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn-delete:hover {
+  background: #ef4444;
+  color: white;
+}
+
+/* باقي الكود كما هو مع تغيير الألوان الأساسية */
 .icon-btn {
   padding: 5px 8px;
   background: none;
@@ -497,85 +547,13 @@ html, body, #root {
   opacity: 0.6;
   transition: all 0.3s;
   border-radius: 5px;
+  color: #64748b;  /* تم الإضافة */
 }
 
 .icon-btn:hover {
   opacity: 1;
-  background-color: #eef2f6;
+  background-color: #e9ecef;  /* تم التعديل */
   transform: translateY(-2px);
-}
-
-
-.btn-primary {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #3949ab, #1a237e);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-weight: 500;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(57,73,171,0.3);
-}
-
-.btn-success {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #4caf50, #388e3c);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-weight: 500;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.btn-success:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(76,175,80,0.3);
-}
-
-.btn-info {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #2196f3, #1976d2);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-weight: 500;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.btn-info:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(33,150,243,0.3);
-}
-
-.btn-warning {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-weight: 500;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.btn-warning:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255,152,0,0.3);
 }
 
 .actions-grid {
@@ -585,20 +563,6 @@ html, body, #root {
   max-height: 250px;
   overflow-y: auto;
   padding-right: 5px;
-}
-
-.actions-grid::-webkit-scrollbar {
-  width: 4px;
-}
-
-.actions-grid::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.actions-grid::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 10px;
 }
 
 .action-card {
@@ -613,6 +577,23 @@ html, body, #root {
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* ألوان مختلفة للكروت */
+.action-card.primary {
+  background: #4361ee;  /* تم التعديل */
+}
+
+.action-card.success {
+  background: #4caf50;
+}
+
+.action-card.warning {
+  background: #ff9800;
+}
+
+.action-card.info {
+  background: #64748b;  /* تم التعديل */
 }
 
 .action-card:hover {
@@ -639,20 +620,6 @@ html, body, #root {
   padding-right: 5px;
 }
 
-.metrics-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.metrics-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.metrics-list::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 10px;
-}
-
 .metric-item {
   display: flex;
   flex-direction: column;
@@ -666,19 +633,20 @@ html, body, #root {
 }
 
 .metric-name {
-  color: #555;
+  color: #64748b;  /* تم التعديل */
   font-weight: 500;
 }
 
 .metric-value {
   font-weight: 600;
-  color: #333;
-  background: #f0f2f5;
+  color: #1e293b;  /* تم التعديل */
+  background: #f1f5f9;  /* تم التعديل */
   padding: 2px 8px;
   border-radius: 20px;
   font-size: 0.85rem;
 }
 
+/* ميديا كويرز كما هي */
 @media (max-width: 1024px) {
   .sidebar {
     transform: translateX(-100%);
@@ -760,6 +728,7 @@ html, body, #root {
   }
 }
 
+/* animations */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -783,6 +752,7 @@ html, body, #root {
   animation-delay: 0.2s;
 }
 
+/* helper classes */
 .text-truncate {
   white-space: nowrap;
   overflow: hidden;

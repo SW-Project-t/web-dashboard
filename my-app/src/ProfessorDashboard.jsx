@@ -205,7 +205,7 @@ export default function ProfessorDashboard() {
                 
                 {/* ===== الهيدر مع البحث ===== */}
                 <div className="header">
-                    <h1>Professor Dashboard</h1>
+                    <h1> Dashboard </h1>
                     <p>Welcome back, Dr. Sarah Ahmed!</p>
                     
                     <div className="search-sort-container">

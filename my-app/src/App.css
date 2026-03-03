@@ -1,58 +1,55 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: black;
-  /* لو عندك صورة شبكة زي اللي في التصميم، حط مسارها هنا */
-  /* background-image: url('./assets/back10.jpg'); */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  
-  /* أهم سطور عشان كل حاجة تتسنتر في الشاشة */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh; /* بياخد طول الشاشة بالكامل */
-  width: 100vw;  /* بياخد عرض الشاشة بالكامل */
-  overflow: hidden; /* بيمنع أي Scroll يمين أو شمال ملوش لازمة */
+  font-family: sans-serif;
 }
 
 .container1 {
-  /* ده المربع الخارجي الشفاف اللي جواه الفورم */
-  height: 625px;
-  width: 1165px;
-  max-width: 95%; /* عشان لو الشاشة صغرت الكارت يصغر معاها ومايبوظش */
-  
-  /* السطور دي بتسنتر المربع الداخلي (container2) في النص بالظبط */
+  /* ده بقا واخد الشاشة كلها وفيه التدرج اللبني */
+  height: 100vh;
+  width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
-  
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 30px;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  position: relative; /* مهم جداً عشان اللوجو والشبكة */
+  background: linear-gradient(135deg, #74b9ff 0%, #e0f2fe 100%); /* التدرج اللبني */
+  overflow: hidden;
 }
+
+/* الكلاس ده ضفناه عشان يرمي الشبكة ورا خالص */
+.particles-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.page_logo {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 60px;
+  border-radius: 10px;
+  z-index: 10; /* عشان يبقى فوق الشبكة */
+}
+
 .container2 {
-  /* خلينا العرض 400px عشان يكون متناسق أكتر مع النسخة اللبني */
+  /* ده الكارت الأبيض الزجاجي اللي في النص */
   width: 400px; 
-  border-radius: 30px;
-  
-  /* زودنا وضوح الخلفية شوية عشان تبرز في الـ Dark Mode */
-  background-color: rgba(255, 255, 255, 0.08); 
-  
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.45); /* أبيض شفاف */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 40px; 
   box-sizing: border-box; 
+  z-index: 10; /* عشان يكون فوق الشبكة */
 }
 
 .header_brand {
@@ -64,7 +61,7 @@ body {
 }
 
 .brand_logo {
-  width: 30px;
+  width: 35px;
   height: auto;
   margin-right: 10px;
   border-radius: 8px;
@@ -72,7 +69,7 @@ body {
 
 .logo {
   font-size: 22px;
-  color: white;
+  color: #08509e; /* أزرق غامق بدل الأبيض */
   margin: 0 !important;
   font-weight: bold;
 }
@@ -81,7 +78,6 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  /* شيلنا margin-left: 40px اللي كانت بتبوظ التوسيط */
 }
 
 .login {
@@ -89,14 +85,15 @@ body {
   margin-bottom: 25px;
   margin-top: 0;
   text-align: center;
-  color: white;
+  color: #08509e; /* أزرق غامق */
   font-weight: bold;
 }
 
 .login_container p {
   margin: 10px 0 8px 0;
   font-size: 14px;
-  color: #e2e8f0; /* لون فاتح عشان يتقري بوضوح على الأسود */
+  color: #333; /* لون غامق عشان يتقري على الفاتح */
+  font-weight: 500;
 }
 
 .input_wrapper {
@@ -104,39 +101,35 @@ body {
   display: flex;
   align-items: center;
   width: 100%;
-  margin-bottom: 15px; /* مسافة بين الحقول */
+  margin-bottom: 15px;
 }
 
 .login_container input {
-  width: 100%; /* خليناها 100% بدل 88% عشان تملى المساحة صح */
-  padding: 12px 40px 12px 45px; /* ظبطنا المسافات عشان الأيقونات */
-  border: none;
+  width: 100%; 
+  padding: 12px 40px 12px 45px; 
+  border: 1px solid #d1d5db; /* بوردر خفيف */
   border-radius: 8px;
   color: black;
-  background-color: white; /* فضلنا سايبينها بيضا زي اللبني */
+  background-color: white; 
   outline: none;
   box-sizing: border-box;
   transition: all 0.3s ease; 
   font-size: 14px;
 }
 
-.login_container input:hover {
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
-}
-
 .login_container input:focus {
-  box-shadow: 0 0 0 3px rgba(100, 180, 255, 0.4);
+  border-color: #08509e;
+  box-shadow: 0 0 0 3px rgba(8, 80, 158, 0.2); /* تأثير أزرق خفيف لما تدوس عليه */
 }
 
 ::placeholder {
   color: #9ca3af; 
-  opacity: 1;
 }
 
 .input_icon_left {
   position: absolute;
   left: 15px;
-  color: #08509e; /* نفس درجة الأزرق في النسخة اللبني */
+  color: #08509e; 
   font-size: 18px;
   z-index: 2;
 }
@@ -154,16 +147,16 @@ body {
 }
 
 .toggle_password_icon:hover, .eye_icon:hover {
-  color: #333;
+  color: #08509e;
 }
 
 .login_button {
-  width: 100%; /* 100% عشان يكون نفس عرض الحقول */
+  width: 100%; 
   padding: 12px;
-  margin-top: 20px;
+  margin-top: 15px;
   border: none;
   border-radius: 8px;
-  background-color: #08509e; /* أزرق صريح زي النسخة اللبني */
+  background-color: #08509e; 
   color: white;
   font-weight: bold;
   font-size: 16px;
@@ -182,22 +175,14 @@ body {
 .forgot_password {
   display: block;
   font-size: 13px;
-  color: #cbd5e1; 
+  color: #64748b; /* رمادي غامق */
   text-decoration: none;
-  margin-top: 15px;
+  margin-top: 5px;
   text-align: left;
   transition: all 0.3s ease;
 }
 
 .forgot_password:hover {
-  color: #ffffff;
+  color: #08509e;
   text-decoration: underline;
-}
-
-.page_logo {
-  position: absolute;
-  top: 20px;
-  left: 30px;
-  width: 60px;
-  border-radius: 10px;
 }

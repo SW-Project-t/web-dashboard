@@ -39,8 +39,9 @@ function Login() {
   };
   return (
     <div className='container1'>
-      <div>
-      <ParticleBackground />
+      {/* ضيفنا الكلاس ده هنا */}
+      <div className="particles-wrapper">
+        <ParticleBackground />
       </div>
       <img src={uniLogo} alt="University Logo" className="page_logo" />
       <div className='container2'>

@@ -1,13 +1,13 @@
 #admin_unique_page {
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, #4e92d6 0%, #f4f9ff 100%) ;
+    background: linear-gradient(135deg, #1068bf 0%, #f4f9ff 100%) ;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     width: 100vw;
-    position: fixed; /* جرب دي عشان تضمن إنها تغطي الشاشة كلها */
+    position: fixed; 
     top: 0;
     left: 0;
 }
@@ -171,19 +171,20 @@
 
 .admin_submit_button {
   width: 88%;
-  padding: 7px;
+  padding: 14px; 
   margin-top: 25px;
   border: none;
-  border-radius: 8px;
-  background-color: #07529d;
+  border-radius: 10px; 
+  background: linear-gradient(to right, #1ba2f3, #166de0); 
+  
   color: white;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 18px; 
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 8px; 
 }
 
 

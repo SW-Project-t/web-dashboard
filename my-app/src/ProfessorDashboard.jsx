@@ -203,7 +203,7 @@ export default function ProfessorDashboard() {
             {/* ===== المحتوى الرئيسي ===== */}
             <div className="main-content">
                 
-                {/* ===== الهيدر مع البحث ===== */}
+                
                 <div className="header">
                     <h1> Dashboard </h1>
                     <p>Welcome back, Dr. Sarah Ahmed!</p>

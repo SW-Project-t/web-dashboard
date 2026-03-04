@@ -34,14 +34,18 @@ function Login() {
         const fullName = response.data.profile.fullName;
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('userRole', userRole);
-        alert("Login Successful! Welcome " + fullName + " (" + userRole + ")");
-
+        
         if (userRole === "Instructor") {
         navigate('/ProfessorDashboard');
       } else if(userRole ==="Student") {
         navigate('/StudentDashboard');
       }
+      else if(userRole ==="admin") {
+        navigate('/AdminDashboard');
        }
+
+       alert("Login Successful! Welcome " + fullName + " (" + userRole + ")");
+      }
       } catch (error) {
       console.error("Full Error Details:", error);
       const errorMessage = error.response?.data?.message || error.message;

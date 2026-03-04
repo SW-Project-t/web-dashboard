@@ -4,7 +4,7 @@ import './AdminDashboard.css';
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // بيانات التنبيهات
+
   const alerts = [
     {
       id: 1,
@@ -26,7 +26,7 @@ const AdminDashboard = () => {
     }
   ];
 
-  // بيانات الأقسام
+  
   const departments = [
     { name: 'Engineering', count: 2156, color: '#4caf50' },
     { name: 'Business', count: 1987, color: '#2196f3' },
@@ -35,7 +35,7 @@ const AdminDashboard = () => {
     { name: 'Others', count: 858, color: '#ff9800' }
   ];
 
-  // بيانات المستخدمين
+  
   const users = [
     { id: '202201234', name: 'Ahmed Hassan', role: 'Student', department: 'Computer Science', status: 'active' },
     { id: '202201235', name: 'Fatima Ali', role: 'Student', department: 'Engineering', status: 'active' },
@@ -44,7 +44,7 @@ const AdminDashboard = () => {
     { id: 'PROF002', name: 'Dr. Mohammed Ali', role: 'Professor', department: 'Engineering', status: 'active' }
   ];
 
-  // بيانات الكورسات
+  
   const courses = [
     { code: 'CS401', name: 'Data Structures', professor: 'Dr. Sarah Ahmed', students: 45, status: 'active' },
     { code: 'CS402', name: 'Algorithms', professor: 'Dr. Mohammed Ali', students: 38, status: 'active' },
@@ -52,15 +52,15 @@ const AdminDashboard = () => {
     { code: 'ENG201', name: 'Thermodynamics', professor: 'Dr. Omar Hassan', students: 52, status: 'active' }
   ];
 
-  // بيانات الإجراءات السريعة
+  
   const quickActions = [
     { name: 'Export All Data', icon: '📤', color: '#28a745' },
-    { name: 'Manage Permissions', icon: '🔐', color: '#17a2b8' },
+    { name: 'Manage Permissions', icon: '🔐', color: '#17a228' },
     { name: 'View Departments', icon: '🏢', color: '#ffc107' },
     { name: 'Course Catalog', icon: '📚', color: '#dc3545' }
   ];
 
-  // بيانات حالة النظام
+   
   const systemMetrics = [
     { name: 'Server Load', value: 32, color: '#4caf50' },
     { name: 'Database Usage', value: 68, color: '#2196f3' },
@@ -71,13 +71,12 @@ const AdminDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>
-            Yalla<span>Class</span>  {/* تم التعديل: إضافة Yalla Class مع تنسيق */}
+            Yalla<span>Class</span>
           </h2>
-          <p className="sidebar-subtitle">Admin Panel</p>  {/* تم الإضافة: subtitle */}
+          <p className="sidebar-subtitle">Admin Panel</p>
         </div>
         
         <nav className="sidebar-nav">
@@ -110,9 +109,7 @@ const AdminDashboard = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="main-content">
-        {/* Header */}
         <header className="header">
           <button 
             className="menu-toggle" 
@@ -121,7 +118,7 @@ const AdminDashboard = () => {
             ☰
           </button>
           <div className="header-left">
-             <p className="header-subtitle">Admin Dashboard & System Management</p>  {/* تم الإضافة */}
+             <p className="header-subtitle">Admin Dashboard & System Management</p>
           </div>
           <div className="header-right">
             <div className="search-box">
@@ -131,10 +128,7 @@ const AdminDashboard = () => {
             <div className="user-avatar">👤</div>
           </div>
         </header>
-
-        {/* System Alerts and Department Stats */}
         <div className="grid-2col">
-          {/* System Alerts */}
           <div className="card">
             <h3 className="card-title">System Alerts</h3>
             <div className="alerts-list">
@@ -148,8 +142,6 @@ const AdminDashboard = () => {
               ))}
             </div>
           </div>
-
-          {/* Department Stats */}
           <div className="card">
             <h3 className="card-title">Students by Department</h3>
             <div className="stats-list">
@@ -173,16 +165,12 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* Users Table and Quick Actions */}
         <div className="grid-2col">
-          {/* Users Table */}
           <div className="card span-2">
             <div className="card-header">
               <h3 className="card-title">Recent Users</h3>
               <button className="btn-primary">Add User</button>
             </div>
-            
             <div className="table-responsive">
               <table className="data-table">
                 <thead>
@@ -226,8 +214,6 @@ const AdminDashboard = () => {
               <button className="btn-warning">View Departments</button>
             </div>
           </div>
-
-          {/* Quick Actions */}
           <div className="card">
             <h3 className="card-title">Quick Actions</h3>
             <div className="actions-grid">
@@ -244,10 +230,7 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* Recent Courses and System Status */}
         <div className="grid-2col">
-          {/* Recent Courses */}
           <div className="card span-2">
             <div className="card-header">
               <h3 className="card-title">Recent Courses</h3>
@@ -292,7 +275,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* System Status */}
           <div className="card">
             <h3 className="card-title">System Status</h3>
             <div className="metrics-list">
@@ -316,8 +298,6 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* Footer with Yalla Class Copyright - تم الإضافة */}
         <div className="dashboard-footer">
           <p>© 2026 Yalla Class. All rights reserved.</p>
         </div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import './StudentDashboard.css'; // تأكد من مسار ملف الـ CSS
+import './StudentDashboard.css';
 
-// ========== الثوابت والبيانات الافتراضية ==========
 const STORAGE_KEYS = {
     USER: 'yallaclass_user',
     COURSES: 'yallaclass_courses',
@@ -50,13 +49,11 @@ const loadData = () => {
 };
 
 export default function StudentDashboard() {
-    // ========== حالة التطبيق (State) ==========
     const [appState, setAppState] = useState(loadData());
     const [selectedCourse, setSelectedCourse] = useState(appState.courses[0]?.id || null);
     const [modal, setModal] = useState({ show: false, type: null });
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-    // ========== حفظ التغييرات في LocalStorage ==========
     useEffect(() => {
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(appState.user));
         localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(appState.courses));
@@ -65,7 +62,6 @@ export default function StudentDashboard() {
         localStorage.setItem(STORAGE_KEYS.TREND, JSON.stringify(appState.trend));
     }, [appState]);
 
-    // ========== الـ Timer الخاص بالمحاضرة النشطة ==========
     useEffect(() => {
         const timer = setInterval(() => {
             setAppState(prev => {
@@ -77,12 +73,11 @@ export default function StudentDashboard() {
                 });
                 return { ...prev, courses: newCourses };
             });
-        }, 60000); // كل دقيقة
+        }, 60000);
 
         return () => clearInterval(timer);
     }, []);
 
-    // ========== دوال التفاعل ==========
     const showNotification = (message, type = 'success') => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
@@ -108,7 +103,7 @@ export default function StudentDashboard() {
 
             return { ...prev, courses: newCourses, user: newUser, attendance: newAttendance };
         });
-        showNotification(`✅ Checked in to ${appState.courses.find(c => c.id === courseId)?.name}`);
+        showNotification(`Checked in to ${appState.courses.find(c => c.id === courseId)?.name}`);
     };
 
     const toggleGPS = () => {
@@ -116,7 +111,7 @@ export default function StudentDashboard() {
             ...prev,
             user: { ...prev.user, gpsActive: !prev.user.gpsActive }
         }));
-        showNotification(`📍 GPS ${!appState.user.gpsActive ? 'Activated' : 'Deactivated'}`);
+        showNotification(`GPS ${!appState.user.gpsActive ? 'Activated' : 'Deactivated'}`);
     };
 
     const deleteCourse = (courseId) => {
@@ -134,7 +129,7 @@ export default function StudentDashboard() {
             if (selectedCourse === courseId) {
                 setSelectedCourse(appState.courses.find(c => c.id !== courseId)?.id || null);
             }
-            showNotification(`🗑️ Course ${courseId} deleted`);
+            showNotification(`Course ${courseId} deleted`);
         }
     };
 
@@ -142,11 +137,10 @@ export default function StudentDashboard() {
         if (window.confirm('Reset all data to default?')) {
             setAppState(defaultData);
             setSelectedCourse(defaultData.courses[0]?.id || null);
-            showNotification('🔄 Data reset to default');
+            showNotification('Data reset to default');
         }
     };
 
-    // ========== التعامل مع الـ Forms (إضافة مادة أو حصة) ==========
     const handleAddCourse = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -156,7 +150,7 @@ export default function StudentDashboard() {
         const courseName = formData.get('courseName');
 
         if (appState.courses.some(c => c.id === courseId)) {
-            showNotification('⚠️ Course ID already exists', 'error');
+            showNotification('Course ID already exists', 'error');
             return;
         }
 
@@ -188,7 +182,7 @@ export default function StudentDashboard() {
         }));
 
         setModal({ show: false, type: null });
-        showNotification(`✅ Course ${courseId} added successfully!`);
+        showNotification(`Course ${courseId} added successfully!`);
     };
 
     const handleAddUpcoming = (e) => {
@@ -206,38 +200,34 @@ export default function StudentDashboard() {
 
         setAppState(prev => ({ ...prev, upcoming: [...prev.upcoming, newClass] }));
         setModal({ show: false, type: null });
-        showNotification(`📅 Added upcoming class: ${name}`);
+        showNotification(`Added upcoming class: ${name}`);
     };
 
     return (
         <div className="app">
-            {/* الإشعارات Toast */}
             {toast.show && (
                 <div className={`notification ${toast.type}`}>
                     {toast.message}
                 </div>
             )}
 
-            {/* القائمة الجانبية */}
             <div className="sidebar">
                 <div className="logo">Yalla<span>Class</span></div>
-                <div className="nav-item active" onClick={() => showNotification('Dashboard')}>📊 Dashboard</div>
-                <div className="nav-item" onClick={() => showNotification(`My Courses: ${appState.courses.length} courses`)}>📘 My Courses</div>
-                <div className="nav-item" onClick={() => showNotification(`Student ID: ${appState.user.id}`)}>🆔 Student ID: {appState.user.id}</div>
-                <div className="nav-item" onClick={() => showNotification('Attendance Records')}>📆 Attendance</div>
-                <div className="nav-item" onClick={() => showNotification('Settings')}>⚙️ Settings</div>
-                <div className="nav-item logout" onClick={resetAllData}>🔄 Reset Data</div>
-                <div className="nav-item logout" onClick={() => showNotification('Logged out')}>🚪 Logout</div>
+                <div className="nav-item active" onClick={() => showNotification('Dashboard')}>Dashboard</div>
+                <div className="nav-item" onClick={() => showNotification(`My Courses: ${appState.courses.length} courses`)}>My Courses</div>
+                <div className="nav-item" onClick={() => showNotification(`Student ID: ${appState.user.id}`)}>Student ID: {appState.user.id}</div>
+                <div className="nav-item" onClick={() => showNotification('Attendance Records')}>Attendance</div>
+                <div className="nav-item" onClick={() => showNotification('Settings')}>Settings</div>
+                <div className="nav-item logout" onClick={resetAllData}>Reset Data</div>
+                <div className="nav-item logout" onClick={() => showNotification('Logged out')}>Logout</div>
             </div>
 
-            {/* المحتوى الرئيسي */}
             <div className="main-content">
                 <div className="header">
                     <h1> Dashboard </h1>
                     <p>Welcome back, {appState.user.name}!</p>
                 </div>
 
-                {/* كروت الإحصائيات */}
                 <div className="dashboard-grid">
                     <div className="card" onClick={() => showNotification(`Overall Attendance: ${appState.user.overallAttendance}%`)}>
                         <div className="card-label">Overall Attendance</div>
@@ -253,24 +243,22 @@ export default function StudentDashboard() {
                     </div>
                     <div className="card" onClick={toggleGPS}>
                         <div className="location-badge">
-                            📍 GPS {appState.user.gpsActive ? 'Active' : 'Inactive'}
+                            GPS {appState.user.gpsActive ? 'Active' : 'Inactive'}
                         </div>
                     </div>
                 </div>
 
-                {/* بانر المحاضرة النشطة */}
                 {appState.courses.some(c => c.timeRemaining > 0) && (
                     <div className="active-session">
-                        <p>⏳ Attendance Active for {appState.courses.find(c => c.timeRemaining > 0)?.id} - {appState.courses.find(c => c.timeRemaining > 0)?.name}</p>
+                        <p>Attendance Active for {appState.courses.find(c => c.timeRemaining > 0)?.id} - {appState.courses.find(c => c.timeRemaining > 0)?.name}</p>
                         <div className="timer">{appState.courses.find(c => c.timeRemaining > 0)?.timeRemaining} minutes remaining</div>
                     </div>
                 )}
 
-                {/* المساقات والمحاضرات القادمة */}
                 <div className="courses-row">
                     <div className="section-card">
                         <div className="section-title">
-                            📚 My Courses ({appState.courses.length})
+                            My Courses ({appState.courses.length})
                             <button className="add-btn" onClick={() => setModal({ show: true, type: 'course' })}>+</button>
                         </div>
                         {appState.courses.length > 0 ? appState.courses.map(course => (
@@ -280,14 +268,14 @@ export default function StudentDashboard() {
                                 <div className="course-instructor">{course.instructor}</div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
                                     <span style={{ color: course.checkedIn ? '#22c55e' : '#64748b', fontSize: '0.9rem' }}>
-                                        {course.checkedIn ? '✅ Checked In' : '⏳ Not checked in'}
+                                        {course.checkedIn ? 'Checked In' : 'Not checked in'}
                                     </span>
-                                    <button className="delete-btn" onClick={(e) => { e.stopPropagation(); deleteCourse(course.id); }}>🗑️</button>
+                                    <button className="delete-btn" onClick={(e) => { e.stopPropagation(); deleteCourse(course.id); }}>Delete</button>
                                 </div>
                             </div>
                         )) : (
                             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-                                <p>📚 No courses yet</p>
+                                <p>No courses yet</p>
                                 <p>Click the + button to add your first course</p>
                             </div>
                         )}
@@ -295,7 +283,7 @@ export default function StudentDashboard() {
 
                     <div className="section-card">
                         <div className="section-title">
-                            📅 Upcoming Classes ({appState.upcoming.length})
+                            Upcoming Classes ({appState.upcoming.length})
                             <button className="add-btn" onClick={() => setModal({ show: true, type: 'upcoming' })}>+</button>
                         </div>
                         {appState.upcoming.length > 0 ? appState.upcoming.map(cls => (
@@ -308,13 +296,12 @@ export default function StudentDashboard() {
                             </div>
                         )) : (
                             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-                                <p>📅 No upcoming classes</p>
+                                <p>No upcoming classes</p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* تفاصيل الكورس المحدد */}
                 {selectedCourse && appState.courses.find(c => c.id === selectedCourse) && (() => {
                     const course = appState.courses.find(c => c.id === selectedCourse);
                     return (
@@ -323,24 +310,23 @@ export default function StudentDashboard() {
                                 <h2>{course.id} - {course.name}</h2>
                                 <p>Instructor: {course.instructor}</p>
                                 <div className="course-meta">
-                                    <span>📅 {course.schedule}</span>
-                                    <span>🎓 {course.students} Students</span>
-                                    <span>📍 Room {course.room}</span>
+                                    <span>{course.schedule}</span>
+                                    <span>{course.students} Students</span>
+                                    <span>Room {course.room}</span>
                                 </div>
                             </div>
                             <div className="attendance-rate">
                                 <div className="rate-badge">{course.attendanceRate}%</div>
                                 <button className="check-in-btn" onClick={() => handleCheckIn(course.id)} disabled={course.checkedIn}>
-                                    {course.checkedIn ? '✅ Checked In' : '✅ Check In Now'}
+                                    {course.checkedIn ? 'Checked In' : 'Check In Now'}
                                 </button>
                             </div>
                         </div>
                     );
                 })()}
 
-                {/* جدول الحضور */}
                 <div className="table-wrapper">
-                    <div className="section-title">📋 This Week Attendance</div>
+                    <div className="section-title">This Week Attendance</div>
                     <table className="week-table">
                         <thead>
                             <tr>
@@ -373,9 +359,8 @@ export default function StudentDashboard() {
                     </table>
                 </div>
 
-                {/* رسم بياني للتريند */}
                 <div className="trend-card">
-                    <div className="section-title">📈 Attendance Trend</div>
+                    <div className="section-title">Attendance Trend</div>
                     <div className="chart-container">
                         <div className="chart-bars">
                             {appState.trend.map((week, index) => (
@@ -394,11 +379,10 @@ export default function StudentDashboard() {
                 </div>
             </div>
 
-            {/* Modal */}
             {modal.show && (
                 <div className="modal" onClick={() => setModal({ show: false, type: null })}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h3>{modal.type === 'course' ? '➕ Add New Course' : '📅 Add Upcoming Class'}</h3>
+                        <h3>{modal.type === 'course' ? 'Add New Course' : 'Add Upcoming Class'}</h3>
                         
                         {modal.type === 'course' ? (
                             <form onSubmit={handleAddCourse}>
@@ -443,4 +427,3 @@ export default function StudentDashboard() {
         </div>
     );
 }
-

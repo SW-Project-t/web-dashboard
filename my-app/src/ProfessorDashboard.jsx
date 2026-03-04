@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import './ProfessorDashboard.css';
 
 export default function ProfessorDashboard() {
-    // ===== البيانات الأساسية =====
     const [courses, setCourses] = useState([
         {
             id: 'CS401',
@@ -39,7 +38,6 @@ export default function ProfessorDashboard() {
         }
     ]);
 
-    // ===== حالات التفاعل =====
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('');
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -50,7 +48,6 @@ export default function ProfessorDashboard() {
         id: '', name: '', schedule: '', room: '', students: ''
     });
 
-    // ===== دالة الإشعارات =====
     const showNotification = (message, type = 'success') => {
         const id = Date.now();
         setNotifications(prev => [...prev, { id, message, type }]);
@@ -59,7 +56,6 @@ export default function ProfessorDashboard() {
         }, 3000);
     };
 
-    // ===== دوال البحث والترتيب =====
     const filteredCourses = courses.filter(course =>
         course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -72,7 +68,6 @@ export default function ProfessorDashboard() {
         return 0;
     });
 
-    // ===== دوال CRUD =====
     const openAddModal = () => {
         setModalType('add');
         setNewCourse({ id: '', name: '', schedule: '', room: '', students: '' });
@@ -93,15 +88,15 @@ export default function ProfessorDashboard() {
     };
 
     const deleteCourse = (id) => {
-        if (window.confirm('🗑️ Are you sure you want to delete this course?')) {
+        if (window.confirm('Are you sure you want to delete this course?')) {
             setCourses(courses.filter(c => c.id !== id));
-            showNotification(`✅ Course ${id} deleted successfully`);
+            showNotification(`Course ${id} deleted successfully`);
         }
     };
 
     const saveCourse = () => {
         if (!newCourse.id || !newCourse.name) {
-            showNotification('⚠️ Please fill all required fields', 'error');
+            showNotification('Please fill all required fields', 'error');
             return;
         }
 
@@ -114,18 +109,17 @@ export default function ProfessorDashboard() {
                 todayLate: 0,
                 todayAbsent: 0
             }]);
-            showNotification(`✅ Course ${newCourse.id} added successfully`);
+            showNotification(`Course ${newCourse.id} added successfully`);
         } else {
             setCourses(courses.map(c => 
                 c.id === selectedCourse.id ? { ...c, ...newCourse } : c
             ));
-            showNotification(`✅ Course ${newCourse.id} updated successfully`);
+            showNotification(`Course ${newCourse.id} updated successfully`);
         }
 
         setShowModal(false);
     };
 
-    // ===== دوال الحضور =====
     const updateAttendance = (courseId, type) => {
         setCourses(courses.map(c => {
             if (c.id === courseId) {
@@ -135,10 +129,9 @@ export default function ProfessorDashboard() {
             }
             return c;
         }));
-        showNotification(`✅ Attendance updated for ${courseId}`);
+        showNotification(`Attendance updated for ${courseId}`);
     };
 
-    // ===== دوال إضافية =====
     const duplicateCourse = (course) => {
         const newId = course.id + ' Copy';
         setCourses([...courses, {
@@ -146,7 +139,7 @@ export default function ProfessorDashboard() {
             id: newId,
             name: course.name + ' (Copy)'
         }]);
-        showNotification(`📋 Course duplicated as ${newId}`);
+        showNotification(`Course duplicated as ${newId}`);
     };
 
     const exportData = () => {
@@ -156,15 +149,13 @@ export default function ProfessorDashboard() {
         link.setAttribute('href', dataUri);
         link.setAttribute('download', `courses_${new Date().toISOString().slice(0,10)}.json`);
         link.click();
-        showNotification('📊 Data exported successfully');
+        showNotification('Data exported successfully');
     };
 
-    // ===== الإحصائيات =====
     const totalStudents = courses.reduce((sum, c) => sum + c.students, 0);
     const avgAttendance = Math.round(courses.reduce((sum, c) => sum + c.avgAttendance, 0) / (courses.length || 1));
     const totalPresent = courses.reduce((sum, c) => sum + c.todayPresent, 0);
 
-    // ===== بيانات الرسم البياني =====
     const weeklyData = [
         { day: 'Mon', value: 92 },
         { day: 'Tue', value: 88 },
@@ -175,7 +166,6 @@ export default function ProfessorDashboard() {
 
     return (
         <div className="app professor-app">
-            {/* ===== نظام الإشعارات ===== */}
             <div className="notifications-container">
                 {notifications.map(n => (
                     <div key={n.id} className={`notification ${n.type}`}>
@@ -184,23 +174,21 @@ export default function ProfessorDashboard() {
                 ))}
             </div>
 
-            {/* ===== Sidebar ===== */}
             <div className="sidebar">
                 <div className="logo">Yalla<span>Class</span></div>
-                <div className="nav-item active">📊 Dashboard</div>
-                <div className="nav-item">📚 My Courses</div>
-                <div className="nav-item">👥 Students</div>
-                <div className="nav-item">📅 Schedule</div>
-                <div className="nav-item">⚙️ Settings</div>
+                <div className="nav-item active">Dashboard</div>
+                <div className="nav-item">My Courses</div>
+                <div className="nav-item">Students</div>
+                <div className="nav-item">Schedule</div>
+                <div className="nav-item">Settings</div>
                 
                 <div className="nav-item" onClick={exportData} style={{ cursor: 'pointer' }}>
-                    📥 Export Data
+                    Export Data
                 </div>
                 
-                <div className="nav-item logout">🚪 Logout</div>
+                <div className="nav-item logout">Logout</div>
             </div>
 
-            {/* ===== المحتوى الرئيسي ===== */}
             <div className="main-content">
                 
                 
@@ -211,7 +199,7 @@ export default function ProfessorDashboard() {
                     <div className="search-sort-container">
                         <input
                             type="text"
-                            placeholder="🔍 Search courses by name or ID..."
+                            placeholder="Search courses by name or ID..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="search-input"
@@ -228,7 +216,6 @@ export default function ProfessorDashboard() {
                     </div>
                 </div>
 
-                {/* ===== بطاقات الإحصائيات ===== */}
                 <div className="stats-grid">
                     <div className="stat-card">
                         <div className="stat-label">Total Courses</div>
@@ -252,23 +239,21 @@ export default function ProfessorDashboard() {
                     </div>
                 </div>
 
-                {/* ===== أزرار الإجراءات السريعة ===== */}
                 <div className="quick-actions">
                     <button className="btn btn-primary" onClick={openAddModal}>
-                        ➕ Add New Course
+                        Add New Course
                     </button>
                     <button className="btn btn-outline" onClick={() => {
                         setSearchTerm('');
-                        showNotification('🔄 Filters cleared');
+                        showNotification('Filters cleared');
                     }}>
-                        🧹 Clear Search
+                        Clear Search
                     </button>
                 </div>
 
-                {/* ===== قائمة المساقات ===== */}
                 <div>
                     <div className="section-title">
-                        📚 My Courses ({sortedCourses.length})
+                        My Courses ({sortedCourses.length})
                         <button className="add-btn" onClick={openAddModal}>+</button>
                     </div>
 
@@ -299,35 +284,35 @@ export default function ProfessorDashboard() {
 
                                     <div className="attendance-buttons">
                                         <button className="btn btn-present" onClick={() => updateAttendance(course.id, 'present')}>
-                                            ✅ +Present
+                                            +Present
                                         </button>
                                         <button className="btn btn-late" onClick={() => updateAttendance(course.id, 'late')}>
-                                            ⏰ +Late
+                                            +Late
                                         </button>
                                         <button className="btn btn-absent" onClick={() => updateAttendance(course.id, 'absent')}>
-                                            ❌ +Absent
+                                            +Absent
                                         </button>
                                     </div>
 
                                     <div className="today-stats">
-                                        <span className="stat-present">✅ {course.todayPresent}</span>
-                                        <span className="stat-late">⏰ {course.todayLate}</span>
-                                        <span className="stat-absent">❌ {course.todayAbsent}</span>
+                                        <span className="stat-present">{course.todayPresent}</span>
+                                        <span className="stat-late">{course.todayLate}</span>
+                                        <span className="stat-absent">{course.todayAbsent}</span>
                                     </div>
                                 </div>
 
                                 <div className="action-buttons">
                                     <button className="btn btn-primary" onClick={() => openAttendanceModal(course)}>
-                                        📋 Start
+                                        Start
                                     </button>
                                     <button className="btn btn-outline" onClick={() => openEditModal(course)}>
-                                        ✏️ Edit
+                                        Edit
                                     </button>
                                     <button className="btn btn-outline" onClick={() => duplicateCourse(course)}>
-                                        📋 Copy
+                                        Copy
                                     </button>
                                     <button className="btn btn-delete" onClick={() => deleteCourse(course.id)}>
-                                        🗑️ Delete
+                                        Delete
                                     </button>
                                 </div>
                             </div>
@@ -335,9 +320,8 @@ export default function ProfessorDashboard() {
                     )}
                 </div>
 
-                {/* ===== الرسم البياني ===== */}
                 <div className="chart-card">
-                    <div className="section-title">📊 Weekly Attendance Overview</div>
+                    <div className="section-title">Weekly Attendance Overview</div>
                     <div className="chart-bars">
                         {weeklyData.map((item, i) => (
                             <div key={i} className="bar-item">
@@ -351,18 +335,17 @@ export default function ProfessorDashboard() {
                         ))}
                     </div>
                     <div className="chart-footer">
-                        ↑ Higher attendance on Wednesdays
+                        Higher attendance on Wednesdays
                     </div>
                 </div>
             </div>
 
-            {/* ===== النوافذ المنبثقة (Modal) ===== */}
             {showModal && (
                 <div className="modal" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         {modalType === 'attendance' ? (
                             <>
-                                <h3>📋 Start Attendance</h3>
+                                <h3>Start Attendance</h3>
                                 <p className="modal-subtitle">Course: {selectedCourse?.name}</p>
                                 
                                 <div className="attendance-code">2478</div>
@@ -371,7 +354,7 @@ export default function ProfessorDashboard() {
 
                                 <div className="modal-buttons">
                                     <button className="modal-btn confirm" onClick={() => {
-                                        showNotification('✅ Attendance session started!');
+                                        showNotification('Attendance session started!');
                                         setShowModal(false);
                                     }}>
                                         Start Session
@@ -383,7 +366,7 @@ export default function ProfessorDashboard() {
                             </>
                         ) : (
                             <>
-                                <h3>{modalType === 'add' ? '➕ Add New Course' : '✏️ Edit Course'}</h3>
+                                <h3>{modalType === 'add' ? 'Add New Course' : 'Edit Course'}</h3>
                                 
                                 <input
                                     className="modal-input"

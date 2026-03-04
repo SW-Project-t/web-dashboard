@@ -7,11 +7,13 @@ import uniLogo from './assets/logo2.jpg';
 import teamLogo from './assets/yallaclass_logo.jpg';
 import { FiMail, FiLock, FiEye, FiEyeOff , FiLogIn } from 'react-icons/fi';
 import ParticleBackground from './movingbackground';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -28,8 +30,17 @@ function Login() {
         idToken: idToken 
       });
       if (response.data.success) {
-        alert("Login Successful! Welcome " + response.data.profile.fullName);
+        const userRole = response.data.profile.role;
+        const fullName = response.data.profile.fullName;
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('userRole', userRole);
+        alert("Login Successful! Welcome " + fullName + " (" + userRole + ")");
+
+        if (userRole === "Instructor") {
+        navigate('/ProfessorDashboard');
+      } else if(userRole ==="Student") {
+        navigate('/StudentDashboard');
+      }
        }
       } catch (error) {
       console.error("Full Error Details:", error);

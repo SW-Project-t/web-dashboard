@@ -44,8 +44,7 @@ const AdminDashboard = () => {
 
   const handleAddUserSubmit = async (e) => {
     e.preventDefault();
-    try {
-        const userDataToSend = {
+    const userDataToSend = {
         email: newUserData.email,
         password: newUserData.password,
         fullName: newUserData.fullName,
@@ -55,6 +54,12 @@ const AdminDashboard = () => {
         phoneNumber: newUserData.phoneNumber,
         code: newUserData.code
       };
+    const hasEmptyField = Object.values(userDataToSend).some(value => value.trim() === "");
+    if (hasEmptyField) {
+      alert("Please fill in all fields.");
+      return;
+    }
+    try {
       const response = await axios.post('http://localhost:3001/admin/add-user', userDataToSend);
       if (response.data.success) {
         alert("User added successfully!");

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  const navigate = useNavigate();
   // بيانات التنبيهات
   const alerts = [
     {
@@ -180,7 +181,10 @@ const AdminDashboard = () => {
           <div className="card span-2">
             <div className="card-header">
               <h3 className="card-title">Recent Users</h3>
-              <button className="btn-primary">Add User</button>
+              <button 
+              className="btn-primary"
+              onClick={()=>navigate('/Admin')}
+              >Add User</button>
             </div>
             
             <div className="table-responsive">

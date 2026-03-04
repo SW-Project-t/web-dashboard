@@ -13,35 +13,39 @@ function Admin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [studentcode, setStudentCode] = useState('');
-
+  
+  const [role, setRole] = useState('Student');
+  const [academicYear, setAcademicYear] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
   
-  const handleAdd = async () => {
-    if (studentcode === "" || email === "" || password === "") {
-      alert("Please enter student code, email, and password");
-      return;
-    }
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
-      
-      const response = await axios.post('http://localhost:3001/verify-login', {
-        idToken: idToken ,
-        studentcode: studentcode
+      const response = await axios.post('http://localhost:3001/admin/add-user', {
+        email,
+        password,
+        fullName,
+        role,
+        academicYear
       });
-
       if (response.data.success) {
-        alert("Added Successfully! " + response.data.profile.fullName);
-        setStudentCode("");
-        setEmail("");
-        setPassword("");
-        }
-      } catch (error) {
-      console.error("Full Error Details:", error);
-      const errorMessage = error.response?.data?.message || error.message;
-      alert("Action Failed: " + errorMessage);
+        alert("User added successfully!");
+        setEmail('');
+        setPassword('');
+        setFullName('');
+        setAcademicYear('');
+      }
+    } catch (error) {
+      console.error("Error adding user:", error);
+      alert(error.response?.data?.error || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,8 +99,11 @@ function Admin() {
                     className="admin_input_field admin_input_with_right_icon" 
                />
              </div>
-          <button className='admin_submit_button' onClick={handleAdd}>
-            Add User <FiPlus className="admin_button_icon" />
+          <button 
+          className='admin_submit_button' 
+           onClick={handleAdd}
+           disabled={loading}>
+            {loading ? "Processing..." : "Add User"} <FiPlus className="admin_button_icon" />
           </button>
           </div>
         </div>

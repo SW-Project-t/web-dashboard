@@ -117,7 +117,7 @@ const AdminDashboard = () => {
                   <option value="" disabled hidden>Choose Role</option>
                   <option value="Student">Student</option>
                   <option value="Instructor">Instructor</option>
-                  <option value="Assistant">Admin</option>
+                  <option value="Assistant">Admin</option> //cha
                 </select>
                 <input type="text" name="department" className="modern-input" value={newUserData.department} onChange={handleUserInputChange} placeholder="Department" />
               </div>

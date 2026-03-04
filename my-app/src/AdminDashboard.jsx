@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
+import axios from 'axios';
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -12,7 +13,7 @@ const AdminDashboard = () => {
 
   const [newUserData, setNewUserData] = useState({
     fullName: '', email: '', password: '', role: '',
-    grade: '', group: '', department: '', phoneNumber: ''
+    academicYear: '', code: '', department: '', phoneNumber: ''
   });
 
   const [newCourseData, setNewCourseData] = useState({
@@ -41,16 +42,32 @@ const AdminDashboard = () => {
     setNewUserData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddUserSubmit = (e) => {
+  const handleAddUserSubmit = async (e) => {
     e.preventDefault();
-    console.log("New User Data:", newUserData);
-    setIsAddUserModalOpen(false);
-    setNewUserData({
-      fullName: '', email: '', password: '', role: '',
-      grade: '', group: '', department: '', phoneNumber: ''
-    });
+    try {
+        const userDataToSend = {
+        email: newUserData.email,
+        password: newUserData.password,
+        fullName: newUserData.fullName,
+        role: newUserData.role,
+        academicYear: newUserData.academicYear,
+        department: newUserData.department,
+        phoneNumber: newUserData.phoneNumber,
+        code: newUserData.code
+      };
+      const response = await axios.post('http://localhost:3001/admin/add-user', userDataToSend);
+      if (response.data.success) {
+        alert("User added successfully!");
+        setIsAddUserModalOpen(false);
+        setNewUserData({
+          fullName: '', email: '', password: '', role: '',
+          academicYear: '',department: '', phoneNumber: '', code: '' });
+      }
+    } catch (error) {
+      console.error("Error adding user:", error);
+      alert(error.response?.data?.error || "Something went wrong");
+   }
   };
-
   const handleCourseInputChange = (e) => {
     const { name, value } = e.target;
     setNewCourseData(prev => ({ ...prev, [name]: value }));
@@ -101,7 +118,7 @@ const AdminDashboard = () => {
               </div>
 
               <div className="modern-form-row">
-                <input type="text" name="grade" className="modern-input" value={newUserData.grade} onChange={handleUserInputChange} placeholder="Grade" />
+                <input type="text" name="academicYear" className="modern-input" value={newUserData.academicYear} onChange={handleUserInputChange} placeholder="Academic Year (e.g., 2024)" />
                 <input type="text" name="code" className="modern-input" value={newUserData.code} onChange={handleUserInputChange} placeholder="Code" />
               </div>
 

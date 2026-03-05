@@ -5,10 +5,10 @@ import './Navbar.css';
 const Navbar = () => {
   const location = useLocation();
 
-  // التحقق لو إحنا في أي صفحة داشبورد (أدمن، دكتور، طالب)
+
   const isDashboard = location.pathname.startsWith('/AdminDashboard') || 
-                      location.pathname.startsWith('/professorDashboard') || 
-                      location.pathname.startsWith('/studentDashboard');
+                      location.pathname.startsWith('/ProfessorDashboard') || 
+                      location.pathname.startsWith('/StudentDashboard');
 
   return (
     <nav className="navbar-container">

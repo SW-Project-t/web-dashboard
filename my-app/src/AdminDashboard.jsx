@@ -22,7 +22,7 @@ const AdminDashboard = () => {
 
   const [adminData, setAdminData] = useState({ name: 'Admin...', code: 'Code...' });
   
-  // 🌟 ستيت الصورة الشخصية للأدمن
+ 
   const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
   
   const [newUserData, setNewUserData] = useState({
@@ -73,7 +73,7 @@ const AdminDashboard = () => {
     ? departments.reduce((sum, dept) => sum + dept.count, 0) 
     : 1; 
 
-  // 🌟 دوال رفع وإزالة صورة الأدمن
+  
   const handleImageUpload = (e) => {
       const file = e.target.files[0];
       if (file) {

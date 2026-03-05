@@ -586,38 +586,93 @@
     .course-detail-card { flex-direction: column; text-align: center; }
     .course-meta { flex-wrap: wrap; justify-content: center; }
 }
+
 .sidebar-profile {
-    padding: 20px;
+    padding: 10px 10px 20px 10px;
     text-align: center;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid #e9ecef;
     margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+}
+
+.profile-image-wrapper {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 15px;
 }
 
 .sidebar-profile-image {
-    width: 60px;
-    height: 60px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #3b82f6;
-    margin-bottom: 10px;
+    border: 3px solid #4361ee;
+    box-shadow: 0 4px 10px rgba(67, 97, 238, 0.2);
 }
 
 .sidebar-profile-placeholder {
-    width: 60px;
-    height: 60px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    background: #334155;
-    color: #94a3b8;
+    background: linear-gradient(135deg, #4361ee, #3b82f6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    border: 3px solid #e2e8f0;
+}
+
+.image-upload-overlay {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: #4361ee;
+    color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
-    font-weight: bold;
-    margin: 0 auto 10px;
+    cursor: pointer;
+    border: 2px solid white;
+    transition: all 0.2s ease;
+}
+
+.image-upload-overlay:hover {
+    background-color: #3651d4;
+    transform: scale(1.1);
 }
 
 .sidebar-profile-name {
-    color: white;
-    font-size: 0.9rem;
-    font-weight: 500;
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.sidebar-profile-id {
+    color: #64748b;
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+}
+.remove-photo-btn {
+    background-color: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.remove-photo-btn:hover {
+    background-color: #fee2e2;
 }

@@ -1,10 +1,15 @@
-import React, { useState ,useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import './ProfessorDashboard.css';
 import { useNavigate } from 'react-router-dom';
 
+const STORAGE_KEYS = {
+    PROF_IMAGE: 'yallaclass_prof_image'
+};
+
 export default function ProfessorDashboard() {
-   
    const navigate = useNavigate();
+   
+   const [profileImage, setProfileImage] = useState(localStorage.getItem(STORAGE_KEYS.PROF_IMAGE) || null);
     
     useEffect(() => {
     const token = localStorage.getItem('token');
@@ -18,7 +23,6 @@ export default function ProfessorDashboard() {
     setTimeout(() => {
         navigate('/');}, 1000);
     };
-   
    
     const [courses, setCourses] = useState([
         {
@@ -72,6 +76,25 @@ export default function ProfessorDashboard() {
         setTimeout(() => {
             setNotifications(prev => prev.filter(n => n.id !== id));
         }, 3000);
+    };
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfileImage(reader.result);
+                localStorage.setItem(STORAGE_KEYS.PROF_IMAGE, reader.result);
+                showNotification('Profile image updated successfully!');
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeProfileImage = () => {
+        setProfileImage(null);
+        localStorage.removeItem(STORAGE_KEYS.PROF_IMAGE);
+        showNotification('Profile image removed');
     };
 
     const filteredCourses = courses.filter(course =>
@@ -193,6 +216,42 @@ export default function ProfessorDashboard() {
             </div>
 
             <div className="sidebar">
+                <div className="sidebar-profile">
+                    <div className="profile-image-wrapper">
+                        {profileImage ? (
+                            <img src={profileImage} alt="Profile" className="sidebar-profile-image" />
+                        ) : (
+                            <div className="sidebar-profile-placeholder">
+                                SA
+                            </div>
+                        )}
+                        <div 
+                           className="image-upload-overlay" 
+                           onClick={() => document.getElementById('prof-profile-upload').click()}
+                           title="Upload new photo"
+                        >
+                            <span>+</span>
+                        </div>
+                    </div>
+
+                    <div className="sidebar-profile-name">Dr. Sarah Ahmed</div>
+                    <div className="sidebar-profile-id">Professor</div>
+
+                    <input
+                        type="file"
+                        id="prof-profile-upload"
+                        style={{ display: 'none' }}
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                    />
+
+                    {profileImage && (
+                        <button className="remove-photo-btn" onClick={removeProfileImage}>
+                            Remove Photo
+                        </button>
+                    )}
+                </div>
+
                 <div className="nav-item active">Dashboard</div>
                 <div className="nav-item">My Courses</div>
                 <div className="nav-item">Students</div>
@@ -208,10 +267,11 @@ export default function ProfessorDashboard() {
 
             <div className="main-content">
                 
-                
                 <div className="header">
-                    <h1> Dashboard </h1>
-                    <p>Welcome back, Dr. Sarah Ahmed!</p>
+                    <div>
+                        <h1> Dashboard </h1>
+                        <p>Welcome back, Dr. Sarah Ahmed!</p>
+                    </div>
                     
                     <div className="search-sort-container">
                         <input

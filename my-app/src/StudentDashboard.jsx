@@ -56,19 +56,20 @@ export default function StudentDashboard() {
     const [modal, setModal] = useState({ show: false, type: null });
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-const navigate = useNavigate();
+    const navigate = useNavigate();
     
     useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        navigate('/'); 
-    }
-},[navigate]);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/'); 
+        }
+    }, [navigate]);
     
     const handleLogout = () => {
-    localStorage.removeItem('token');
-    setTimeout(() => {
-        navigate('/');}, 1000);
+        localStorage.removeItem('token');
+        setTimeout(() => {
+            navigate('/');
+        }, 1000);
     };
 
     useEffect(() => {
@@ -220,7 +221,6 @@ const navigate = useNavigate();
         showNotification(`Added upcoming class: ${name}`);
     };
 
-    // دوال إدارة الصورة الشخصية
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -258,18 +258,42 @@ const navigate = useNavigate();
                 </div>
             )}
 
+            {/* Sidebar with Profile Image */}
             <div className="sidebar">
-                {/* صورة مصغرة في sidebar */}
                 <div className="sidebar-profile">
-                    {appState.user.profileImage ? (
-                        <img src={appState.user.profileImage} alt="Profile" className="sidebar-profile-image" />
-                    ) : (
-                        <div className="sidebar-profile-placeholder">
-                            {appState.user.name.split(' ').map(n => n[0]).join('')}
+                    <div className="profile-image-wrapper">
+                        {appState.user.profileImage ? (
+                            <img src={appState.user.profileImage} alt="Profile" className="sidebar-profile-image" />
+                        ) : (
+                            <div className="sidebar-profile-placeholder">
+                                {appState.user.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                        )}
+                        <div 
+                           className="image-upload-overlay" 
+                           onClick={() => document.getElementById('profile-upload').click()}
+                           title="Upload new photo"
+                        >
+                            <span>+</span>
                         </div>
-                    )}
+                    </div>
+
                     <div className="sidebar-profile-name">{appState.user.name}</div>
                     <div className="sidebar-profile-id">{appState.user.id}</div>
+
+                    <input
+                        type="file"
+                        id="profile-upload"
+                        style={{ display: 'none' }}
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                    />
+
+                    {appState.user.profileImage && (
+                        <button className="remove-photo-btn" onClick={removeProfileImage}>
+                            Remove Photo
+                        </button>
+                    )}
                 </div>
 
                 <div className="nav-item active" onClick={() => showNotification('Dashboard')}>Dashboard</div>
@@ -284,48 +308,9 @@ const navigate = useNavigate();
 
             <div className="main-content">
                 <div className="header">
-                    <div className="profile-section">
-                        <div className="profile-image-container" onClick={() => document.getElementById('profile-upload').click()}>
-                            {appState.user.profileImage ? (
-                                <img src={appState.user.profileImage} alt="Profile" className="profile-image" />
-                            ) : (
-                                <div className="profile-image-placeholder">
-                                    {appState.user.name.split(' ').map(n => n[0]).join('')}
-                                </div>
-                            )}
-                            <div className="profile-image-overlay">Change Photo</div>
-                        </div>
-                        
-                        <input
-                            type="file"
-                            id="profile-upload"
-                            className="profile-upload-input"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                        />
-                        
-                        <div className="welcome-text">
-                            <h1>Student Dashboard</h1>
-                            <p>Welcome back, {appState.user.name}!</p>
-                            <p style={{ fontSize: '0.9rem', color: '#64748b' }}>ID: {appState.user.id}</p>
-                        </div>
-                        
-                        <div className="profile-actions">
-                            <button 
-                                className="profile-action-btn upload"
-                                onClick={() => document.getElementById('profile-upload').click()}
-                            >
-                                Upload Photo
-                            </button>
-                            {appState.user.profileImage && (
-                                <button 
-                                    className="profile-action-btn remove"
-                                    onClick={removeProfileImage}
-                                >
-                                    Remove
-                                </button>
-                            )}
-                        </div>
+                    <div>
+                        <h1>Student Dashboard</h1>
+                        <p>Welcome back, {appState.user.name}!</p>
                     </div>
                 </div>
 

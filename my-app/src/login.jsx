@@ -30,6 +30,8 @@ function Login() {
         idToken: idToken 
       });
       if (response.data.success) {
+        console.log("Server Response:", response.data);
+        console.log("my token:", response.data.token);
         const userRole = response.data.profile.role;
         const fullName = response.data.profile.fullName;
         localStorage.setItem('token', response.data.token);

@@ -18,7 +18,7 @@ const AdminDashboard = () => {
 
   const [newCourseData, setNewCourseData] = useState({
     courseId: '', courseName: '', instructorName: '',
-    days: '', time: '', roomNumber: '', capacity: ''
+    SelectDays: '', Time: '', RoomNumber: '', capacity: ''
   });
 
   const [alerts, setAlerts] = useState([]);
@@ -78,14 +78,37 @@ const AdminDashboard = () => {
     setNewCourseData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddCourseSubmit = (e) => {
+  const handleAddCourseSubmit = async (e) => {
     e.preventDefault();
-    console.log("New Course Data:", newCourseData);
-    setIsAddCourseModalOpen(false);
-    setNewCourseData({
-      courseId: '', courseName: '', instructorName: '',
-      days: '', time: '', roomNumber: '', capacity: ''
+    const isFormValid = Object.values(newCourseData).every(value => value.trim() !== "");
+
+    
+  try {
+    const token = localStorage.getItem('token');
+    console.log("My Token is:", token);
+    const response = await axios.post('http://localhost:3001/admin/add-course',newCourseData,{
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     });
+    if (response.data.success) {
+      alert("Course added successfully!");
+      setIsAddCourseModalOpen(false);
+      setNewCourseData({
+        courseId: '', 
+        courseName: '', 
+        instructorName: '',
+        SelectDays: '', 
+        Time: '', 
+        RoomNumber: '', 
+        capacity: ''
+      })
+    }
+  } catch (error) {
+    console.error("Error adding course:", error);
+    const errorMessage = error.response?.data?.error || "Failed to add course. Please try again.";
+    alert(errorMessage);
+  }
   };
 
   return (
@@ -154,8 +177,9 @@ const AdminDashboard = () => {
               <input type="text" name="courseName" className="modern-input" value={newCourseData.courseName} onChange={handleCourseInputChange} placeholder="Course Name (e.g., Web Development)" required />
               <input type="text" name="instructorName" className="modern-input" value={newCourseData.instructorName} onChange={handleCourseInputChange} placeholder="Instructor Name" required />
               
-              <select name="days" className={`modern-input ${newCourseData.days === "" ? "placeholder-select" : ""}`} value={newCourseData.days} onChange={handleCourseInputChange} required>
-                <option value="" disabled hidden>Select Days</option>
+              <select name="SelectDays" className={`modern-input ${newCourseData.SelectDays === "" ? "placeholder-select" : ""}`} value={newCourseData.days} onChange={handleCourseInputChange} required>
+                <option value="" disabled hidden>SelectDays</option>
+                <option value="Saturday">Saturday</option>
                 <option value="Sunday">Sunday</option>
                 <option value="Monday">Monday</option>
                 <option value="Tuesday">Tuesday</option>
@@ -163,8 +187,8 @@ const AdminDashboard = () => {
                 <option value="Thursday">Thursday</option>
               </select>
 
-              <input type="text" name="time" className="modern-input" value={newCourseData.time} onChange={handleCourseInputChange} placeholder="Time (e.g., 1:00 PM)" required />
-              <input type="text" name="roomNumber" className="modern-input" value={newCourseData.roomNumber} onChange={handleCourseInputChange} placeholder="Room Number (e.g., 201)" required />
+              <input type="text" name="Time" className="modern-input" value={newCourseData.Time} onChange={handleCourseInputChange} placeholder="Time (e.g., 1:00 PM)" required />
+              <input type="text" name="RoomNumber" className="modern-input" value={newCourseData.RoomNumber} onChange={handleCourseInputChange} placeholder="Room Number (e.g., 201)" required />
               <input type="number" name="capacity" className="modern-input" value={newCourseData.capacity} onChange={handleCourseInputChange} placeholder="Capacity (e.g., 50)" required />
 
               <div className="modern-modal-actions" style={{ marginTop: '10px' }}>

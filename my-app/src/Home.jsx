@@ -30,8 +30,8 @@ function Home() {
           <h1>Smart Attendance Made Simple</h1>
           <p className="hero-subtitle">Streamline your university attendance with GPS-based check-ins, QR code student IDs, and real-time tracking.</p>
           <div className="hero-buttons">
-            <button className="btn-primary" onClick={() => navigate('/student')}>Student Portal</button>
-            <button className="btn-secondary" onClick={() => navigate('/professor')}>Professor Portal</button>
+            <button className="btn-primary" onClick={() => navigate('/Login')}>Student Portal</button>
+            <button className="btn-secondary" onClick={() => navigate('/Login')}>Professor Portal</button>
             <button className="btn-outline">Mobile App</button>
           </div>
           

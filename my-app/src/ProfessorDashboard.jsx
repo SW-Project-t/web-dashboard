@@ -1,7 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import './ProfessorDashboard.css';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProfessorDashboard() {
+   
+   const navigate = useNavigate();
+    
+    useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        navigate('/'); 
+    }
+},[navigate]);
+    
+    const handleLogout = () => {
+    localStorage.removeItem('token');
+    setTimeout(() => {
+        navigate('/');}, 1000);
+    };
+   
+   
     const [courses, setCourses] = useState([
         {
             id: 'CS401',
@@ -185,7 +203,7 @@ export default function ProfessorDashboard() {
                     Export Data
                 </div>
                 
-                <div className="nav-item logout">Logout</div>
+                <div className="nav-item logout" onClick={handleLogout} style={{ cursor: 'pointer' }}>Logout</div>
             </div>
 
             <div className="main-content">

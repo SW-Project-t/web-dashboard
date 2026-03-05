@@ -121,7 +121,7 @@ function Home() {
       <section className="cta">
         <h2>Ready to Get Started?</h2>
         <p>Join thousands of students and professors already using YallaClass</p>
-        <button className="btn-primary btn-large" onClick={() => navigate('/signup')}>Student Sign Up</button>
+        <button className="btn-primary btn-large" onClick={() => navigate('/signup')}>Student Sign in</button>
       </section>
     </div>
   );

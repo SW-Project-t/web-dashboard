@@ -3,10 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import axios from 'axios';
 import { db } from './firebase'; 
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
+
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        navigate('/'); 
+    }
+},[navigate]);
+    
+    const handleLogout = () => {
+    localStorage.removeItem('token');
+    setTimeout(() => {
+        navigate('/');}, 1000);
+    };
+
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
@@ -27,6 +44,9 @@ const AdminDashboard = () => {
     courseId: '', courseName: '', instructorName: '',
     SelectDays: '', Time: '', RoomNumber: '', capacity: ''
   })
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, "users"));
@@ -137,6 +157,51 @@ const AdminDashboard = () => {
   }
   };
 
+const handleDelete = async (collectionName, id) => {
+  if (window.confirm("Are you sure?")) {
+    try {
+      
+      await deleteDoc(doc(db, collectionName, id));
+      alert("Deleted successfully from Database!");
+    } catch (error) {
+      console.error("Firebase Delete Error:", error);
+      alert("Failed to delete from Database");
+    }
+  }
+};
+
+const handleView = (item) => {
+  setSelectedItem(item);
+  setIsViewModalOpen(true);
+};
+
+const handleChange = (item) => {
+  setSelectedItem(item);
+  setIsEditModalOpen(true);
+};
+
+const handleSaveChanges = async (e) => {
+  e.preventDefault();
+  
+  
+  const deptInput = e.target.elements[1].value; 
+
+  try {
+    const collectionName = selectedItem.courseName ? "courses" : "users";
+    const itemRef = doc(db, collectionName, selectedItem.id);
+
+    const updatedData = selectedItem.courseName 
+      ? { RoomNumber: deptInput } 
+      : { department: deptInput };
+
+    await updateDoc(itemRef, updatedData);
+    alert("Department updated successfully!");
+    setIsEditModalOpen(false);
+  } catch (error) {
+    alert("Error: " + error.message);
+  }
+};
+
   return (
     <div className="dashboard-container">
     
@@ -242,7 +307,7 @@ const AdminDashboard = () => {
         </nav>
 
         <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '20px' }}>
-          <button className="logout-btn" style={{ display: 'block', width: '100%', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '6px', color: '#d32f2f', cursor: 'pointer', fontWeight: 'bold' }}>
+          <button className="logout-btn" onClick={handleLogout} style={{ display: 'block', width: '100%', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '6px', color: '#d32f2f', cursor: 'pointer', fontWeight: 'bold' }}>
             Logout
           </button>
         </div>
@@ -346,9 +411,9 @@ const AdminDashboard = () => {
               <td><span className={`status-badge ${user.status || 'Active'}`}>{user.status || 'Active'}</span></td>
               <td>
                 <div className="action-buttons">
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>View</button>
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>Change</button>
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>Delete</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}onClick={() => handleView(user)}>View</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}onClick={() => handleChange(user)}>Change</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}onClick={() => handleDelete("users", user.id)}>Delete</button>
                 </div>
               </td>
             </tr>
@@ -394,9 +459,9 @@ const AdminDashboard = () => {
         <td>{course.Time || course.time || "TBD"}</td>
         <td>
           <div className="action-buttons">
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>View</button>
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>Change</button>
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>Delete</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}onClick={() => handleView(course)}>View</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}onClick={() => handleChange(course)}>Change</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}onClick={() => handleDelete("courses", course.id)}>Delete</button>
           </div>
         </td>
       </tr>
@@ -423,6 +488,64 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
+{isViewModalOpen && selectedItem && (
+  <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
+    <div className="modern-modal-content" style={{background: 'white', padding: '30px', borderRadius: '15px', width: '400px', textAlign: 'left', color: '#333'}}>
+      <h2 style={{color: '#7e57c2', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '15px'}}>Item Details</h2>
+      
+      <div style={{lineHeight: '2', fontSize: '16px'}}>
+        <p><strong>Name:</strong> {selectedItem.fullName || selectedItem.courseName || selectedItem.name || "N/A"}</p>
+        <p><strong>ID:</strong> {selectedItem.code || selectedItem.courseId || selectedItem.id || "N/A"}</p>
+        <p><strong>Role:</strong> {selectedItem.role || selectedItem.instructorName || "N/A"}</p>
+        <p><strong>Department:</strong> {selectedItem.department || "General"}</p>
+        {selectedItem.courseName && (
+          <p><strong>Schedule:</strong> {selectedItem.SelectDays || selectedItem.days} at {selectedItem.Time || selectedItem.time}</p>
+        )}
+        
+        <p><strong>Status:</strong> <span style={{color: '#4caf50'}}>{selectedItem.status || 'Active'}</span></p>
+      </div>
+
+      <button 
+        onClick={() => setIsViewModalOpen(false)}
+        style={{marginTop: '25px', width: '100%', padding: '12px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
+{isEditModalOpen && selectedItem && (
+  <div className="modal-overlay" style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.7)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:9999}}>
+    <div className="modern-modal-content" style={{background:'white', padding:'30px', borderRadius:'15px', width:'450px'}}>
+      <h2 style={{color:'#4caf50', marginBottom:'20px'}}>Update Department</h2>
+      
+      <form className="modern-form" onSubmit={handleSaveChanges}>
+        <label style={{display:'block', marginBottom:'5px', textAlign:'left'}}>User Name (Read Only):</label>
+        <input 
+          type="text" 
+          className="modern-input" 
+          value={selectedItem.fullName || selectedItem.courseName} 
+          disabled 
+          style={{backgroundColor: '#f5f5f5', cursor: 'not-allowed'}} 
+        />
+        
+        <label style={{display:'block', marginBottom:'5px', textAlign:'left', marginTop:'15px'}}>New Department:</label>
+        <input 
+          type="text" 
+          className="modern-input" 
+          defaultValue={selectedItem.department || selectedItem.RoomNumber || ""} 
+          placeholder="Enter new department"
+          required
+        />
+
+        <div className="modern-modal-actions" style={{marginTop:'25px'}}>
+           <button type="submit" className="modern-btn-primary" style={{backgroundColor:'#4caf50'}}>Update Now</button>
+           <button type="button" className="modern-btn-secondary" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 };

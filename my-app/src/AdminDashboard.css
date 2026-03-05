@@ -29,7 +29,7 @@
     color: #1e293b;  
     height: 100%;
     position: fixed;
-    padding: 30px 10px 0px 15px; /* قللنا ال padding من فوق عشان الصورة */
+    padding: 30px 10px 0px 15px; 
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
@@ -38,7 +38,6 @@
     border-right: 1px solid #e9ecef;  
   }
   
-  /* ===== 🌟 Sidebar Profile (الصورة والاسم للأدمن) 🌟 ===== */
   .sidebar-profile {
       padding: 10px 10px 20px 10px;
       text-align: center;
@@ -61,7 +60,7 @@
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      border: 3px solid #7e57c2; /* إطار بنفسجي شيك يليق مع الأدمن */
+      border: 3px solid #7e57c2; 
       box-shadow: 0 4px 10px rgba(126, 87, 194, 0.2);
   }
   
@@ -129,7 +128,6 @@
   .remove-photo-btn:hover {
       background-color: #fee2e2;
   }
-  /* ================================================= */
 
   .sidebar-header {
     padding: 20px;
@@ -215,7 +213,7 @@
   .main-content {
     flex: 1;
     margin-left: 250px;
-    padding: 20px; /* رجعناها طبيعية لأن اللوجو اتشال */
+    padding: 20px; 
     height: 100%;
     overflow-y: auto;
     background-color: #f0f2f5;  

@@ -11,12 +11,13 @@
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
     z-index: 9999; 
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 .logo-text {
     font-size: 26px;
     font-weight: 700;
-    color: #0070F3; 
+    color: #0070F3;
     letter-spacing: -0.5px;
     cursor: pointer;
 }
@@ -56,20 +57,19 @@
 
 .btn-signin:hover {
     border-color: #0070F3;
-}
-
-.btn-getstarted {
-    padding: 10px 22px;
-    background-color: #0084FF;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 132, 255, 0.2);
-    transition: background 0.3s;
+    background-color: #f0f7ff;
 }
 
 .btn-getstarted:hover {
     background-color: #0070d9;
+}
+
+
+@media (max-width: 768px) {
+    .navbar-container {
+        padding: 15px 20px;
+    }
+    .nav-links {
+        display: none; 
+    }
 }

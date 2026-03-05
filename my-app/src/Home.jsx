@@ -7,7 +7,7 @@ function Home() {
 
   return (
     <div className="home">
-      {/* Navbar */}
+      {/* Navbar
       <nav className="navbar">
         <div className="nav-container">
           <div className="nav-logo">YallaClass</div>
@@ -22,7 +22,7 @@ function Home() {
             <button className="btn-getstarted" onClick={() => navigate('/signup')}>Get Started</button>
           </div>
         </div>
-      </nav>
+      </nav> */}
 
       {/* Hero Section */}
       <section className="hero">
@@ -121,7 +121,7 @@ function Home() {
       <section className="cta">
         <h2>Ready to Get Started?</h2>
         <p>Join thousands of students and professors already using YallaClass</p>
-        <button className="btn-primary btn-large" onClick={() => navigate('/signup')}>Student Sign in</button>
+        <button className="btn-primary btn-large" onClick={() => navigate('/Login')}>Sign In</button>
       </section>
     </div>
   );

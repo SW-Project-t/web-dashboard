@@ -247,16 +247,16 @@ section {
 
 .step h3 {
   margin-bottom: 1rem;
-  color: #1f2937;
+  color: #1967d4;
 }
 
 .step p {
-  color: #6b7280;
+  color: #245dcf;
 }
 
 /* CTA Section */
 .cta {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #3c19cb 100%);
   color: white;
   text-align: center;
 }
@@ -276,56 +276,6 @@ section {
   padding: 1rem 3rem;
   font-size: 1.25rem;
 }
-
-/* Footer
-.footer {
-  background: #1f2937;
-  color: white;
-  padding: 4rem 2rem 2rem;
-}
-
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 2fr repeat(3, 1fr);
-  gap: 2rem;
-  margin-bottom: 3rem;
-}
-
-.footer-section h3 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.footer-section h4 {
-  margin-bottom: 1rem;
-  color: #9ca3af;
-}
-
-.footer-section ul {
-  list-style: none;
-}
-
-.footer-section ul li {
-  margin-bottom: 0.5rem;
-}
-
-.footer-section ul li a {
-  color: #d1d5db;
-  text-decoration: none;
-}
-
-.footer-section ul li a:hover {
-  color: white;
-}
-
-.footer-bottom {
-  text-align: center;
-  padding-top: 2rem;
-  border-top: 1px solid #374151;
-  color: #9ca3af;
-} */
 
 /* Responsive */
 @media (max-width: 768px) {

@@ -139,11 +139,11 @@ const AdminDashboard = () => {
     alert(errorMessage);
   }
   };
-  // 1. Delete Function (ربط الحذف بالباك اند)
+
 const handleDelete = async (collectionName, id) => {
   if (window.confirm("Are you sure?")) {
     try {
-      // بنمسح من الداتابيز مباشرة بدل ما نكلم السيرفر
+      
       await deleteDoc(doc(db, collectionName, id));
       alert("Deleted successfully from Database!");
     } catch (error) {
@@ -153,28 +153,26 @@ const handleDelete = async (collectionName, id) => {
   }
 };
 
-// 2. View Function
 const handleView = (item) => {
   setSelectedItem(item);
   setIsViewModalOpen(true);
 };
-// 3 chane funciton
+
 const handleChange = (item) => {
   setSelectedItem(item);
   setIsEditModalOpen(true);
 };
-// Function to save changes to Firestore
+
 const handleSaveChanges = async (e) => {
   e.preventDefault();
   
-  // بناخد القيمة من حقل القسم (الإنبوت التاني في الفورم)
+  
   const deptInput = e.target.elements[1].value; 
 
   try {
     const collectionName = selectedItem.courseName ? "courses" : "users";
     const itemRef = doc(db, collectionName, selectedItem.id);
 
-    // بنعدل القسم بس لليوزر، أو رقم الغرفة للكورس
     const updatedData = selectedItem.courseName 
       ? { RoomNumber: deptInput } 
       : { department: deptInput };
@@ -473,20 +471,16 @@ const handleSaveChanges = async (e) => {
           </div>
         </div>
       </main>
-{/* View Details Modal - Fixed Version */}
 {isViewModalOpen && selectedItem && (
   <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
     <div className="modern-modal-content" style={{background: 'white', padding: '30px', borderRadius: '15px', width: '400px', textAlign: 'left', color: '#333'}}>
       <h2 style={{color: '#7e57c2', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '15px'}}>Item Details</h2>
       
       <div style={{lineHeight: '2', fontSize: '16px'}}>
-        {/* بنجرب كل الاحتمالات لاسم الحقل عشان نضمن إنه يظهر */}
         <p><strong>Name:</strong> {selectedItem.fullName || selectedItem.courseName || selectedItem.name || "N/A"}</p>
         <p><strong>ID:</strong> {selectedItem.code || selectedItem.courseId || selectedItem.id || "N/A"}</p>
         <p><strong>Role/Instructor:</strong> {selectedItem.role || selectedItem.instructorName || "N/A"}</p>
         <p><strong>Department:</strong> {selectedItem.department || "General"}</p>
-        
-        {/* لو كورس، اعرض المواعيد */}
         {selectedItem.courseName && (
           <p><strong>Schedule:</strong> {selectedItem.SelectDays || selectedItem.days} at {selectedItem.Time || selectedItem.time}</p>
         )}
@@ -503,7 +497,6 @@ const handleSaveChanges = async (e) => {
     </div>
   </div>
 )}
-{/* --- Edit (Change) Modal --- */}
 {isEditModalOpen && selectedItem && (
   <div className="modal-overlay" style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.7)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:9999}}>
     <div className="modern-modal-content" style={{background:'white', padding:'30px', borderRadius:'15px', width:'450px'}}>

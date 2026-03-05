@@ -3,18 +3,16 @@
     justify-content: space-between;
     align-items: center;
     
-    /* تغيير الخلفية للون الكحلي الداكن بدون أي حواف */
+    
     background-color: #0b1120; 
-    border: none; /* هذا السطر يخفي الحواف تماماً */
-    outline: none; /* لضمان عدم وجود أي إطار خارجي */
-    
-    /* جعل الحواف دائرية أو حادة حسب رغبتك */
-    border-radius: 0px; /* خليه 0 لو عاوزه يملأ عرض الصفحة بالكامل بدون دوران */
-    
+    border: none; 
+    outline: none;
+
+    border-radius: 0px; 
     padding: 20px 40px;
-    margin: 0; /* شيل المارجن عشان يلزق في جوانب الشاشة */
+    margin: 0;
     
-    /* اختياري: إضافة ظل ناعم جداً بدلاً من الحواف */
+   
     box-shadow: none; 
 }
 .footer-copyright, .footer-links a {
@@ -39,15 +37,15 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    gap: 24px; /* المسافة بين الروابط */
+    gap: 24px; 
 }
 
 
 .footer-links a:hover {
-    color: #ffffff; /* يتغير للأبيض عند التمرير */
+    color: #ffffff; 
 }
 
-/* لجعل التصميم متجاوب مع الموبايل */
+
 @media (max-width: 640px) {
     .custom-footer {
         flex-direction: column;

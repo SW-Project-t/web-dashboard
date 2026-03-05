@@ -6,34 +6,18 @@ import { db } from './firebase';
 import { collection, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 const AdminDashboard = () => {
-
-
-    const navigate = useNavigate();
-
-    useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        navigate('/'); 
-    }
-},[navigate]);
-    
-    const handleLogout = () => {
-    localStorage.removeItem('token');
-    setTimeout(() => {
-        navigate('/');}, 1000);
-    };
-
-  
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
   
-
   const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [departments, setDepartments] = useState([]);
-
+  
+  // 🌟 ستيت الصورة الشخصية للأدمن
+  const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
   
   const [newUserData, setNewUserData] = useState({
     fullName: '', email: '', password: '', role: '',
@@ -43,7 +27,7 @@ const AdminDashboard = () => {
   const [newCourseData, setNewCourseData] = useState({
     courseId: '', courseName: '', instructorName: '',
     SelectDays: '', Time: '', RoomNumber: '', capacity: ''
-  })
+  });
   const [selectedItem, setSelectedItem] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -60,7 +44,6 @@ const AdminDashboard = () => {
     return () => unsubscribe();
   }, []);
 
-
   useEffect(() => {
     const q = query(collection(db, "courses"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -72,6 +55,7 @@ const AdminDashboard = () => {
     });
     return () => unsubscribe();
   }, []);
+  
   const quickActions = [
     { name: 'Add Course', color: '#673ab7', action: () => setIsAddCourseModalOpen(true) },
     { name: 'Export All Data', color: '#28a745', action: () => {} },
@@ -82,6 +66,24 @@ const AdminDashboard = () => {
   const totalStudents = departments.length > 0 
     ? departments.reduce((sum, dept) => sum + dept.count, 0) 
     : 1; 
+
+  // 🌟 دوال رفع وإزالة صورة الأدمن
+  const handleImageUpload = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setAdminProfileImage(reader.result);
+              localStorage.setItem('admin_profile_image', reader.result);
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const removeProfileImage = () => {
+      setAdminProfileImage(null);
+      localStorage.removeItem('admin_profile_image');
+  };
 
   const handleUserInputChange = (e) => {
     const { name, value } = e.target;
@@ -119,6 +121,7 @@ const AdminDashboard = () => {
       alert(error.response?.data?.error || "Something went wrong");
    }
   };
+  
   const handleCourseInputChange = (e) => {
     const { name, value } = e.target;
     setNewCourseData(prev => ({ ...prev, [name]: value }));
@@ -128,10 +131,8 @@ const AdminDashboard = () => {
     e.preventDefault();
     const isFormValid = Object.values(newCourseData).every(value => value.trim() !== "");
 
-    
   try {
     const token = localStorage.getItem('token');
-    console.log("My Token is:", token);
     const response = await axios.post('http://localhost:3001/admin/add-course',newCourseData,{
       headers: {
         Authorization: `Bearer ${token}`
@@ -160,7 +161,6 @@ const AdminDashboard = () => {
 const handleDelete = async (collectionName, id) => {
   if (window.confirm("Are you sure?")) {
     try {
-      
       await deleteDoc(doc(db, collectionName, id));
       alert("Deleted successfully from Database!");
     } catch (error) {
@@ -182,8 +182,6 @@ const handleChange = (item) => {
 
 const handleSaveChanges = async (e) => {
   e.preventDefault();
-  
-  
   const deptInput = e.target.elements[1].value; 
 
   try {
@@ -195,11 +193,18 @@ const handleSaveChanges = async (e) => {
       : { department: deptInput };
 
     await updateDoc(itemRef, updatedData);
-    alert("Department updated successfully!");
+    alert("Updated successfully!");
     setIsEditModalOpen(false);
   } catch (error) {
     alert("Error: " + error.message);
   }
+};
+
+const handleLogout = () => {
+    localStorage.removeItem('token');
+    setTimeout(() => {
+        navigate('/');
+    }, 1000);
 };
 
   return (
@@ -231,7 +236,7 @@ const handleSaveChanges = async (e) => {
                   <option value="" disabled hidden>Choose Role</option>
                   <option value="Student">Student</option>
                   <option value="Instructor">Instructor</option>
-                  <option value="admin">Admin</option> //cha
+                  <option value="admin">Admin</option>
                 </select>
                 <input type="text" name="department" className="modern-input" value={newUserData.department} onChange={handleUserInputChange} placeholder="Department" />
               </div>
@@ -292,10 +297,42 @@ const handleSaveChanges = async (e) => {
       )}
 
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <p className="sidebar-subtitle">Admin Panel</p>
-        </div>
         
+        <div className="sidebar-profile">
+            <div className="profile-image-wrapper">
+                {adminProfileImage ? (
+                    <img src={adminProfileImage} alt="Profile" className="sidebar-profile-image" />
+                ) : (
+                    <div className="sidebar-profile-placeholder">
+                        AD
+                    </div>
+                )}
+                <div 
+                   className="image-upload-overlay" 
+                   onClick={() => document.getElementById('admin-profile-upload').click()}
+                   title="Upload new photo"
+                >
+                    <span>+</span>
+                </div>
+            </div>
+
+            <div className="sidebar-profile-name">System Admin</div>
+            <div className="sidebar-profile-id">Management Panel</div>
+
+            <input
+                type="file"
+                id="admin-profile-upload"
+                style={{ display: 'none' }}
+                accept="image/*"
+                onChange={handleImageUpload}
+            />
+
+            {adminProfileImage && (
+                <button className="remove-photo-btn" onClick={removeProfileImage}>
+                    Remove Photo
+                </button>
+            )}
+        </div>
         <nav className="sidebar-nav">
           <ul>
             <li className="active"><span>Dashboard</span></li>
@@ -307,7 +344,7 @@ const handleSaveChanges = async (e) => {
         </nav>
 
         <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '20px' }}>
-          <button className="logout-btn" onClick={handleLogout} style={{ display: 'block', width: '100%', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '6px', color: '#d32f2f', cursor: 'pointer', fontWeight: 'bold' }}>
+          <button onClick={handleLogout} className="logout-btn" style={{ display: 'block', width: '100%', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '6px', color: '#d32f2f', cursor: 'pointer', fontWeight: 'bold' }}>
             Logout
           </button>
         </div>
@@ -324,9 +361,6 @@ const handleSaveChanges = async (e) => {
           <div className="header-right">
             <div className="search-box">
               <input type="text" placeholder="Search users..." />
-            </div>
-            <div className="user-avatar" style={{ cursor: 'pointer', color: '#fff', background: '#2196f3', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-              AD
             </div>
           </div>
         </header>
@@ -411,9 +445,9 @@ const handleSaveChanges = async (e) => {
               <td><span className={`status-badge ${user.status || 'Active'}`}>{user.status || 'Active'}</span></td>
               <td>
                 <div className="action-buttons">
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}onClick={() => handleView(user)}>View</button>
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}onClick={() => handleChange(user)}>Change</button>
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}onClick={() => handleDelete("users", user.id)}>Delete</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}} onClick={() => handleView(user)}>View</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}} onClick={() => handleChange(user)}>Change</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}} onClick={() => handleDelete("users", user.id)}>Delete</button>
                 </div>
               </td>
             </tr>
@@ -459,9 +493,9 @@ const handleSaveChanges = async (e) => {
         <td>{course.Time || course.time || "TBD"}</td>
         <td>
           <div className="action-buttons">
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}onClick={() => handleView(course)}>View</button>
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}onClick={() => handleChange(course)}>Change</button>
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}onClick={() => handleDelete("courses", course.id)}>Delete</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}} onClick={() => handleView(course)}>View</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}} onClick={() => handleChange(course)}>Change</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}} onClick={() => handleDelete("courses", course.id)}>Delete</button>
           </div>
         </td>
       </tr>
@@ -496,7 +530,7 @@ const handleSaveChanges = async (e) => {
       <div style={{lineHeight: '2', fontSize: '16px'}}>
         <p><strong>Name:</strong> {selectedItem.fullName || selectedItem.courseName || selectedItem.name || "N/A"}</p>
         <p><strong>ID:</strong> {selectedItem.code || selectedItem.courseId || selectedItem.id || "N/A"}</p>
-        <p><strong>Role:</strong> {selectedItem.role || selectedItem.instructorName || "N/A"}</p>
+        <p><strong>Role/Instructor:</strong> {selectedItem.role || selectedItem.instructorName || "N/A"}</p>
         <p><strong>Department:</strong> {selectedItem.department || "General"}</p>
         {selectedItem.courseName && (
           <p><strong>Schedule:</strong> {selectedItem.SelectDays || selectedItem.days} at {selectedItem.Time || selectedItem.time}</p>
@@ -517,10 +551,10 @@ const handleSaveChanges = async (e) => {
 {isEditModalOpen && selectedItem && (
   <div className="modal-overlay" style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.7)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:9999}}>
     <div className="modern-modal-content" style={{background:'white', padding:'30px', borderRadius:'15px', width:'450px'}}>
-      <h2 style={{color:'#4caf50', marginBottom:'20px'}}>Update Department</h2>
+      <h2 style={{color:'#4caf50', marginBottom:'20px'}}>Update Details</h2>
       
       <form className="modern-form" onSubmit={handleSaveChanges}>
-        <label style={{display:'block', marginBottom:'5px', textAlign:'left'}}>User Name (Read Only):</label>
+        <label style={{display:'block', marginBottom:'5px', textAlign:'left'}}>Name (Read Only):</label>
         <input 
           type="text" 
           className="modern-input" 
@@ -529,12 +563,12 @@ const handleSaveChanges = async (e) => {
           style={{backgroundColor: '#f5f5f5', cursor: 'not-allowed'}} 
         />
         
-        <label style={{display:'block', marginBottom:'5px', textAlign:'left', marginTop:'15px'}}>New Department:</label>
+        <label style={{display:'block', marginBottom:'5px', textAlign:'left', marginTop:'15px'}}>New {selectedItem.courseName ? 'Room Number' : 'Department'}:</label>
         <input 
           type="text" 
           className="modern-input" 
           defaultValue={selectedItem.department || selectedItem.RoomNumber || ""} 
-          placeholder="Enter new department"
+          placeholder="Enter new value"
           required
         />
 

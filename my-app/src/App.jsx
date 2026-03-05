@@ -31,7 +31,7 @@ function App() {
         <Route path="/ProfessorDashboard" element={<ProfessorDashboard />} />
       
       </Routes>
-      <Footer />
+      {/* <Footer /> */}
     </BrowserRouter>
   );
 }

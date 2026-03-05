@@ -13,7 +13,7 @@ html, body {
 
 .home {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  color: #1e3a8a;  /* أزرق غامق */
+  color: #2c5282;  /* أزرق فاتح غامق */
   line-height: 1.6;
   width: 100%;
   min-height: 100vh;
@@ -24,7 +24,7 @@ html, body {
 /* Navbar */
 .navbar {
   background: white;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.2);  /* ظل أزرق */
+  box-shadow: 0 2px 10px rgba(66, 153, 225, 0.15);  /* ظل أزرق فاتح */
   position: fixed;
   width: 100%;
   top: 0;
@@ -43,7 +43,7 @@ html, body {
 .nav-logo {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #1e4dd8;  /* أزرق */
+  color: #4299e1;  /* أزرق فاتح */
 }
 
 .nav-menu {
@@ -53,12 +53,12 @@ html, body {
 
 .nav-menu a {
   text-decoration: none;
-  color: #3b6ae0;  /* أزرق فاتح */
+  color: #63b3ed;  /* أزرق أفتح */
   font-weight: 500;
 }
 
 .nav-menu a:hover {
-  color: #0f2b80;  /* أزرق غامق */
+  color: #3182ce;  /* أزرق متوسط */
 }
 
 .nav-buttons {
@@ -70,18 +70,18 @@ html, body {
   padding: 0.5rem 1rem;
   border: none;
   background: none;
-  color: #2563eb;  /* أزرق */
+  color: #4299e1;  /* أزرق فاتح */
   cursor: pointer;
   font-weight: 500;
 }
 
 .btn-signin:hover {
-  color: #1e40af;  /* أزرق غامق */
+  color: #3182ce;  /* أزرق متوسط */
 }
 
 .btn-getstarted {
   padding: 0.5rem 1.5rem;
-  background: #2563eb;  /* أزرق */
+  background: #4299e1;  /* أزرق فاتح */
   color: white;
   border: none;
   border-radius: 8px;
@@ -90,12 +90,12 @@ html, body {
 }
 
 .btn-getstarted:hover {
-  background: #1e40af;  /* أزرق غامق */
+  background: #3182ce;  /* أزرق متوسط */
 }
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);  /* تدرج أزرق */
+  background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);  /* تدرج أزرق فاتح */
   color: white;
   padding: 8rem 2rem 4rem;
   text-align: center;
@@ -116,8 +116,8 @@ html, body {
 .hero-subtitle {
   font-size: 1.25rem;
   margin-bottom: 2rem;
-  opacity: 0.9;
-  color: #e6f0ff;  /* أزرق فاتح جداً */
+  opacity: 0.95;
+  color: #ebf8ff;  /* أزرق فاتح جداً */
 }
 
 .hero-buttons {
@@ -130,7 +130,7 @@ html, body {
 .btn-primary {
   padding: 0.75rem 2rem;
   background: white;
-  color: #2563eb;  /* أزرق */
+  color: #4299e1;  /* أزرق فاتح */
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -138,7 +138,7 @@ html, body {
 }
 
 .btn-primary:hover {
-  background: #e6f0ff;  /* أزرق فاتح جداً */
+  background: #ebf8ff;  /* أزرق فاتح جداً */
 }
 
 .btn-secondary {
@@ -153,7 +153,7 @@ html, body {
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: #e6f0ff;
+  border-color: #ebf8ff;
 }
 
 .btn-outline {
@@ -185,8 +185,8 @@ html, body {
 }
 
 .stat-item p {
-  opacity: 0.9;
-  color: #e6f0ff;  /* أزرق فاتح جداً */
+  opacity: 0.95;
+  color: #ebf8ff;  /* أزرق فاتح جداً */
 }
 
 /* Sections */
@@ -198,19 +198,19 @@ section {
   text-align: center;
   font-size: 2.5rem;
   margin-bottom: 1rem;
-  color: #1e3a8a;  /* أزرق غامق */
+  color: #3182ce;  /* أزرق متوسط */
 }
 
 .section-subtitle {
   text-align: center;
   font-size: 1.25rem;
-  color: #3b6ae0;  /* أزرق */
+  color: #63b3ed;  /* أزرق فاتح */
   margin-bottom: 3rem;
 }
 
 /* Features Section */
 .features {
-  background: #f0f7ff;  /* أزرق فاتح جداً */
+  background: #f7fcff;  /* أزرق فاتح جداً */
 }
 
 .features-grid {
@@ -225,30 +225,30 @@ section {
   padding: 2rem;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1);  /* ظل أزرق */
+  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.1);  /* ظل أزرق فاتح */
   transition: transform 0.3s;
-  border: 1px solid #bfdbfe;  /* أزرق فاتح */
+  border: 1px solid #bee3f8;  /* أزرق فاتح جداً */
 }
 
 .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 15px rgba(37, 99, 235, 0.2);  /* ظل أزرق أغمق */
-  border-color: #2563eb;  /* أزرق */
+  box-shadow: 0 10px 15px rgba(66, 153, 225, 0.15);  /* ظل أزرق فاتح */
+  border-color: #90cdf4;  /* أزرق فاتح */
 }
 
 .feature-card h3 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
-  color: #1e4dd8;  /* أزرق */
+  color: #4299e1;  /* أزرق فاتح */
 }
 
 .feature-card p {
-  color: #3b6ae0;  /* أزرق فاتح */
+  color: #63b3ed;  /* أزرق أفتح */
 }
 
 /* How It Works */
 .how-it-works {
-  background: #e6f0ff;  /* أزرق فاتح */
+  background: #f0f9ff;  /* أزرق فاتح جداً */
 }
 
 .steps {
@@ -267,7 +267,7 @@ section {
 .step-number {
   width: 60px;
   height: 60px;
-  background: #2563eb;  /* أزرق */
+  background: #63b3ed;  /* أزرق فاتح */
   color: white;
   border-radius: 50%;
   display: flex;
@@ -276,21 +276,21 @@ section {
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0 auto 1.5rem;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 10px rgba(66, 153, 225, 0.2);
 }
 
 .step h3 {
   margin-bottom: 1rem;
-  color: #1e3a8a;  /* أزرق غامق */
+  color: #4299e1;  /* أزرق فاتح */
 }
 
 .step p {
-  color: #3b6ae0;  /* أزرق */
+  color: #63b3ed;  /* أزرق أفتح */
 }
 
 /* CTA Section */
 .cta {
-  background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);  /* تدرج أزرق */
+  background: linear-gradient(135deg, #63b3ed 0%, #4299e1 100%);  /* تدرج أزرق فاتح */
   color: white;
   text-align: center;
 }
@@ -304,15 +304,15 @@ section {
 .cta p {
   font-size: 1.25rem;
   margin-bottom: 2rem;
-  opacity: 0.9;
-  color: #e6f0ff;  /* أزرق فاتح جداً */
+  opacity: 0.95;
+  color: #ebf8ff;  /* أزرق فاتح جداً */
 }
 
 .btn-large {
   padding: 1rem 3rem;
   font-size: 1.25rem;
   background: white;
-  color: #2563eb !important;  /* أزرق */
+  color: #4299e1 !important;  /* أزرق فاتح */
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -320,7 +320,7 @@ section {
 }
 
 .btn-large:hover {
-  background: #e6f0ff;  /* أزرق فاتح جداً */
+  background: #ebf8ff;  /* أزرق فاتح جداً */
 }
 
 /* Responsive */

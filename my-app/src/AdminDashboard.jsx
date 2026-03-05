@@ -496,7 +496,7 @@ const handleSaveChanges = async (e) => {
       <div style={{lineHeight: '2', fontSize: '16px'}}>
         <p><strong>Name:</strong> {selectedItem.fullName || selectedItem.courseName || selectedItem.name || "N/A"}</p>
         <p><strong>ID:</strong> {selectedItem.code || selectedItem.courseId || selectedItem.id || "N/A"}</p>
-        <p><strong>Role/Instructor:</strong> {selectedItem.role || selectedItem.instructorName || "N/A"}</p>
+        <p><strong>Role:</strong> {selectedItem.role || selectedItem.instructorName || "N/A"}</p>
         <p><strong>Department:</strong> {selectedItem.department || "General"}</p>
         {selectedItem.courseName && (
           <p><strong>Schedule:</strong> {selectedItem.SelectDays || selectedItem.days} at {selectedItem.Time || selectedItem.time}</p>

@@ -22,9 +22,8 @@ const Navbar = () => {
         <a href="#about">About</a>
         <a href="#demo">Demo</a>
       </div>
-
-      {/* الأزرار بتظهر فقط لو مش في صفحات الداشبورد */}
-      {!isDashboard && (
+      
+         {!isDashboard && (
         <div className="nav-buttons">
           <Link to="/login">
             <button className="btn-signin">Sign In</button>

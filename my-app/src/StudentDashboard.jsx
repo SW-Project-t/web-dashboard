@@ -212,7 +212,6 @@ export default function StudentDashboard() {
             )}
 
             <div className="sidebar">
-                <div className="logo">Yalla<span>Class</span></div>
                 <div className="nav-item active" onClick={() => showNotification('Dashboard')}>Dashboard</div>
                 <div className="nav-item" onClick={() => showNotification(`My Courses: ${appState.courses.length} courses`)}>My Courses</div>
                 <div className="nav-item" onClick={() => showNotification(`Student ID: ${appState.user.id}`)}>Student ID: {appState.user.id}</div>

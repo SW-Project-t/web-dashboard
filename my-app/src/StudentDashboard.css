@@ -11,7 +11,7 @@
 .sidebar {
     width: 280px;
     background-color: #f8f9fa;
-    padding: 2rem 1.5rem;
+    padding: 80px 10px 0px 15px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid #e9ecef;
@@ -64,7 +64,7 @@
 /* ===== Main Content ===== */
 .main-content {
     flex: 1;
-    padding: 2rem 2.5rem;
+    padding: 80px 0px 0px 0px;
     background-color: #ffffff;
     overflow-y: auto;
 }

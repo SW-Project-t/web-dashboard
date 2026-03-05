@@ -7,11 +7,13 @@ import Admin from './Admin';
 import AdminDashboard from './AdminDashboard';
 import StudentDashboard from './StudentDashboard';
 import ProfessorDashboard from './ProfessorDashboard';
+import Navbar from './Navbar';  
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Navbar />
+      <Routes>    
         <Route path="/" element={<Login />} />
         
         <Route path="/forget-password" element={<ForgetPassword />} />

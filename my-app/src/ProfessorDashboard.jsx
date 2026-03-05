@@ -175,7 +175,6 @@ export default function ProfessorDashboard() {
             </div>
 
             <div className="sidebar">
-                <div className="logo">Yalla<span>Class</span></div>
                 <div className="nav-item active">Dashboard</div>
                 <div className="nav-item">My Courses</div>
                 <div className="nav-item">Students</div>

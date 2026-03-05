@@ -13,7 +13,7 @@ html, body {
 
 .home {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  color: #333;
+  color: rgb(22, 41, 220);
   line-height: 1.6;
   width: 100%;
   min-height: 100vh;
@@ -53,7 +53,7 @@ html, body {
 
 .nav-menu a {
   text-decoration: none;
-  color: #4b5563;
+  color: #1c69d4;
   font-weight: 500;
 }
 
@@ -70,7 +70,7 @@ html, body {
   padding: 0.5rem 1rem;
   border: none;
   background: none;
-  color: #4b5563;
+  color: #0d67e5;
   cursor: pointer;
   font-weight: 500;
 }
@@ -87,7 +87,7 @@ html, body {
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #0a0dde 100%);
   color: white;
   padding: 8rem 2rem 4rem;
   text-align: center;
@@ -120,7 +120,7 @@ html, body {
 .btn-primary {
   padding: 0.75rem 2rem;
   background: white;
-  color: #2563eb;
+  color: #1658e6;
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -141,7 +141,7 @@ html, body {
   padding: 0.75rem 2rem;
   background: transparent;
   color: white;
-  border: 2px solid rgba(255,255,255,0.3);
+  border: 2px solid rgba(32, 21, 237, 0.3);
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
@@ -172,13 +172,13 @@ section {
   text-align: center;
   font-size: 2.5rem;
   margin-bottom: 1rem;
-  color: #1f2937;
+  color: #0f68e4;
 }
 
 .section-subtitle {
   text-align: center;
   font-size: 1.25rem;
-  color: #6b7280;
+  color: #1255da;
   margin-bottom: 3rem;
 }
 
@@ -210,7 +210,7 @@ section {
 }
 
 .feature-card p {
-  color: #6b7280;
+  color: #1f5ede;
 }
 
 /* How It Works */
@@ -247,16 +247,16 @@ section {
 
 .step h3 {
   margin-bottom: 1rem;
-  color: #1f2937;
+  color: #1967d4;
 }
 
 .step p {
-  color: #6b7280;
+  color: #245dcf;
 }
 
 /* CTA Section */
 .cta {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #3c19cb 100%);
   color: white;
   text-align: center;
 }
@@ -275,56 +275,6 @@ section {
 .btn-large {
   padding: 1rem 3rem;
   font-size: 1.25rem;
-}
-
-/* Footer */
-.footer {
-  background: #1f2937;
-  color: white;
-  padding: 4rem 2rem 2rem;
-}
-
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 2fr repeat(3, 1fr);
-  gap: 2rem;
-  margin-bottom: 3rem;
-}
-
-.footer-section h3 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.footer-section h4 {
-  margin-bottom: 1rem;
-  color: #9ca3af;
-}
-
-.footer-section ul {
-  list-style: none;
-}
-
-.footer-section ul li {
-  margin-bottom: 0.5rem;
-}
-
-.footer-section ul li a {
-  color: #d1d5db;
-  text-decoration: none;
-}
-
-.footer-section ul li a:hover {
-  color: white;
-}
-
-.footer-bottom {
-  text-align: center;
-  padding-top: 2rem;
-  border-top: 1px solid #374151;
-  color: #9ca3af;
 }
 
 /* Responsive */

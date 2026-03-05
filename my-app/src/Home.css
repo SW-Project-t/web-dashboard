@@ -277,7 +277,7 @@ section {
   font-size: 1.25rem;
 }
 
-/* Footer */
+/* Footer
 .footer {
   background: #1f2937;
   color: white;
@@ -325,7 +325,7 @@ section {
   padding-top: 2rem;
   border-top: 1px solid #374151;
   color: #9ca3af;
-}
+} */
 
 /* Responsive */
 @media (max-width: 768px) {

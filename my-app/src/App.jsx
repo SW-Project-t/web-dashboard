@@ -7,7 +7,8 @@ import Admin from './Admin';
 import AdminDashboard from './AdminDashboard';
 import StudentDashboard from './StudentDashboard';
 import ProfessorDashboard from './ProfessorDashboard';
-import Navbar from './Navbar';  
+import Navbar from './Navbar';
+import Footer from './Footer';   
 import Home from './Home';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
         <Route path="/ProfessorDashboard" element={<ProfessorDashboard />} />
       
       </Routes>
+      <Footer />
     </BrowserRouter>
   );
 }

@@ -12,16 +12,17 @@ export default function ProfessorDashboard() {
    const [profileImage, setProfileImage] = useState(localStorage.getItem(STORAGE_KEYS.PROF_IMAGE) || null);
     
     useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        navigate('/'); 
-    }
-},[navigate]);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/'); 
+        }
+    },[navigate]);
     
     const handleLogout = () => {
-    localStorage.removeItem('token');
-    setTimeout(() => {
-        navigate('/');}, 1000);
+        localStorage.removeItem('token');
+        setTimeout(() => {
+            navigate('/');
+        }, 1000);
     };
    
     const [courses, setCourses] = useState([

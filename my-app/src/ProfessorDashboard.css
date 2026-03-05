@@ -1,3 +1,6 @@
+/* ProfessorDashboard.css */
+
+/* App Container */
 .professor-app {
     display: flex;
     min-height: 100vh;
@@ -5,104 +8,25 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Sidebar */
 .sidebar {
     width: 250px;
     background: #f8f9fa;
-    padding: 30px 10px 0px 15px;
+    padding: 80px 10px 0px 15px;
     border-right: 1px solid #e9ecef;
     display: flex;
     flex-direction: column;
 }
 
-.sidebar-profile {
-    padding: 10px 10px 20px 10px;
-    text-align: center;
-    border-bottom: 1px solid #e9ecef;
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center; 
-}
-
-.profile-image-wrapper {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    margin-bottom: 15px;
-}
-
-.sidebar-profile-image {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #10b981; 
-    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
-}
-
-.sidebar-profile-placeholder {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8rem;
+.logo {
+    font-size: 24px;
     font-weight: bold;
-    border: 3px solid #e2e8f0;
-}
-
-.image-upload-overlay {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    background-color: #10b981;
-    color: white;
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    cursor: pointer;
-    border: 2px solid white;
-    transition: all 0.2s ease;
-}
-
-.image-upload-overlay:hover {
-    background-color: #059669;
-    transform: scale(1.1);
-}
-
-.sidebar-profile-name {
+    margin-bottom: 40px;
     color: #1e293b;
-    font-size: 1rem;
-    font-weight: 700;
 }
 
-.sidebar-profile-id {
-    color: #64748b;
-    font-size: 0.8rem;
-    margin-bottom: 10px;
-}
-
-.remove-photo-btn {
-    background-color: transparent;
-    color: #ef4444;
-    border: 1px solid #ef4444;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.remove-photo-btn:hover {
-    background-color: #fee2e2;
+.logo span {
+    color: #4361ee;
 }
 
 .nav-item {
@@ -129,18 +53,12 @@
     color: #ef4444;
 }
 
+/* Main Content */
 .main-content {
     flex: 1;
-    padding: 40px;
+    padding: 80px 0px 0px 0px;
     background-color: #f0f2f5;
     overflow-y: auto;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
 }
 
 .header h1 {
@@ -153,9 +71,12 @@
     margin-bottom: 30px;
 }
 
+/* Search and Sort */
 .search-sort-container {
     display: flex;
     gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 .search-input {
@@ -165,7 +86,6 @@
     border: 1px solid #e9ecef;
     font-size: 16px;
     outline: none;
-    width: 300px;
 }
 
 .search-input:focus {
@@ -180,6 +100,7 @@
     outline: none;
 }
 
+/* Stats Cards */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -216,6 +137,7 @@
     color: #64748b;
 }
 
+/* Quick Actions */
 .quick-actions {
     display: flex;
     gap: 10px;
@@ -223,6 +145,7 @@
     flex-wrap: wrap;
 }
 
+/* Section Title */
 .section-title {
     font-size: 20px;
     font-weight: 600;
@@ -251,6 +174,7 @@
     background: #3651d4;
 }
 
+/* Course Card */
 .course-card {
     border: 1px solid #e9ecef;
     border-radius: 16px;
@@ -313,6 +237,7 @@
     margin-left: 5px;
 }
 
+/* Inline Action Buttons inside Course Info */
 .attendance-buttons {
     display: flex;
     gap: 8px;
@@ -320,9 +245,9 @@
     flex-wrap: wrap;
 }
 
-.btn-present { background: #22c55e; color: white; padding: 6px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; border: none;}
-.btn-late { background: #eab308; color: white; padding: 6px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; border: none;}
-.btn-absent { background: #ef4444; color: white; padding: 6px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; border: none;}
+.btn-present { background: #22c55e; color: white; padding: 6px 12px; font-size: 13px; }
+.btn-late { background: #eab308; color: white; padding: 6px 12px; font-size: 13px; }
+.btn-absent { background: #ef4444; color: white; padding: 6px 12px; font-size: 13px; }
 
 .today-stats {
     margin-top: 15px;
@@ -336,6 +261,7 @@
 .stat-late { color: #eab308; margin-left: 15px; }
 .stat-absent { color: #ef4444; margin-left: 15px; }
 
+/* Main Action Buttons */
 .action-buttons {
     display: flex;
     flex-direction: column;
@@ -362,6 +288,7 @@
 .btn-outline { background: white; color: #4361ee; border: 2px solid #4361ee; }
 .btn-delete { background: #fee2e2; color: #ef4444; }
 
+/* Empty State */
 .empty-state {
     text-align: center;
     padding: 50px;
@@ -373,6 +300,7 @@
 .empty-state h3 { color: #64748b; margin-bottom: 10px; }
 .empty-state p { color: #94a3b8; margin-bottom: 20px; }
 
+/* Chart */
 .chart-card {
     background: white;
     border: 1px solid #e9ecef;
@@ -411,6 +339,7 @@
     margin-top: 10px;
 }
 
+/* Modal */
 .modal {
     position: fixed;
     top: 0;
@@ -462,7 +391,6 @@
     border: 1px solid #e9ecef;
     border-radius: 6px;
     outline: none;
-    box-sizing: border-box;
 }
 
 .modal-input:focus {
@@ -487,6 +415,7 @@
 .modal-btn.confirm { background: #4361ee; color: white; }
 .modal-btn.cancel { background: #e9ecef; color: #4b5563; }
 
+/* Notifications */
 .notifications-container {
     position: fixed;
     top: 20px;
@@ -506,6 +435,7 @@
 .notification.success { background: #4361ee; }
 .notification.error { background: #ef4444; }
 
+/* Animations */
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
@@ -516,12 +446,10 @@
     to { opacity: 1; transform: scale(1); }
 }
 
+/* Responsive */
 @media (max-width: 768px) {
     .professor-app { flex-direction: column; }
-    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e9ecef; padding: 15px; }
-    .header { flex-direction: column; }
-    .search-sort-container { flex-direction: column; width: 100%; }
-    .search-input { width: 100%; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e9ecef; }
     .course-card { flex-direction: column; gap: 20px; }
     .action-buttons { margin-left: 0; flex-direction: row; flex-wrap: wrap; }
     .action-buttons .btn { flex: 1; }

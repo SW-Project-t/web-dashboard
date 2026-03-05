@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import axios from 'axios';
+import { db } from './firebase'; 
+import { collection, onSnapshot, query } from 'firebase/firestore';
+// ... باقي الـ imports
 
 const AdminDashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-
- 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
+  
+  // States للبيانات الجاية من الفايربيز
+  const [users, setUsers] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
+  // States للفورم (شغل زمايلك)
   const [newUserData, setNewUserData] = useState({
     fullName: '', email: '', password: '', role: '',
     academicYear: '', code: '', department: '', phoneNumber: ''
@@ -20,11 +28,35 @@ const AdminDashboard = () => {
     courseId: '', courseName: '', instructorName: '',
     SelectDays: '', Time: '', RoomNumber: '', capacity: ''
   });
+// سحب بيانات المستخدمين
+  useEffect(() => {
+    const q = query(collection(db, "users"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const usersArray = [];
+      querySnapshot.forEach((doc) => {
+        usersArray.push({ id: doc.id, ...doc.data() });
+      });
+      setUsers(usersArray);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const [alerts, setAlerts] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [courses, setCourses] = useState([]); 
+  // سحب بيانات الكورسات
+  useEffect(() => {
+    const q = query(collection(db, "courses"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const coursesArray = [];
+      querySnapshot.forEach((doc) => {
+        coursesArray.push({ id: doc.id, ...doc.data() });
+      });
+      setCourses(coursesArray);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ... باقي الفانكشنز (handleAddUserSubmit, handleAddCourseSubmit)
+
+
   
   const quickActions = [
     { name: 'Add Course', color: '#673ab7', action: () => setIsAddCourseModalOpen(true) },
@@ -283,55 +315,58 @@ const AdminDashboard = () => {
 
         <div className="grid-2col">
           
-          <div className="card span-2 custom-card-border">
-            <div className="card-header">
-              <h3 className="card-title">Recent Users</h3>
-              <button 
-                className="btn-primary"
-                onClick={() => setIsAddUserModalOpen(true)}
-              >
-                Add User
-              </button>
-            </div>
-            <div className="table-responsive">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Department</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="empty-state">No users found. Data will appear here once loaded.</td>
-                    </tr>
-                  ) : (
-                    users.map(user => (
-                      <tr key={user.id}>
-                        <td>{user.id}</td>
-                        <td>{user.name}</td>
-                        <td>{user.role}</td>
-                        <td>{user.department}</td>
-                        <td><span className={`status-badge ${user.status}`}>{user.status}</span></td>
-                        <td>
-                          <div className="action-buttons">
-                            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>عرض</button>
-                            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>تعديل</button>
-                            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>حذف</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+         <div className="card span-2 custom-card-border">
+  <div className="card-header">
+    <h3 className="card-title">Recent Users</h3>
+    <button 
+      className="btn-primary"
+      onClick={() => setIsAddUserModalOpen(true)}
+    >
+      Add User
+    </button>
+  </div>
+  <div className="table-responsive">
+    <table className="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Department</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {users.length === 0 ? (
+          <tr>
+            <td colSpan="6" className="empty-state">No users found. Data will appear here once loaded.</td>
+          </tr>
+        ) : (
+          users.map(user => (
+            <tr key={user.id}>
+              {/* استعملت الـ slice عشان لو الـ ID بتاع فايربيز طويل ميبوظش شكل الجدول */}
+              <td>{user.code || user.id?.toString().slice(0, 5)}</td>
+              {/* هنا التعديل المهم: لو ملقاش name يدور على fullName */}
+              <td>{user.fullName || user.name || "N/A"}</td>
+              <td>{user.role}</td>
+              <td>{user.department || "General"}</td>
+              {/* لو الـ status مش موجودة في الداتا هنخليها Active افتراضياً */}
+              <td><span className={`status-badge ${user.status || 'Active'}`}>{user.status || 'Active'}</span></td>
+              <td>
+                <div className="action-buttons">
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>view</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>change</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>delete</button>
+                </div>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
           <div className="card span-2 custom-card-border">
             <div className="card-header">
               <h3 className="card-title">Recent Courses</h3>
@@ -353,30 +388,35 @@ const AdminDashboard = () => {
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {courses.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="empty-state">No courses found. Data will appear here once loaded.</td>
-                    </tr>
-                  ) : (
-                    courses.map(course => (
-                      <tr key={course.id}>
-                        <td>{course.courseId}</td>
-                        <td>{course.courseName}</td>
-                        <td>{course.instructorName}</td>
-                        <td>{course.days}</td>
-                        <td>{course.time}</td>
-                        <td>
-                          <div className="action-buttons">
-                            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>عرض</button>
-                            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>تعديل</button>
-                            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>حذف</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
+               <tbody>
+  {courses.length === 0 ? (
+    <tr>
+      <td colSpan="6" className="empty-state">No courses found. Data will appear here once loaded.</td>
+    </tr>
+  ) : (
+    courses.map(course => (
+      <tr key={course.id}>
+        {/* عرض كود الكورس */}
+        <td>{course.courseId || "N/A"}</td>
+        {/* عرض اسم الكورس */}
+        <td>{course.courseName || "Unknown Course"}</td>
+        {/* عرض اسم الدكتور أو المحاضر */}
+        <td>{course.instructorName || "No Instructor"}</td>
+        {/* عرض الأيام - استخدمت SelectDays عشان ده الاسم اللي زمايلك استخدموه في الـ Input */}
+        <td>{course.SelectDays || course.days || "TBD"}</td>
+        {/* عرض الوقت */}
+        <td>{course.Time || course.time || "TBD"}</td>
+        <td>
+          <div className="action-buttons">
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>view</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>change</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>delete</button>
+          </div>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
               </table>
             </div>
           </div>
@@ -400,5 +440,4 @@ const AdminDashboard = () => {
     </div>
   );
 };
-
 export default AdminDashboard;

@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import './StudentDashboard.css';
 import { useNavigate } from 'react-router-dom';
 
+import { auth, db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+
 const STORAGE_KEYS = {
     USER: 'yallaclass_user',
     COURSES: 'yallaclass_courses',
@@ -12,8 +16,8 @@ const STORAGE_KEYS = {
 
 const defaultData = {
     user: {
-        name: "Ahmed Hassan",
-        id: "2024001",
+        name: "loading...",
+        id: "...",
         overallAttendance: 92,
         enrolledCourses: 3,
         activeSession: 1,
@@ -60,10 +64,32 @@ export default function StudentDashboard() {
     
     useEffect(() => {
         const token = localStorage.getItem('token');
-        if (!token) {
-            navigate('/'); 
-        }
-    }, [navigate]);
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                  
+                    if(!token){navigate('/');}
+
+                   else if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        setAppState(prev => ({
+                            ...prev,
+                            user: {
+                                ...prev.user,
+                                name: userData.fullName || "No Name",
+                                id: userData.code || "No Code",
+                                }
+                        }));
+                    }
+                } catch (error) {
+                    console.error("Error fetching student data:", error);
+                }
+            } else {navigate('/');
+            }
+        });return () => unsubscribe();}, [navigate]);
+    
     
     const handleLogout = () => {
         localStorage.removeItem('token');

@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import './ProfessorDashboard.css';
 import { useNavigate } from 'react-router-dom';
 
+import { auth, db } from './firebase'; 
+import { doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+
 const STORAGE_KEYS = {
     PROF_IMAGE: 'yallaclass_prof_image'
 };
@@ -10,13 +14,34 @@ export default function ProfessorDashboard() {
    const navigate = useNavigate();
    
    const [profileImage, setProfileImage] = useState(localStorage.getItem(STORAGE_KEYS.PROF_IMAGE) || null);
-    
+   
+   const [profData, setProfData] = useState({ name: 'Loading...', code: '...' });
+   const [isLoading, setIsLoading] = useState(true);
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            navigate('/'); 
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            try {
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+                const token = localStorage.getItem('token');
+                if(!token){navigate('/');}
+                else if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setProfData({
+                        name: data.fullName || "Dr. Anonymous",
+                        code: data.code || "No Code"});
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
+            navigate('/');
         }
-    },[navigate]);
+    });
+    return () => unsubscribe();
+}, [navigate]);
     
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -223,7 +248,7 @@ export default function ProfessorDashboard() {
                             <img src={profileImage} alt="Profile" className="sidebar-profile-image" />
                         ) : (
                             <div className="sidebar-profile-placeholder">
-                                SA
+                                {profData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
                             </div>
                         )}
                         <div 
@@ -235,8 +260,8 @@ export default function ProfessorDashboard() {
                         </div>
                     </div>
 
-                    <div className="sidebar-profile-name">Dr. Sarah Ahmed</div>
-                    <div className="sidebar-profile-id">Professor</div>
+                    <div className="sidebar-profile-name">{profData.name}</div>
+                    <div className="sidebar-profile-id">{profData.code}</div>
 
                     <input
                         type="file"
@@ -271,7 +296,7 @@ export default function ProfessorDashboard() {
                 <div className="header">
                     <div>
                         <h1> Dashboard </h1>
-                        <p>Welcome back, Dr. Sarah Ahmed!</p>
+                        <p>Welcome back, {profData.name}!</p>
                     </div>
                     
                     <div className="search-sort-container">

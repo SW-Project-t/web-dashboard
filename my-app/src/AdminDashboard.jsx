@@ -5,6 +5,10 @@ import axios from 'axios';
 import { db } from './firebase'; 
 import { collection, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
+import { auth } from './firebase';
+import {getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -15,6 +19,8 @@ const AdminDashboard = () => {
   const [courses, setCourses] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [departments, setDepartments] = useState([]);
+
+  const [adminData, setAdminData] = useState({ name: 'Admin...', code: 'Code...' });
   
   // 🌟 ستيت الصورة الشخصية للأدمن
   const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
@@ -200,6 +206,29 @@ const handleSaveChanges = async (e) => {
   }
 };
 
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        const token = localStorage.getItem('token');
+         if(!token){navigate('/');}
+        else if (docSnap.exists()) {
+          const data = docSnap.data();
+          setAdminData({
+            name: data.fullName || "System Admin",
+            code: data.code || "No Code"
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching admin data:", error);
+      }
+    }
+  });
+  return () => unsubscribe();
+}, [navigate]);
+
 const handleLogout = () => {
     localStorage.removeItem('token');
     setTimeout(() => {
@@ -304,7 +333,7 @@ const handleLogout = () => {
                     <img src={adminProfileImage} alt="Profile" className="sidebar-profile-image" />
                 ) : (
                     <div className="sidebar-profile-placeholder">
-                        AD
+                        {adminData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
                     </div>
                 )}
                 <div 
@@ -316,8 +345,8 @@ const handleLogout = () => {
                 </div>
             </div>
 
-            <div className="sidebar-profile-name">System Admin</div>
-            <div className="sidebar-profile-id">Management Panel</div>
+            <div className="sidebar-profile-name">{adminData.name}</div>
+            <div className="sidebar-profile-id">{adminData.code}</div>
 
             <input
                 type="file"

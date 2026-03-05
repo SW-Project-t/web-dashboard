@@ -6,7 +6,24 @@ import { db } from './firebase';
 import { collection, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
+
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        navigate('/'); 
+    }
+},[navigate]);
+    
+    const handleLogout = () => {
+    localStorage.removeItem('token');
+    setTimeout(() => {
+        navigate('/');}, 1000);
+    };
+
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
@@ -290,7 +307,7 @@ const handleSaveChanges = async (e) => {
         </nav>
 
         <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '20px' }}>
-          <button className="logout-btn" style={{ display: 'block', width: '100%', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '6px', color: '#d32f2f', cursor: 'pointer', fontWeight: 'bold' }}>
+          <button className="logout-btn" onClick={handleLogout} style={{ display: 'block', width: '100%', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '6px', color: '#d32f2f', cursor: 'pointer', fontWeight: 'bold' }}>
             Logout
           </button>
         </div>

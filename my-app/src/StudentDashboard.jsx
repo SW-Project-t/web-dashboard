@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './StudentDashboard.css';
+import { useNavigate } from 'react-router-dom';
 
 const STORAGE_KEYS = {
     USER: 'yallaclass_user',
@@ -53,6 +54,21 @@ export default function StudentDashboard() {
     const [selectedCourse, setSelectedCourse] = useState(appState.courses[0]?.id || null);
     const [modal, setModal] = useState({ show: false, type: null });
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+const navigate = useNavigate();
+    
+    useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        navigate('/'); 
+    }
+},[navigate]);
+    
+    const handleLogout = () => {
+    localStorage.removeItem('token');
+    setTimeout(() => {
+        navigate('/');}, 1000);
+    };
 
     useEffect(() => {
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(appState.user));
@@ -218,7 +234,8 @@ export default function StudentDashboard() {
                 <div className="nav-item" onClick={() => showNotification('Attendance Records')}>Attendance</div>
                 <div className="nav-item" onClick={() => showNotification('Settings')}>Settings</div>
                 <div className="nav-item logout" onClick={resetAllData}>Reset Data</div>
-                <div className="nav-item logout" onClick={() => showNotification('Logged out')}>Logout</div>
+                
+                <div className="nav-item logout" onClick={handleLogout}>Logout</div>
             </div>
 
             <div className="main-content">

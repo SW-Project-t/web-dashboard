@@ -4,7 +4,6 @@ import './AdminDashboard.css';
 import axios from 'axios';
 import { db } from './firebase'; 
 import { collection, onSnapshot, query } from 'firebase/firestore';
-// ... باقي الـ imports
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -12,13 +11,13 @@ const AdminDashboard = () => {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
   
-  // States للبيانات الجاية من الفايربيز
+
   const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [departments, setDepartments] = useState([]);
 
-  // States للفورم (شغل زمايلك)
+  
   const [newUserData, setNewUserData] = useState({
     fullName: '', email: '', password: '', role: '',
     academicYear: '', code: '', department: '', phoneNumber: ''
@@ -27,8 +26,8 @@ const AdminDashboard = () => {
   const [newCourseData, setNewCourseData] = useState({
     courseId: '', courseName: '', instructorName: '',
     SelectDays: '', Time: '', RoomNumber: '', capacity: ''
-  });
-// سحب بيانات المستخدمين
+  })
+
   useEffect(() => {
     const q = query(collection(db, "users"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -41,7 +40,7 @@ const AdminDashboard = () => {
     return () => unsubscribe();
   }, []);
 
-  // سحب بيانات الكورسات
+
   useEffect(() => {
     const q = query(collection(db, "courses"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -53,11 +52,6 @@ const AdminDashboard = () => {
     });
     return () => unsubscribe();
   }, []);
-
-  // ... باقي الفانكشنز (handleAddUserSubmit, handleAddCourseSubmit)
-
-
-  
   const quickActions = [
     { name: 'Add Course', color: '#673ab7', action: () => setIsAddCourseModalOpen(true) },
     { name: 'Export All Data', color: '#28a745', action: () => {} },
@@ -345,19 +339,16 @@ const AdminDashboard = () => {
         ) : (
           users.map(user => (
             <tr key={user.id}>
-              {/* استعملت الـ slice عشان لو الـ ID بتاع فايربيز طويل ميبوظش شكل الجدول */}
               <td>{user.code || user.id?.toString().slice(0, 5)}</td>
-              {/* هنا التعديل المهم: لو ملقاش name يدور على fullName */}
               <td>{user.fullName || user.name || "N/A"}</td>
               <td>{user.role}</td>
               <td>{user.department || "General"}</td>
-              {/* لو الـ status مش موجودة في الداتا هنخليها Active افتراضياً */}
               <td><span className={`status-badge ${user.status || 'Active'}`}>{user.status || 'Active'}</span></td>
               <td>
                 <div className="action-buttons">
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>view</button>
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>change</button>
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>delete</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>View</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>Change</button>
+                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>Delete</button>
                 </div>
               </td>
             </tr>
@@ -396,21 +387,16 @@ const AdminDashboard = () => {
   ) : (
     courses.map(course => (
       <tr key={course.id}>
-        {/* عرض كود الكورس */}
         <td>{course.courseId || "N/A"}</td>
-        {/* عرض اسم الكورس */}
         <td>{course.courseName || "Unknown Course"}</td>
-        {/* عرض اسم الدكتور أو المحاضر */}
         <td>{course.instructorName || "No Instructor"}</td>
-        {/* عرض الأيام - استخدمت SelectDays عشان ده الاسم اللي زمايلك استخدموه في الـ Input */}
         <td>{course.SelectDays || course.days || "TBD"}</td>
-        {/* عرض الوقت */}
         <td>{course.Time || course.time || "TBD"}</td>
         <td>
           <div className="action-buttons">
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>view</button>
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>change</button>
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>delete</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}}>View</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}}>Change</button>
+            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}}>Delete</button>
           </div>
         </td>
       </tr>

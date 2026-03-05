@@ -4,10 +4,21 @@
   box-sizing: border-box;
 }
 
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto !important;  /* 🔥强制执行 scroll */
+  scroll-behavior: smooth;  /* عشان scroll يكون ناعم */
+}
+
 .home {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   color: #333;
   line-height: 1.6;
+  width: 100%;
+  min-height: 100vh;
+  overflow-y: visible;  /* 🔥 مهم جداً */
+  display: block;  /* يخلي العناصر تترص تحت بعض */
 }
 
 /* Navbar */

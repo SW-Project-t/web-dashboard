@@ -140,7 +140,7 @@ const AdminDashboard = () => {
                   <option value="" disabled hidden>Choose Role</option>
                   <option value="Student">Student</option>
                   <option value="Instructor">Instructor</option>
-                  <option value="Admin">Admin</option> //cha
+                  <option value="admin">Admin</option> //cha
                 </select>
                 <input type="text" name="department" className="modern-input" value={newUserData.department} onChange={handleUserInputChange} placeholder="Department" />
               </div>
@@ -177,7 +177,7 @@ const AdminDashboard = () => {
               <input type="text" name="courseName" className="modern-input" value={newCourseData.courseName} onChange={handleCourseInputChange} placeholder="Course Name (e.g., Web Development)" required />
               <input type="text" name="instructorName" className="modern-input" value={newCourseData.instructorName} onChange={handleCourseInputChange} placeholder="Instructor Name" required />
               
-              <select name="SelectDays" className={`modern-input ${newCourseData.SelectDays === "" ? "placeholder-select" : ""}`} value={newCourseData.days} onChange={handleCourseInputChange} required>
+              <select name="SelectDays" className={`modern-input ${newCourseData.SelectDays === "" ? "placeholder-select" : ""}`} value={newCourseData.SelectDays} onChange={handleCourseInputChange} required>
                 <option value="" disabled hidden>SelectDays</option>
                 <option value="Saturday">Saturday</option>
                 <option value="Sunday">Sunday</option>

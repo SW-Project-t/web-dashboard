@@ -284,7 +284,6 @@ export default function StudentDashboard() {
                 </div>
             )}
 
-            {/* Sidebar with Profile Image */}
             <div className="sidebar">
                 <div className="sidebar-profile">
                     <div className="profile-image-wrapper">

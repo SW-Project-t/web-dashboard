@@ -56,7 +56,6 @@ function Login() {
   };
   return (
     <div className='container1'>
-      {/* ضيفنا الكلاس ده هنا */}
       <div className="particles-wrapper">
         <ParticleBackground />
       </div>

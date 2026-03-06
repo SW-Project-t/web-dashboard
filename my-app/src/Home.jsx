@@ -7,7 +7,7 @@ function Home() {
 
   return (
     <div className="home">
-      {/* Hero Section */}
+      
       <section className="hero">
         <div className="hero-content">
           <h1>Smart Attendance Made Simple</h1>
@@ -18,7 +18,7 @@ function Home() {
             <button className="btn-outline">Mobile App</button>
           </div>
           
-          {/* Stats */}
+          
           <div className="stats">
             <div className="stat-item">
               <h2>10k+</h2>
@@ -36,7 +36,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
+       
       <section id="features" className="features">
         <h2 className="section-title">Powerful Features</h2>
         <p className="section-subtitle">Everything you need for modern, efficient attendance management</p>
@@ -74,7 +74,7 @@ function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
+      
       <section id="how-it-works" className="how-it-works">
         <h2 className="section-title">How It Works</h2>
         <p className="section-subtitle">Simple, fast, and secure</p>
@@ -100,7 +100,7 @@ function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      
       <section className="cta">
         <h2>Ready to Get Started?</h2>
         <p>Join thousands of students and professors already using YallaClass</p>

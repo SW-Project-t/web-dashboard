@@ -30,18 +30,16 @@ body {
     border-right: 1px solid #e9ecef;
 }
 .container1 {
-  /* ده بقا واخد الشاشة كلها وفيه التدرج اللبني */
   height: 100vh;
   width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative; /* مهم جداً عشان اللوجو والشبكة */
-  background: linear-gradient(135deg, #74b9ff 0%, #e0f2fe 100%); /* التدرج اللبني */
+  position: relative;
+  background: linear-gradient(135deg, #74b9ff 0%, #e0f2fe 100%);
   overflow: hidden;
 }
 
-/* الكلاس ده ضفناه عشان يرمي الشبكة ورا خالص */
 .particles-wrapper {
   position: absolute;
   top: 0;
@@ -57,14 +55,13 @@ body {
   left: 70px;
   width: 60px;
   border-radius: 10px;
-  z-index: 10; /* عشان يبقى فوق الشبكة */
+  z-index: 10;
 }
 
 .container2 {
-  /* ده الكارت الأبيض الزجاجي اللي في النص */
   width: 400px; 
   border-radius: 20px;
-  background-color: rgba(255, 255, 255, 0.45); /* أبيض شفاف */
+  background-color: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.6);
@@ -74,7 +71,7 @@ body {
   align-items: center;
   padding: 40px; 
   box-sizing: border-box; 
-  z-index: 10; /* عشان يكون فوق الشبكة */
+  z-index: 10;
 }
 
 .header_brand {
@@ -94,7 +91,7 @@ body {
 
 .logo {
   font-size: 22px;
-  color: #08509e; /* أزرق غامق بدل الأبيض */
+  color: #08509e;
   margin: 0 !important;
   font-weight: bold;
 }
@@ -110,14 +107,14 @@ body {
   margin-bottom: 25px;
   margin-top: 0;
   text-align: center;
-  color: #08509e; /* أزرق غامق */
+  color: #08509e;
   font-weight: bold;
 }
 
 .login_container p {
   margin: 10px 0 8px 0;
   font-size: 14px;
-  color: #333; /* لون غامق عشان يتقري على الفاتح */
+  color: #333;
   font-weight: 500;
 }
 
@@ -132,7 +129,7 @@ body {
 .login_container input {
   width: 100%; 
   padding: 12px 40px 12px 45px; 
-  border: 1px solid #d1d5db; /* بوردر خفيف */
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   color: black;
   background-color: white; 
@@ -144,7 +141,7 @@ body {
 
 .login_container input:focus {
   border-color: #08509e;
-  box-shadow: 0 0 0 3px rgba(8, 80, 158, 0.2); /* تأثير أزرق خفيف لما تدوس عليه */
+  box-shadow: 0 0 0 3px rgba(8, 80, 158, 0.2);
 }
 
 ::placeholder {
@@ -200,7 +197,7 @@ body {
 .forgot_password {
   display: block;
   font-size: 13px;
-  color: #64748b; /* رمادي غامق */
+  color: #64748b;
   text-decoration: none;
   margin-top: 5px;
   text-align: left;

@@ -18,7 +18,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* إضافة خاصية التحكم في الـ scroll */
   height: 100%;
   width: 100%;
   overflow-x: hidden;
@@ -34,19 +33,19 @@ html, body, #root {
 
 body {
   margin: 0;
-  display: block;  /* تغيير من flex لـ block */
+  display: block;
   min-width: 320px;
   min-height: 100vh;
-  overflow-y: auto !important;  /* 🔥 السماح بالـ scroll */
+  overflow-y: auto !important;
   width: 100%;
   position: relative;
 }
 
 #root {
-  display: block;  /* تغيير من flex لـ block */
+  display: block;
   min-height: 100vh;
   width: 100%;
-  overflow-y: auto !important;  /* 🔥 السماح بالـ scroll */
+  overflow-y: auto !important;
 }
 
 a {

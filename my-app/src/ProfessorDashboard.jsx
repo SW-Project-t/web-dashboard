@@ -470,7 +470,6 @@ export default function ProfessorDashboard() {
                         ) : (
                             <>
                                 <h3>{modalType === 'add' ? 'Add New Course' : 'Edit Course'}</h3>
-                                
                                 <input
                                     className="modal-input"
                                     placeholder="Course ID (e.g., CS401)"
@@ -491,7 +490,7 @@ export default function ProfessorDashboard() {
                                 />
                                 <input
                                     className="modal-input"
-                                    placeholder="Room (e.g., Room 201)"
+                                    placeholder="Room"
                                     value={newCourse.room}
                                     onChange={(e) => setNewCourse({...newCourse, room: e.target.value})}
                                 />

@@ -71,8 +71,7 @@ export default function StudentDashboard() {
                     const userDocSnap = await getDoc(userDocRef);
                   
                     if(!token){navigate('/');}
-
-                   else if (userDocSnap.exists()) {
+                    else if (userDocSnap.exists()) {
                         const userData = userDocSnap.data();
                         setAppState(prev => ({
                             ...prev,
@@ -80,16 +79,16 @@ export default function StudentDashboard() {
                                 ...prev.user,
                                 name: userData.fullName || "No Name",
                                 id: userData.code || "No Code",
-                                }
+                            }
                         }));
                     }
                 } catch (error) {
                     console.error("Error fetching student data:", error);
                 }
-            } else {navigate('/');
-            }
-        });return () => unsubscribe();}, [navigate]);
-    
+            } else {navigate('/');}
+        });
+        return () => unsubscribe();
+    }, [navigate]);
     
     const handleLogout = () => {
         localStorage.removeItem('token');

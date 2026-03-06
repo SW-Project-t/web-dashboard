@@ -190,9 +190,9 @@ const handleSaveChanges = async (e) => {
   e.preventDefault();
   const deptInput = e.target.elements[1].value; 
 
-  try {
-    const collectionName = selectedItem.courseName ? "courses" : "users";
-    const itemRef = doc(db, collectionName, selectedItem.id);
+    try {
+      const collectionName = selectedItem.courseName ? "courses" : "users";
+      const itemRef = doc(db, collectionName, selectedItem.id);
 
     const updatedData = selectedItem.courseName 
       ? { RoomNumber: deptInput } 

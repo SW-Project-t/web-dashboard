@@ -7,23 +7,6 @@ function Home() {
 
   return (
     <div className="home">
-      {/* Navbar
-      <nav className="navbar">
-        <div className="nav-container">
-          <div className="nav-logo">YallaClass</div>
-          <div className="nav-menu">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
-            <a href="#about">About</a>
-            <a href="#demo">Demo</a>
-          </div>
-          <div className="nav-buttons">
-            <button className="btn-signin" onClick={() => navigate('/login')}>Sign In</button>
-            <button className="btn-getstarted" onClick={() => navigate('/signup')}>Get Started</button>
-          </div>
-        </div>
-      </nav> */}
-
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">

@@ -17,10 +17,10 @@ const Navbar = () => {
       </div>
 
       <div className="nav-links">
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How It Works</a>
-        <a href="#about">About</a>
-        <a href="#demo">Demo</a>
+        <a href="#features">Home</a>
+        <a href="#how-it-works">Student Dashboard</a>
+        <a href="#about">Admin Dashboard</a>
+        <a href="#demo">Contact</a>
       </div>
       
          {!isDashboard && (

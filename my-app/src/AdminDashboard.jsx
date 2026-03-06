@@ -7,7 +7,7 @@ import { collection, onSnapshot, query, deleteDoc, doc, updateDoc } from 'fireba
 
 import { auth } from './firebase';
 import {getDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -22,7 +22,6 @@ const AdminDashboard = () => {
 
   const [adminData, setAdminData] = useState({ name: 'Admin...', code: 'Code...' });
   
- 
   const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
   
   const [newUserData, setNewUserData] = useState({
@@ -37,6 +36,14 @@ const AdminDashboard = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // --- States لتغيير كلمة المرور ---
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordFields, setPasswordFields] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
     const q = query(collection(db, "users"));
@@ -73,7 +80,6 @@ const AdminDashboard = () => {
     ? departments.reduce((sum, dept) => sum + dept.count, 0) 
     : 1; 
 
-  
   const handleImageUpload = (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -190,9 +196,9 @@ const handleSaveChanges = async (e) => {
   e.preventDefault();
   const deptInput = e.target.elements[1].value; 
 
-    try {
-      const collectionName = selectedItem.courseName ? "courses" : "users";
-      const itemRef = doc(db, collectionName, selectedItem.id);
+  try {
+    const collectionName = selectedItem.courseName ? "courses" : "users";
+    const itemRef = doc(db, collectionName, selectedItem.id);
 
     const updatedData = selectedItem.courseName 
       ? { RoomNumber: deptInput } 
@@ -203,6 +209,34 @@ const handleSaveChanges = async (e) => {
     setIsEditModalOpen(false);
   } catch (error) {
     alert("Error: " + error.message);
+  }
+};
+
+// --- وظائف تغيير كلمة المرور ---
+const handlePasswordInputChange = (e) => {
+  const { name, value } = e.target;
+  setPasswordFields(prev => ({ ...prev, [name]: value }));
+};
+
+const handlePasswordUpdate = async (e) => {
+  e.preventDefault();
+  const user = auth.currentUser;
+
+  if (passwordFields.newPassword !== passwordFields.confirmPassword) {
+    alert("New passwords do not match!");
+    return;
+  }
+
+  try {
+    const credential = EmailAuthProvider.credential(user.email, passwordFields.currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, passwordFields.newPassword);
+    alert("Password updated successfully!");
+    setIsPasswordModalOpen(false);
+    setPasswordFields({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  } catch (error) {
+    console.error(error);
+    alert("Error: Check your current password.");
   }
 };
 
@@ -337,9 +371,9 @@ const handleLogout = () => {
                     </div>
                 )}
                 <div 
-                   className="image-upload-overlay" 
-                   onClick={() => document.getElementById('admin-profile-upload').click()}
-                   title="Upload new photo"
+                    className="image-upload-overlay" 
+                    onClick={() => document.getElementById('admin-profile-upload').click()}
+                    title="Upload new photo"
                 >
                     <span>+</span>
                 </div>
@@ -373,6 +407,19 @@ const handleLogout = () => {
         </nav>
 
         <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '20px' }}>
+          {/* زرار تغيير كلمة المرور */}
+          <button 
+            onClick={() => setIsPasswordModalOpen(true)} 
+            style={{ 
+              display: 'block', width: '100%', padding: '10px', 
+              background: 'none', border: 'none', color: '#ff5252', 
+              cursor: 'pointer', fontWeight: 'bold', textAlign: 'center',
+              marginBottom: '5px' 
+            }}
+          >
+            Change Password
+          </button>
+
           <button onClick={handleLogout} className="logout-btn" style={{ display: 'block', width: '100%', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '6px', color: '#d32f2f', cursor: 'pointer', fontWeight: 'bold' }}>
             Logout
           </button>
@@ -507,7 +554,7 @@ const handleLogout = () => {
                     <th>Actions</th>
                   </tr>
                 </thead>
-               <tbody>
+                <tbody>
   {courses.length === 0 ? (
     <tr>
       <td colSpan="6" className="empty-state">No courses found. Data will appear here once loaded.</td>
@@ -551,6 +598,42 @@ const handleLogout = () => {
           </div>
         </div>
       </main>
+
+{isPasswordModalOpen && (
+  <div className="modal-overlay" style={{zIndex: 9999}}>
+    <div className="modern-modal-content" style={{padding: '35px', borderRadius: '20px', width: '450px'}}>
+      <h2 style={{color: '#2c3e50', marginBottom: '25px', fontSize: '24px'}}>Change Password</h2>
+      <form onSubmit={handlePasswordUpdate}>
+        <div style={{marginBottom: '15px'}}>
+          <label style={{display: 'block', marginBottom: '5px', fontSize: '14px', color: '#666'}}>Current Password</label>
+          <input 
+            type="password" name="currentPassword" required className="modern-input"
+            value={passwordFields.currentPassword} onChange={handlePasswordInputChange} placeholder="••••••••"
+          />
+        </div>
+        <div style={{marginBottom: '15px'}}>
+          <label style={{display: 'block', marginBottom: '5px', fontSize: '14px', color: '#666'}}>New Password</label>
+          <input 
+            type="password" name="newPassword" required className="modern-input"
+            value={passwordFields.newPassword} onChange={handlePasswordInputChange} placeholder="••••••••"
+          />
+        </div>
+        <div style={{marginBottom: '25px'}}>
+          <label style={{display: 'block', marginBottom: '5px', fontSize: '14px', color: '#666'}}>Confirm New Password</label>
+          <input 
+            type="password" name="confirmPassword" required className="modern-input"
+            value={passwordFields.confirmPassword} onChange={handlePasswordInputChange} placeholder="••••••••"
+          />
+        </div>
+        <div className="modern-modal-actions">
+          <button type="submit" className="modern-btn-primary" style={{flex: 1}}>Update Password</button>
+          <button type="button" className="modern-btn-secondary" style={{flex: 1}} onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
 {isViewModalOpen && selectedItem && (
   <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
     <div className="modern-modal-content" style={{background: 'white', padding: '30px', borderRadius: '15px', width: '400px', textAlign: 'left', color: '#333'}}>

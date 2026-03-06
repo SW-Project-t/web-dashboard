@@ -6,7 +6,7 @@
 }
 
 .sidebar {
-    width: 280px;
+    width: 250px;
     background-color: #f8f9fa;
     padding: 80px 10px 0px 15px;
     display: flex;
@@ -60,7 +60,7 @@
 
 .main-content {
     flex: 1;
-    padding: 80px 0px 0px 0px;
+    padding: 80px 0px 0px 20px;
     background-color: #ffffff;
     overflow-y: auto;
 }
@@ -659,4 +659,75 @@
 
 .remove-photo-btn:hover {
     background-color: #fee2e2;
+}
+
+.password-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.password-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.password-form label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #475569;
+}
+
+.password-form input {
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.password-form input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.save-btn {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border: none;
+}
+
+.save-btn:hover {
+    background-color: #2563eb !important;
+    transform: translateY(-1px);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.modal-buttons button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sidebar .nav-item.logout {
+    color: #ef4444; 
+    border-top: 1px solid rgba(255,255,255,0.1);
+    margin-top: 5px;
+}
+
+.sidebar .nav-item.logout:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #f87171;
 }

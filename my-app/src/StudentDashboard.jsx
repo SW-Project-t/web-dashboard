@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { auth, db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 const STORAGE_KEYS = {
     USER: 'yallaclass_user',
@@ -126,6 +126,33 @@ export default function StudentDashboard() {
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
     };
 
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const oldPass = formData.get('oldPassword');
+        const newPass = formData.get('newPassword');
+        const confirmPass = formData.get('confirmPassword');
+
+        if (newPass !== confirmPass) {
+            showNotification('New passwords do not match!', 'error');
+            return;
+        }
+
+        try {
+            const user = auth.currentUser;
+            const credential = EmailAuthProvider.credential(user.email, oldPass);
+            
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, newPass);
+            
+            showNotification('Password updated successfully!');
+            setModal({ show: false, type: null });
+        } catch (error) {
+            console.error(error);
+            showNotification('Error: Current password incorrect or session expired', 'error');
+        }
+    };
+
     const handleCheckIn = (courseId) => {
         setAppState(prev => {
             const newCourses = prev.courses.map(c => {
@@ -173,14 +200,6 @@ export default function StudentDashboard() {
                 setSelectedCourse(appState.courses.find(c => c.id !== courseId)?.id || null);
             }
             showNotification(`Course ${courseId} deleted`);
-        }
-    };
-
-    const resetAllData = () => {
-        if (window.confirm('Reset all data to default?')) {
-            setAppState(defaultData);
-            setSelectedCourse(defaultData.courses[0]?.id || null);
-            showNotification('Data reset to default');
         }
     };
 
@@ -232,7 +251,7 @@ export default function StudentDashboard() {
         e.preventDefault();
         const formData = new FormData(e.target);
         const name = formData.get('className');
-        
+
         const newClass = {
             id: Date.now(),
             name: name,
@@ -325,8 +344,8 @@ export default function StudentDashboard() {
                 <div className="nav-item" onClick={() => showNotification(`Student ID: ${appState.user.id}`)}>Student ID: {appState.user.id}</div>
                 <div className="nav-item" onClick={() => showNotification('Attendance Records')}>Attendance</div>
                 <div className="nav-item" onClick={() => showNotification('Settings')}>Settings</div>
-                <div className="nav-item logout" onClick={resetAllData}>Reset Data</div>
                 
+                <div className="nav-item logout" onClick={() => setModal({ show: true, type: 'password' })}>Change Password</div>
                 <div className="nav-item logout" onClick={handleLogout}>Logout</div>
             </div>
 
@@ -492,12 +511,16 @@ export default function StudentDashboard() {
             {modal.show && (
                 <div className="modal" onClick={() => setModal({ show: false, type: null })}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h3>{modal.type === 'course' ? 'Add New Course' : 'Add Upcoming Class'}</h3>
+                        <h3>
+                            {modal.type === 'course' ? 'Add New Course' : 
+                             modal.type === 'upcoming' ? 'Add Upcoming Class' : 
+                             'Change Password'}
+                        </h3>
                         
                         {modal.type === 'course' ? (
                             <form onSubmit={handleAddCourse}>
                                 <input type="text" name="courseId" placeholder="Course ID (e.g., CS404)" required />
-                                <input type="text" name="courseName" placeholder="Course Name (e.g., Web Development)" required />
+                                <input type="text" name="courseName" placeholder="Course Name" required />
                                 <input type="text" name="instructor" placeholder="Instructor Name" required />
                                 <select name="days" required>
                                     <option value="">Select Days</option>
@@ -508,15 +531,14 @@ export default function StudentDashboard() {
                                     <option value="Sat, Mon">Saturday, Monday</option>
                                 </select>
                                 <input type="text" name="time" placeholder="Time (e.g., 1:00 PM)" required />
-                                <input type="text" name="room" placeholder="Room Number (e.g., 201)" required />
-                                <input type="number" name="students" placeholder="Number of Students" defaultValue="0" />
-                                <small style={{ color: '#64748b', display: 'block', marginBottom: '10px' }}>* All fields are required</small>
+                                <input type="text" name="room" placeholder="Room Number" required />
+                                <input type="number" name="students" placeholder="Number of Students" />
                                 <div className="modal-buttons">
-                                    <button type="submit">Add</button>
+                                    <button type="submit" className="save-btn">Add</button>
                                     <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
                                 </div>
                             </form>
-                        ) : (
+                        ) : modal.type === 'upcoming' ? (
                             <form onSubmit={handleAddUpcoming}>
                                 <input type="text" name="className" placeholder="Class Name" required />
                                 <input type="text" name="classTime" placeholder="Time (e.g., 2:00 PM)" required />
@@ -526,7 +548,26 @@ export default function StudentDashboard() {
                                     <option value="Tomorrow">Tomorrow</option>
                                 </select>
                                 <div className="modal-buttons">
-                                    <button type="submit">Add</button>
+                                    <button type="submit" className="save-btn">Add</button>
+                                    <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
+                                </div>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleChangePassword} className="password-form">
+                                <div className="form-group">
+                                    <label>Current Password</label>
+                                    <input type="password" name="oldPassword" placeholder="••••••••" required />
+                                </div>
+                                <div className="form-group">
+                                    <label>New Password</label>
+                                    <input type="password" name="newPassword" placeholder="••••••••" required />
+                                </div>
+                                <div className="form-group">
+                                    <label>Confirm New Password</label>
+                                    <input type="password" name="confirmPassword" placeholder="••••••••" required />
+                                </div>
+                                <div className="modal-buttons">
+                                    <button type="submit" className="save-btn">Update Password</button>
                                     <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
                                 </div>
                             </form>

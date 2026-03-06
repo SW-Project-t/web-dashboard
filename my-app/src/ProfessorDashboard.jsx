@@ -11,40 +11,52 @@ const STORAGE_KEYS = {
 };
 
 export default function ProfessorDashboard() {
-   const navigate = useNavigate();
-   
-   const [profileImage, setProfileImage] = useState(localStorage.getItem(STORAGE_KEYS.PROF_IMAGE) || null);
-   
-   const [profData, setProfData] = useState({ name: 'Loading...', code: '...' });
-   const [isLoading, setIsLoading] = useState(true);
-    useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            try {
-                const docRef = doc(db, "users", user.uid);
-                const docSnap = await getDoc(docRef);
-                const token = localStorage.getItem('token');
-                if(!token){navigate('/');}
-                else if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setProfData({
-                        name: data.fullName || "Dr. Anonymous",
-                        code: data.code || "No Code"});
-                }
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            } finally {
-                setIsLoading(false);
+    const navigate = useNavigate();
+    
+    const [profileImage, setProfileImage] = useState(localStorage.getItem(STORAGE_KEYS.PROF_IMAGE) || null);
+    const [profData, setProfData] = useState({ name: 'Loading...', code: '...' });
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchUserData = async (user) => {
+        try {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            const token = localStorage.getItem('token');
+            
+            if(!token) {
+                navigate('/');
+                return;
             }
-        } else {
-            navigate('/');
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setProfData({
+                    name: data.fullName || "Dr. Anonymous",
+                    code: data.code || "No Code"
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            showNotification('Error fetching profile data', 'error');
+        } finally {
+            setIsLoading(false);
         }
-    });
-    return () => unsubscribe();
-}, [navigate]);
+    };
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                fetchUserData(user);
+            } else {
+                navigate('/');
+            }
+        });
+        return () => unsubscribe();
+    }, [navigate]);
     
     const handleLogout = () => {
         localStorage.removeItem('token');
+        showNotification('Logging out...', 'success');
         setTimeout(() => {
             navigate('/');
         }, 1000);
@@ -121,6 +133,20 @@ export default function ProfessorDashboard() {
         setProfileImage(null);
         localStorage.removeItem(STORAGE_KEYS.PROF_IMAGE);
         showNotification('Profile image removed');
+    };
+
+    const resetDailyAttendance = (courseId) => {
+        setCourses(courses.map(c => 
+            c.id === courseId ? { ...c, todayPresent: 0, todayLate: 0, todayAbsent: 0 } : c
+        ));
+        showNotification(`Attendance reset for ${courseId}`);
+    };
+
+    const resetAllAttendance = () => {
+        if(window.confirm('Reset today\'s attendance for ALL courses?')) {
+            setCourses(courses.map(c => ({ ...c, todayPresent: 0, todayLate: 0, todayAbsent: 0 })));
+            showNotification('All courses reset for the day');
+        }
     };
 
     const filteredCourses = courses.filter(course =>
@@ -294,15 +320,18 @@ export default function ProfessorDashboard() {
             <div className="main-content">
                 
                 <div className="header">
-                    <div>
+                    <div className="header-info">
                         <h1> Dashboard </h1>
                         <p>Welcome back, {profData.name}!</p>
                     </div>
                     
                     <div className="search-sort-container">
+                        <button className="refresh-btn" onClick={() => fetchUserData(auth.currentUser)} title="Sync Profile">
+                           🔄
+                        </button>
                         <input
                             type="text"
-                            placeholder="Search courses by name or ID..."
+                            placeholder="Search courses..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="search-input"
@@ -345,6 +374,9 @@ export default function ProfessorDashboard() {
                 <div className="quick-actions">
                     <button className="btn btn-primary" onClick={openAddModal}>
                         Add New Course
+                    </button>
+                    <button className="btn btn-outline" onClick={resetAllAttendance}>
+                        Reset All Today
                     </button>
                     <button className="btn btn-outline" onClick={() => {
                         setSearchTerm('');
@@ -398,9 +430,9 @@ export default function ProfessorDashboard() {
                                     </div>
 
                                     <div className="today-stats">
-                                        <span className="stat-present">{course.todayPresent}</span>
-                                        <span className="stat-late">{course.todayLate}</span>
-                                        <span className="stat-absent">{course.todayAbsent}</span>
+                                        <span className="stat-present" title="Present">{course.todayPresent}</span>
+                                        <span className="stat-late" title="Late">{course.todayLate}</span>
+                                        <span className="stat-absent" title="Absent">{course.todayAbsent}</span>
                                     </div>
                                 </div>
 
@@ -411,8 +443,8 @@ export default function ProfessorDashboard() {
                                     <button className="btn btn-outline" onClick={() => openEditModal(course)}>
                                         Edit
                                     </button>
-                                    <button className="btn btn-outline" onClick={() => duplicateCourse(course)}>
-                                        Copy
+                                    <button className="btn btn-outline" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
+                                        Reset
                                     </button>
                                     <button className="btn btn-delete" onClick={() => deleteCourse(course.id)}>
                                         Delete
@@ -484,7 +516,7 @@ export default function ProfessorDashboard() {
                                 />
                                 <input
                                     className="modal-input"
-                                    placeholder="Schedule (e.g., Mon, Wed 10:00 AM)"
+                                    placeholder="Schedule"
                                     value={newCourse.schedule}
                                     onChange={(e) => setNewCourse({...newCourse, schedule: e.target.value})}
                                 />

@@ -8,7 +8,9 @@ const Navbar = () => {
 
   const isDashboard = location.pathname.startsWith('/AdminDashboard') || 
                       location.pathname.startsWith('/ProfessorDashboard') || 
-                      location.pathname.startsWith('/StudentDashboard');
+                      location.pathname.startsWith('/StudentDashboard') ||
+                      location.pathname.startsWith('/login') ;
+
 
   return (
     <nav className="navbar-container">
@@ -17,10 +19,9 @@ const Navbar = () => {
       </div>
 
       <div className="nav-links">
-        <a href="#features">Home</a>
-        <a href="#how-it-works">Student Dashboard</a>
-        <a href="#about">Admin Dashboard</a>
-        <a href="#demo">Contact</a>
+        <Link to="/">Home</Link>
+        <Link to="/about">About</Link>
+       <Link to="/contact">Contact</Link>
       </div>
       
          {!isDashboard && (

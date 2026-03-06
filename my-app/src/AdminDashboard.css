@@ -213,7 +213,7 @@
   .main-content {
     flex: 1;
     margin-left: 250px;
-    padding: 20px; 
+    padding: 20ox 20px 20px 20px; 
     height: 100%;
     overflow-y: auto;
     background-color: #f0f2f5;  

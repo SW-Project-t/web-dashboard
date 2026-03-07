@@ -204,12 +204,12 @@ function Home() {
 
           <div className="yc-hero-stats yc-fade-in-up yc-delay-4">
             {stats.map((stat, index) => (
-              <div key={index} className="yc-stat-card">
-                <div className={`yc-stat-icon yc-gradient-bg ${stat.color}`}>
+              <div key={index} className="yc-hero-stat-card">
+                <div className={`yc-hero-stat-icon yc-gradient-bg ${stat.color}`}>
                   <IconComponent name={stat.icon} />
                 </div>
-                <div className="yc-stat-value">{stat.value}</div>
-                <div className="yc-stat-label">{stat.label}</div>
+                <div className="yc-hero-stat-value">{stat.value}</div>
+                <div className="yc-hero-stat-label">{stat.label}</div>
               </div>
             ))}
           </div>

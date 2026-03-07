@@ -412,7 +412,7 @@
   margin: 0 auto;
 }
 
-.yc-stat-card {
+.yc-hero-stat-card {
   padding: 1.5rem;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(8px);
@@ -421,13 +421,13 @@
   transition: all var(--yc-transition-normal);
 }
 
-.yc-stat-card:hover {
+.yc-hero-stat-card:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
 }
 
-.yc-stat-icon {
+.yc-hero-stat-icon {
   display: inline-flex;
   padding: 0.75rem;
   border-radius: var(--yc-radius-lg);
@@ -435,24 +435,24 @@
   transition: transform var(--yc-transition-normal);
 }
 
-.yc-stat-card:hover .yc-stat-icon {
+.yc-hero-stat-card:hover .yc-hero-stat-icon {
   transform: scale(1.1);
 }
 
-.yc-stat-icon svg {
+.yc-hero-stat-icon svg {
   width: 24px;
   height: 24px;
   color: white;
 }
 
-.yc-stat-value {
+.yc-hero-stat-value {
   font-size: 1.75rem;
   font-weight: 700;
   color: white;
   margin-bottom: 0.25rem;
 }
 
-.yc-stat-label {
+.yc-hero-stat-label {
   font-size: 0.875rem;
   color: rgba(191, 219, 254, 0.7);
   font-weight: 500;
@@ -1047,7 +1047,7 @@
     max-width: 300px;
   }
 
-  .yc-stat-card {
+  .yc-hero-stat-card {
     padding: 1.25rem;
   }
 

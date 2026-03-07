@@ -1,6 +1,7 @@
 /* ============================================
    YallaClass - Professional Landing Page Styles
    ALL classes prefixed with 'yc-' to avoid conflicts
+   NOTE: Navbar styles are in Navbar.css
    ============================================ */
 
 /* CSS Variables - Scoped to yc-home */
@@ -229,166 +230,9 @@
   background: linear-gradient(135deg, var(--yc-blue-600), var(--yc-cyan-500)) !important;
 }
 
-/* ============================================
-   Navbar
-   ============================================ */
-.yc-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  padding: 0 1.5rem;
-  transition: all var(--yc-transition-normal);
-  background: transparent;
-}
-
-.yc-navbar.yc-scrolled {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px rgba(30, 58, 138, 0.08);
-}
-
-.yc-nav-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 80px;
-}
-
-.yc-nav-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.yc-logo-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border-radius: var(--yc-radius-lg);
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  transition: all var(--yc-transition-normal);
-  color: white;
-}
-
-.yc-logo-icon.yc-scrolled {
-  background: linear-gradient(135deg, var(--yc-blue-600), var(--yc-cyan-500));
-  box-shadow: var(--yc-shadow-blue);
-}
-
-.yc-logo-icon svg {
-  width: 24px;
-  height: 24px;
-}
-
-.yc-logo-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white;
-  transition: color var(--yc-transition-normal);
-}
-
-.yc-logo-text.yc-scrolled {
-  color: var(--yc-gray-900);
-}
-
+/* Logo Highlight (shared with Navbar) */
 .yc-logo-highlight {
   color: var(--yc-cyan-400);
-}
-
-.yc-nav-menu {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.yc-nav-link {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  transition: all var(--yc-transition-normal);
-}
-
-.yc-nav-link:hover {
-  color: var(--yc-cyan-400);
-}
-
-.yc-nav-link.yc-scrolled {
-  color: var(--yc-gray-700);
-}
-
-.yc-nav-link.yc-scrolled:hover {
-  color: var(--yc-blue-600);
-}
-
-.yc-nav-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.yc-btn-signin {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all var(--yc-transition-normal);
-}
-
-.yc-btn-signin:hover {
-  color: var(--yc-cyan-400);
-}
-
-.yc-btn-signin.yc-scrolled {
-  color: var(--yc-gray-700);
-}
-
-.yc-btn-signin.yc-scrolled:hover {
-  color: var(--yc-blue-600);
-  background: rgba(59, 130, 246, 0.1);
-  border-radius: var(--yc-radius-md);
-}
-
-.yc-btn-getstarted {
-  padding: 0.5rem 1.25rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: white;
-  background: linear-gradient(135deg, var(--yc-blue-600), var(--yc-cyan-500));
-  border: none;
-  border-radius: var(--yc-radius-md);
-  cursor: pointer;
-  transition: all var(--yc-transition-normal);
-  box-shadow: var(--yc-shadow-blue);
-}
-
-.yc-btn-getstarted:hover {
-  transform: scale(1.05);
-  box-shadow: 0 15px 40px -10px rgba(59, 130, 246, 0.4);
-}
-
-.yc-mobile-menu-btn {
-  display: none;
-  padding: 0.5rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: white;
-}
-
-.yc-mobile-menu-btn svg {
-  width: 24px;
-  height: 24px;
 }
 
 /* ============================================
@@ -401,7 +245,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 6rem 1.5rem 4rem;
+  padding: 8rem 1.5rem 4rem; /* Extra top padding for navbar */
 }
 
 .yc-hero-bg {
@@ -1166,85 +1010,6 @@
 }
 
 /* ============================================
-   Mobile Menu
-   ============================================ */
-.yc-mobile-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  box-shadow: var(--yc-shadow-xl);
-  opacity: 0;
-  visibility: hidden;
-  transition: all var(--yc-transition-normal);
-}
-
-.yc-mobile-menu.yc-open {
-  opacity: 1;
-  visibility: visible;
-}
-
-.yc-mobile-menu-content {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.yc-mobile-link {
-  display: block;
-  padding: 0.75rem 0;
-  color: var(--yc-gray-700);
-  text-decoration: none;
-  font-weight: 500;
-  transition: color var(--yc-transition-normal);
-}
-
-.yc-mobile-link:hover {
-  color: var(--yc-blue-600);
-}
-
-.yc-mobile-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--yc-gray-100);
-}
-
-.yc-btn-outline-mobile,
-.yc-btn-primary-mobile {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--yc-radius-lg);
-  cursor: pointer;
-  transition: all var(--yc-transition-normal);
-}
-
-.yc-btn-outline-mobile {
-  background: transparent;
-  color: var(--yc-gray-700);
-  border: 1px solid var(--yc-gray-300);
-}
-
-.yc-btn-outline-mobile:hover {
-  border-color: var(--yc-blue-500);
-  color: var(--yc-blue-600);
-}
-
-.yc-btn-primary-mobile {
-  background: linear-gradient(135deg, var(--yc-blue-600), var(--yc-cyan-500));
-  color: white;
-  border: none;
-}
-
-.yc-btn-primary-mobile:hover {
-  transform: scale(1.02);
-}
-
-/* ============================================
    Responsive Design
    ============================================ */
 @media (max-width: 1024px) {
@@ -1261,19 +1026,6 @@
 }
 
 @media (max-width: 768px) {
-  .yc-nav-menu,
-  .yc-nav-buttons {
-    display: none;
-  }
-
-  .yc-mobile-menu-btn {
-    display: flex;
-  }
-
-  .yc-navbar.yc-scrolled .yc-mobile-menu-btn {
-    color: var(--yc-gray-700);
-  }
-
   .yc-hero-title {
     font-size: 2.25rem;
   }
@@ -1345,7 +1097,7 @@
 
 @media (max-width: 480px) {
   .yc-hero {
-    padding: 5rem 1rem 3rem;
+    padding: 6rem 1rem 3rem;
   }
 
   .yc-hero-title {

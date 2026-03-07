@@ -1,15 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './Home.css';
 import { useNavigate } from 'react-router-dom';
 
 // Icons as SVG components
 const Icons = {
-  GraduationCap: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-      <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-    </svg>
-  ),
   MapPin: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
@@ -88,39 +82,21 @@ const Icons = {
       <path d="M17 19h4"/>
     </svg>
   ),
-  Menu: () => (
+  GraduationCap: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" x2="20" y1="12" y2="12"/>
-      <line x1="4" x2="20" y1="6" y2="6"/>
-      <line x1="4" x2="20" y1="18" y2="18"/>
-    </svg>
-  ),
-  X: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 6 6 18"/>
-      <path d="m6 6 12 12"/>
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+      <path d="M6 12v5c3 3 9 3 12 0v-5"/>
     </svg>
   ),
 };
 
+const IconComponent = ({ name, className = '' }) => {
+  const Icon = Icons[name];
+  return Icon ? <span className={className}><Icon /></span> : null;
+};
+
 function Home() {
   const navigate = useNavigate();
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const navLinks = [
-    { name: 'Features', href: '#yc-features' },
-    { name: 'How It Works', href: '#yc-how-it-works' },
-    { name: 'About', href: '#yc-about' },
-  ];
 
   const features = [
     {
@@ -185,79 +161,8 @@ function Home() {
     { icon: 'University', value: '50+', label: 'Universities', color: 'yc-from-purple-400-to-pink-400' },
   ];
 
-  const IconComponent = ({ name, className = '' }) => {
-    const Icon = Icons[name];
-    return Icon ? <span className={className}><Icon /></span> : null;
-  };
-
   return (
     <div className="yc-home">
-      {/* Navbar */}
-      <nav className={`yc-navbar ${isScrolled ? 'yc-scrolled' : ''}`}>
-        <div className="yc-nav-container">
-          <div className="yc-nav-logo">
-            <div className={`yc-logo-icon ${isScrolled ? 'yc-scrolled' : ''}`}>
-              <IconComponent name="GraduationCap" />
-            </div>
-            <span className={`yc-logo-text ${isScrolled ? 'yc-scrolled' : ''}`}>
-              Yalla<span className="yc-logo-highlight">Class</span>
-            </span>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="yc-nav-menu">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className={`yc-nav-link ${isScrolled ? 'yc-scrolled' : ''}`}
-              >
-                {link.name}
-              </a>
-            ))}
-          </div>
-
-          <div className="yc-nav-buttons">
-            <button className={`yc-btn-signin ${isScrolled ? 'yc-scrolled' : ''}`}>
-              Sign In
-            </button>
-            <button className="yc-btn-getstarted" onClick={() => navigate('/Login')}>
-              Get Started
-            </button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="yc-mobile-menu-btn"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <IconComponent name={isMobileMenuOpen ? 'X' : 'Menu'} />
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        <div className={`yc-mobile-menu ${isMobileMenuOpen ? 'yc-open' : ''}`}>
-          <div className="yc-mobile-menu-content">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="yc-mobile-link"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {link.name}
-              </a>
-            ))}
-            <div className="yc-mobile-buttons">
-              <button className="yc-btn-outline-mobile">Sign In</button>
-              <button className="yc-btn-primary-mobile" onClick={() => navigate('/Login')}>
-                Get Started
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <section className="yc-hero">
         <div className="yc-hero-bg">

@@ -3,129 +3,32 @@ import './StudentDashboard.css';
 import { useNavigate } from 'react-router-dom';
 
 import { auth, db } from './firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { 
+    doc, getDoc, collection, getDocs, query, where, 
+    runTransaction, increment, serverTimestamp, setDoc 
+} from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
-// Icons as SVG components
+// Icons as SVG components (تم اختصارها للتنسيق، هي موجودة في الكود الأصلي)
 const Icons = {
-  Dashboard: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="7" height="9" x="3" y="3" rx="1"/>
-      <rect width="7" height="5" x="14" y="3" rx="1"/>
-      <rect width="7" height="9" x="14" y="12" rx="1"/>
-      <rect width="7" height="5" x="3" y="16" rx="1"/>
-    </svg>
-  ),
-  BookOpen: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-    </svg>
-  ),
-  IdCard: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="20" height="14" x="2" y="5" rx="2"/>
-      <circle cx="8" cy="12" r="2"/>
-      <path d="M14 10h4"/>
-      <path d="M14 14h4"/>
-    </svg>
-  ),
-  Calendar: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 2v4"/>
-      <path d="M16 2v4"/>
-      <rect width="18" height="18" x="3" y="4" rx="2"/>
-      <path d="M3 10h18"/>
-    </svg>
-  ),
-  Settings: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  ),
-  Lock: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-    </svg>
-  ),
-  LogOut: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-      <polyline points="16 17 21 12 16 7"/>
-      <line x1="21" x2="9" y1="12" y2="12"/>
-    </svg>
-  ),
-  MapPin: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-      <circle cx="12" cy="10" r="3"/>
-    </svg>
-  ),
-  Check: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 6 9 17l-5-5"/>
-    </svg>
-  ),
-  X: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 6 6 18"/>
-      <path d="m6 6 12 12"/>
-    </svg>
-  ),
-  Plus: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14"/>
-      <path d="M12 5v14"/>
-    </svg>
-  ),
-  Trash2: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 6h18"/>
-      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-    </svg>
-  ),
-  Clock: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="12 6 12 12 16 14"/>
-    </svg>
-  ),
-  Users: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  Map: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-      <line x1="9" x2="9" y1="3" y2="18"/>
-      <line x1="15" x2="15" y1="6" y2="21"/>
-    </svg>
-  ),
-  TrendingUp: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-      <polyline points="16 7 22 7 22 13"/>
-    </svg>
-  ),
-  GraduationCap: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-      <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-    </svg>
-  ),
-  Camera: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-      <circle cx="12" cy="13" r="3"/>
-    </svg>
-  ),
+  Dashboard: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>),
+  BookOpen: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>),
+  IdCard: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4"/><path d="M14 14h4"/></svg>),
+  Calendar: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>),
+  Settings: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>),
+  Lock: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>),
+  LogOut: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>),
+  MapPin: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>),
+  Check: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>),
+  X: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>),
+  Plus: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>),
+  Trash2: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>),
+  Clock: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>),
+  Users: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>),
+  Map: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>),
+  TrendingUp: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>),
+  GraduationCap: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>),
+  Camera: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>),
 };
 
 const IconComponent = ({ name, className = '' }) => {
@@ -151,33 +54,19 @@ const defaultData = {
         gpsActive: true,
         profileImage: null
     },
-    courses: [
-        { id: "CS401", name: "Data Structures", instructor: "Dr. Sarah Ahmed", schedule: "Mon, Wed 10:00 AM", students: 45, attendanceRate: 95, checkedIn: false, timeRemaining: 8, room: "201", days: ["Mon", "Wed"], time: "10:00 AM" },
-        { id: "CS402", name: "Algorithms", instructor: "Dr. Mohammed Ali", schedule: "Tue, Thu 2:00 PM", students: 38, attendanceRate: 88, checkedIn: false, room: "102", days: ["Tue", "Thu"], time: "2:00 PM" },
-        { id: "CS403", name: "Database Systems", instructor: "Dr. Fatima Khan", schedule: "Wed, Fri 11:00 AM", students: 42, attendanceRate: 92, checkedIn: false, room: "305", days: ["Wed", "Fri"], time: "11:00 AM" }
-    ],
-    upcoming: [
-        { id: 1, name: "Data Structures", time: "10:00 AM", room: "201", date: "Today", courseId: "CS401" },
-        { id: 2, name: "Database Systems", time: "11:00 AM", room: "305", date: "Today", courseId: "CS403" },
-        { id: 3, name: "Algorithms", time: "2:00 PM", room: "102", date: "Tomorrow", courseId: "CS402" }
-    ],
-    attendance: [
-        { class: "CS402", name: "Algorithms", onTime: 15, late: 2, absences: 1, total: 18 },
-        { class: "CS401", name: "Data Structures", onTime: 12, late: 4, absences: 2, total: 18 }
-    ],
-    trend: [
-        { week: "Week 1", rate: 92 }, { week: "Week 2", rate: 88 }, { week: "Week 3", rate: 95 },
-        { week: "Week 4", rate: 89 }, { week: "Week 5", rate: 93 }, { week: "Week 6", rate: 92 }
-    ]
+    courses: [],
+    upcoming: [],
+    attendance: [],
+    trend: []
 };
 
 const loadData = () => {
     return {
         user: JSON.parse(localStorage.getItem(STORAGE_KEYS.USER)) || defaultData.user,
-        courses: JSON.parse(localStorage.getItem(STORAGE_KEYS.COURSES)) || defaultData.courses,
-        upcoming: JSON.parse(localStorage.getItem(STORAGE_KEYS.UPCOMING)) || defaultData.upcoming,
-        attendance: JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) || defaultData.attendance,
-        trend: JSON.parse(localStorage.getItem(STORAGE_KEYS.TREND)) || defaultData.trend
+        courses: JSON.parse(localStorage.getItem(STORAGE_KEYS.COURSES)) || [],
+        upcoming: JSON.parse(localStorage.getItem(STORAGE_KEYS.UPCOMING)) || [],
+        attendance: JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) || [],
+        trend: JSON.parse(localStorage.getItem(STORAGE_KEYS.TREND)) || []
     };
 };
 
@@ -186,6 +75,10 @@ export default function StudentDashboard() {
     const [selectedCourse, setSelectedCourse] = useState(appState.courses[0]?.id || null);
     const [modal, setModal] = useState({ show: false, type: null });
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    // --- [1] State جديد للكورسات المتاحة والتسجيل ---
+    const [availableCourses, setAvailableCourses] = useState([]);
+    const [isEnrolling, setIsEnrolling] = useState(false);
 
     const navigate = useNavigate();
     
@@ -216,6 +109,20 @@ export default function StudentDashboard() {
         });
         return () => unsubscribe();
     }, [navigate]);
+
+    // --- [2] جلب الكورسات من Firestore ---
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'courses'));
+                const coursesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAvailableCourses(coursesData);
+            } catch (error) {
+                console.error("Error fetching available courses:", error);
+            }
+        };
+        fetchCourses();
+    }, []);
     
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -330,48 +237,96 @@ export default function StudentDashboard() {
         }
     };
 
-    const handleAddCourse = (e) => {
+    // --- [3] دالة تسجيل الطالب في كورس (جديدة) ---
+    const handleEnrollCourse = async (e) => {
         e.preventDefault();
+        setIsEnrolling(true);
+        
         const formData = new FormData(e.target);
-        const courseId = formData.get('courseId').toUpperCase();
-        const time = formData.get('time');
-        const days = formData.get('days');
-        const courseName = formData.get('courseName');
+        const courseId = formData.get('courseId'); // اللي هيختاره من الـ Select
+        const studentUid = auth.currentUser?.uid;
 
-        if (appState.courses.some(c => c.id === courseId)) {
-            showNotification('Course ID already exists', 'error');
+        if (!studentUid) {
+            showNotification('You must be logged in', 'error');
+            setIsEnrolling(false);
             return;
         }
 
-        const newCourse = {
-            id: courseId,
-            name: courseName,
-            instructor: formData.get('instructor'),
-            schedule: `${days} ${time}`,
-            days: days.split(', '),
-            time: time,
-            room: formData.get('room'),
-            students: parseInt(formData.get('students')) || 0,
-            attendanceRate: 0,
-            checkedIn: false,
-            timeRemaining: 0
-        };
+        try {
+            // 1. البحث عن الكورس في الفايرستور
+            const q = query(collection(db, 'courses'), where('courseId', '==', courseId));
+            const courseQuerySnapshot = await getDocs(q);
 
-        const currentHour = new Date().getHours();
-        const classHour = parseInt(time.split(':')[0]);
-        const dateStr = classHour > currentHour ? "Today" : "Tomorrow";
+            if (courseQuerySnapshot.empty) {
+                showNotification('Course not found', 'error');
+                setIsEnrolling(false);
+                return;
+            }
 
-        setAppState(prev => ({
-            ...prev,
-            courses: [...prev.courses, newCourse],
-            user: { ...prev.user, enrolledCourses: prev.courses.length + 1 },
-            upcoming: [...prev.upcoming, { id: Date.now(), name: courseName, time, room: newCourse.room, date: dateStr, courseId }],
-            attendance: [...prev.attendance, { class: courseId, name: courseName, onTime: 0, late: 0, absences: 0, total: newCourse.students }],
-            trend: [...prev.trend, { week: `Week ${prev.trend.length + 1}`, rate: prev.trend[prev.trend.length - 1]?.rate || 0 }]
-        }));
+            const courseDoc = courseQuerySnapshot.docs[0];
+            const courseRef = courseDoc.ref;
+            const courseData = courseDoc.data();
 
-        setModal({ show: false, type: null });
-        showNotification(`Course ${courseId} added successfully!`);
+            // التحقق المحلي (سريع) هل هو مسجل بالفعل
+            if (appState.courses.some(c => c.id === courseId)) {
+                showNotification('Already enrolled in this course', 'error');
+                setIsEnrolling(false);
+                return;
+            }
+
+            // 2. تنفيذ الـ Transaction
+            const enrollmentRef = doc(collection(db, 'enrollments')); // إنشاء reference جديد
+
+            await runTransaction(db, async (transaction) => {
+                // (اختياري) التحقق من السيرفر أيضاً
+                const existingEnrollmentQuery = query(collection(db, 'enrollments'), 
+                    where('studentUid', '==', studentUid), 
+                    where('courseId', '==', courseId));
+                
+                // ملاحظة: getDocs داخل transaction قد يسبب خطأ في بعض إصدارات SDK، 
+                // لكن للتبسيط سنكتفي بالتحقق المحلي أعلاه أو ننفذ الـ set مباشرة.
+                
+                transaction.set(enrollmentRef, {
+                    studentUid: studentUid,
+                    courseId: courseId,
+                    enrolledAt: serverTimestamp()
+                });
+
+                transaction.update(courseRef, {
+                    studentsCount: increment(1)
+                });
+            });
+
+            // 3. تحديث الـ UI محلياً (Optimistic UI)
+            const newCourse = {
+                id: courseId,
+                name: courseData.name,
+                instructor: courseData.instructor,
+                schedule: `${courseData.days || ''} ${courseData.time || ''}`,
+                days: courseData.days ? courseData.days.split(', ') : [],
+                time: courseData.time,
+                room: courseData.room,
+                students: courseData.studentsCount || 0,
+                attendanceRate: 0,
+                checkedIn: false,
+                timeRemaining: 0
+            };
+
+            setAppState(prev => ({
+                ...prev,
+                courses: [...prev.courses, newCourse],
+                user: { ...prev.user, enrolledCourses: prev.courses.length + 1 }
+            }));
+
+            showNotification(`Enrolled in ${courseData.name} successfully!`);
+            setModal({ show: false, type: null });
+
+        } catch (error) {
+            console.error("Enrollment error:", error);
+            showNotification(error.message || 'Failed to enroll', 'error');
+        } finally {
+            setIsEnrolling(false);
+        }
     };
 
     const handleAddUpcoming = (e) => {
@@ -624,7 +579,7 @@ export default function StudentDashboard() {
                                 <div className="yc-empty-state">
                                     <IconComponent name="BookOpen" />
                                     <p>No courses yet</p>
-                                    <span>Click the + button to add your first course</span>
+                                    <span>Click the + button to enroll</span>
                                 </div>
                             )}
                         </div>
@@ -760,7 +715,7 @@ export default function StudentDashboard() {
                     <div className="yc-modal" onClick={e => e.stopPropagation()}>
                         <div className="yc-modal-header">
                             <h3>
-                                {modal.type === 'course' ? 'Add New Course' : 
+                                {modal.type === 'course' ? 'Enroll in Course' : 
                                  modal.type === 'upcoming' ? 'Add Upcoming Class' : 
                                  'Change Password'}
                             </h3>
@@ -770,54 +725,26 @@ export default function StudentDashboard() {
                         </div>
                         
                         {modal.type === 'course' ? (
-                            <form onSubmit={handleAddCourse} className="yc-form">
-                                <div className="yc-form-row">
-                                    <div className="yc-form-group">
-                                        <label>Course ID</label>
-                                        <input type="text" name="courseId" placeholder="e.g., CS404" required />
-                                    </div>
-                                    <div className="yc-form-group">
-                                        <label>Course Name</label>
-                                        <input type="text" name="courseName" placeholder="e.g., Machine Learning" required />
-                                    </div>
-                                </div>
+                            // --- [4] تعديل شكل المودال ليصبح Select ---
+                            <form onSubmit={handleEnrollCourse} className="yc-form">
                                 <div className="yc-form-group">
-                                    <label>Instructor Name</label>
-                                    <input type="text" name="instructor" placeholder="Dr. ..." required />
+                                    <label>Select Course to Enroll</label>
+                                    <select name="courseId" className="form-control" required>
+                                        <option value="" disabled selected>Choose a course...</option>
+                                        {availableCourses.map(course => (
+                                            <option key={course.id} value={course.courseId}>
+                                                {course.name} ({course.courseId})
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div className="yc-form-row">
-                                    <div className="yc-form-group">
-                                        <label>Days</label>
-                                        <select name="days" required>
-                                            <option value="">Select Days</option>
-                                            <option value="Sun, Tue">Sunday, Tuesday</option>
-                                            <option value="Mon, Wed">Monday, Wednesday</option>
-                                            <option value="Tue, Thu">Tuesday, Thursday</option>
-                                            <option value="Wed, Fri">Wednesday, Friday</option>
-                                            <option value="Sat, Mon">Saturday, Monday</option>
-                                        </select>
-                                    </div>
-                                    <div className="yc-form-group">
-                                        <label>Time</label>
-                                        <input type="text" name="time" placeholder="e.g., 1:00 PM" required />
-                                    </div>
-                                </div>
-                                <div className="yc-form-row">
-                                    <div className="yc-form-group">
-                                        <label>Room Number</label>
-                                        <input type="text" name="room" placeholder="e.g., 201" required />
-                                    </div>
-                                    <div className="yc-form-group">
-                                        <label>Number of Students</label>
-                                        <input type="number" name="students" placeholder="e.g., 40" />
-                                    </div>
-                                </div>
+                                
                                 <div className="yc-form-actions">
                                     <button type="button" className="yc-btn-secondary" onClick={() => setModal({ show: false, type: null })}>
                                         Cancel
                                     </button>
-                                    <button type="submit" className="yc-btn-primary">
-                                        Add Course
+                                    <button type="submit" className="yc-btn-primary" disabled={isEnrolling}>
+                                        {isEnrolling ? 'Enrolling...' : 'Enroll Now'}
                                     </button>
                                 </div>
                             </form>

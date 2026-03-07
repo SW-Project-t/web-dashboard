@@ -46,7 +46,7 @@ function Login() {
         navigate('/AdminDashboard');
        }
 
-       alert("Login Successful! Welcome " + fullName + " (" + userRole + ")");
+      
       }
       } catch (error) {
       console.error("Full Error Details:", error);

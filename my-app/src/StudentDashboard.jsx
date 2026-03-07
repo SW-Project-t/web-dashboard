@@ -6,6 +6,133 @@ import { auth, db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
+// Icons as SVG components
+const Icons = {
+  Dashboard: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="7" height="9" x="3" y="3" rx="1"/>
+      <rect width="7" height="5" x="14" y="3" rx="1"/>
+      <rect width="7" height="9" x="14" y="12" rx="1"/>
+      <rect width="7" height="5" x="3" y="16" rx="1"/>
+    </svg>
+  ),
+  BookOpen: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+  ),
+  IdCard: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="14" x="2" y="5" rx="2"/>
+      <circle cx="8" cy="12" r="2"/>
+      <path d="M14 10h4"/>
+      <path d="M14 14h4"/>
+    </svg>
+  ),
+  Calendar: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2v4"/>
+      <path d="M16 2v4"/>
+      <rect width="18" height="18" x="3" y="4" rx="2"/>
+      <path d="M3 10h18"/>
+    </svg>
+  ),
+  Settings: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  ),
+  Lock: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  ),
+  LogOut: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" x2="9" y1="12" y2="12"/>
+    </svg>
+  ),
+  MapPin: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  ),
+  Check: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 6 9 17l-5-5"/>
+    </svg>
+  ),
+  X: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6 6 18"/>
+      <path d="m6 6 12 12"/>
+    </svg>
+  ),
+  Plus: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14"/>
+      <path d="M12 5v14"/>
+    </svg>
+  ),
+  Trash2: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18"/>
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+    </svg>
+  ),
+  Clock: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>
+  ),
+  Users: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  ),
+  Map: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+      <line x1="9" x2="9" y1="3" y2="18"/>
+      <line x1="15" x2="15" y1="6" y2="21"/>
+    </svg>
+  ),
+  TrendingUp: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+      <polyline points="16 7 22 7 22 13"/>
+    </svg>
+  ),
+  GraduationCap: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+      <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+    </svg>
+  ),
+  Camera: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+      <circle cx="12" cy="13" r="3"/>
+    </svg>
+  ),
+};
+
+const IconComponent = ({ name, className = '' }) => {
+  const Icon = Icons[name];
+  return Icon ? <span className={className}><Icon /></span> : null;
+};
+
 const STORAGE_KEYS = {
     USER: 'yallaclass_user',
     COURSES: 'yallaclass_courses',
@@ -295,34 +422,47 @@ export default function StudentDashboard() {
     };
 
     return (
-        <div className="app">
+        <div className="yc-dashboard">
+            {/* Toast Notification */}
             {toast.show && (
-                <div className={`notification ${toast.type}`}>
+                <div className={`yc-toast ${toast.type}`}>
+                    <span className="yc-toast-icon">
+                        {toast.type === 'success' ? <IconComponent name="Check" /> : <IconComponent name="X" />}
+                    </span>
                     {toast.message}
                 </div>
             )}
 
-            <div className="sidebar">
-                <div className="sidebar-profile">
-                    <div className="profile-image-wrapper">
+            {/* Sidebar */}
+            <aside className="yc-sidebar">
+                {/* Logo */}
+                <div className="yc-sidebar-logo">
+                    <div className="yc-logo-icon-wrapper">
+                        <IconComponent name="GraduationCap" />
+                    </div>
+                    <span className="yc-logo-text">
+                        Yalla<span className="yc-logo-highlight">Class</span>
+                    </span>
+                </div>
+
+                {/* Profile Section */}
+                <div className="yc-sidebar-profile">
+                    <div className="yc-profile-image-wrapper">
                         {appState.user.profileImage ? (
-                            <img src={appState.user.profileImage} alt="Profile" className="sidebar-profile-image" />
+                            <img src={appState.user.profileImage} alt="Profile" className="yc-profile-image" />
                         ) : (
-                            <div className="sidebar-profile-placeholder">
-                                {appState.user.name.split(' ').map(n => n[0]).join('')}
+                            <div className="yc-profile-placeholder">
+                                {appState.user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                             </div>
                         )}
                         <div 
-                           className="image-upload-overlay" 
-                           onClick={() => document.getElementById('profile-upload').click()}
-                           title="Upload new photo"
+                            className="yc-image-upload-overlay" 
+                            onClick={() => document.getElementById('profile-upload').click()}
+                            title="Upload new photo"
                         >
-                            <span>+</span>
+                            <IconComponent name="Camera" />
                         </div>
                     </div>
-
-                    <div className="sidebar-profile-name">{appState.user.name}</div>
-                    <div className="sidebar-profile-id">{appState.user.id}</div>
 
                     <input
                         type="file"
@@ -332,243 +472,408 @@ export default function StudentDashboard() {
                         onChange={handleImageUpload}
                     />
 
+                    <div className="yc-profile-name">{appState.user.name}</div>
+                    <div className="yc-profile-id">{appState.user.id}</div>
+
                     {appState.user.profileImage && (
-                        <button className="remove-photo-btn" onClick={removeProfileImage}>
+                        <button className="yc-remove-photo-btn" onClick={removeProfileImage}>
                             Remove Photo
                         </button>
                     )}
                 </div>
 
-                <div className="nav-item active" onClick={() => showNotification('Dashboard')}>Dashboard</div>
-                <div className="nav-item" onClick={() => showNotification(`My Courses: ${appState.courses.length} courses`)}>My Courses</div>
-                <div className="nav-item" onClick={() => showNotification(`Student ID: ${appState.user.id}`)}>Student ID: {appState.user.id}</div>
-                <div className="nav-item" onClick={() => showNotification('Attendance Records')}>Attendance</div>
-                <div className="nav-item" onClick={() => showNotification('Settings')}>Settings</div>
-                
-                <div className="nav-item logout" onClick={() => setModal({ show: true, type: 'password' })}>Change Password</div>
-                <div className="nav-item logout" onClick={handleLogout}>Logout</div>
-            </div>
+                {/* Navigation */}
+                <nav className="yc-sidebar-nav">
+                    <div className="yc-nav-item yc-active">
+                        <IconComponent name="Dashboard" />
+                        <span>Dashboard</span>
+                    </div>
+                    <div className="yc-nav-item">
+                        <IconComponent name="BookOpen" />
+                        <span>My Courses</span>
+                    </div>
+                    <div className="yc-nav-item">
+                        <IconComponent name="IdCard" />
+                        <span>Student ID</span>
+                    </div>
+                    <div className="yc-nav-item">
+                        <IconComponent name="Calendar" />
+                        <span>Attendance</span>
+                    </div>
+                    <div className="yc-nav-item">
+                        <IconComponent name="Settings" />
+                        <span>Settings</span>
+                    </div>
+                </nav>
 
-            <div className="main-content">
-                <div className="header">
-                    <div>
-                        <h1>Student Dashboard</h1>
-                        <p>Welcome back, {appState.user.name}!</p>
+                {/* Bottom Actions */}
+                <div className="yc-sidebar-actions">
+                    <div className="yc-nav-item yc-change-password" onClick={() => setModal({ show: true, type: 'password' })}>
+                        <IconComponent name="Lock" />
+                        <span>Change Password</span>
+                    </div>
+                    <div className="yc-nav-item yc-logout" onClick={handleLogout}>
+                        <IconComponent name="LogOut" />
+                        <span>Logout</span>
                     </div>
                 </div>
+            </aside>
 
-                <div className="dashboard-grid">
-                    <div className="card" onClick={() => showNotification(`Overall Attendance: ${appState.user.overallAttendance}%`)}>
-                        <div className="card-label">Overall Attendance</div>
-                        <div className="card-value">{appState.user.overallAttendance}%</div>
+            {/* Main Content */}
+            <main className="yc-main-content">
+                {/* Header */}
+                <header className="yc-header">
+                    <div>
+                        <h1 className="yc-page-title">Student Dashboard</h1>
+                        <p className="yc-page-subtitle">Welcome back, {appState.user.name}!</p>
                     </div>
-                    <div className="card" onClick={() => showNotification(`Enrolled Courses: ${appState.courses.length}`)}>
-                        <div className="card-label">Enrolled Courses</div>
-                        <div className="card-value">{appState.courses.length}</div>
+                </header>
+
+                {/* Stats Cards */}
+                <div className="yc-stats-grid">
+                    <div className="yc-stat-card yc-primary">
+                        <div className="yc-stat-icon">
+                            <IconComponent name="TrendingUp" />
+                        </div>
+                        <div className="yc-stat-content">
+                            <span className="yc-stat-label">Overall Attendance</span>
+                            <span className="yc-stat-value">{appState.user.overallAttendance}%</span>
+                        </div>
                     </div>
-                    <div className="card" onClick={() => showNotification(`Active Sessions: ${appState.user.activeSession}`)}>
-                        <div className="card-label">Active Session</div>
-                        <div className="card-value">{appState.user.activeSession}</div>
+                    <div className="yc-stat-card">
+                        <div className="yc-stat-icon yc-blue">
+                            <IconComponent name="BookOpen" />
+                        </div>
+                        <div className="yc-stat-content">
+                            <span className="yc-stat-label">Enrolled Courses</span>
+                            <span className="yc-stat-value">{appState.courses.length}</span>
+                        </div>
                     </div>
-                    <div className="card" onClick={toggleGPS}>
-                        <div className="location-badge">
-                            GPS {appState.user.gpsActive ? 'Active' : 'Inactive'}
+                    <div className="yc-stat-card">
+                        <div className="yc-stat-icon yc-purple">
+                            <IconComponent name="Calendar" />
+                        </div>
+                        <div className="yc-stat-content">
+                            <span className="yc-stat-label">Active Session</span>
+                            <span className="yc-stat-value">{appState.user.activeSession}</span>
+                        </div>
+                    </div>
+                    <div className="yc-stat-card yc-clickable" onClick={toggleGPS}>
+                        <div className={`yc-gps-status ${appState.user.gpsActive ? 'yc-active' : 'yc-inactive'}`}>
+                            <IconComponent name="MapPin" />
+                            <span>GPS {appState.user.gpsActive ? 'Active' : 'Inactive'}</span>
                         </div>
                     </div>
                 </div>
 
+                {/* Active Session Banner */}
                 {appState.courses.some(c => c.timeRemaining > 0) && (
-                    <div className="active-session">
-                        <p>Attendance Active for {appState.courses.find(c => c.timeRemaining > 0)?.id} - {appState.courses.find(c => c.timeRemaining > 0)?.name}</p>
-                        <div className="timer">{appState.courses.find(c => c.timeRemaining > 0)?.timeRemaining} minutes remaining</div>
+                    <div className="yc-active-banner">
+                        <div className="yc-banner-info">
+                            <div className="yc-banner-pulse"></div>
+                            <span>Attendance Active for <strong>{appState.courses.find(c => c.timeRemaining > 0)?.id}</strong> - {appState.courses.find(c => c.timeRemaining > 0)?.name}</span>
+                        </div>
+                        <div className="yc-banner-timer">
+                            <IconComponent name="Clock" />
+                            <span>{appState.courses.find(c => c.timeRemaining > 0)?.timeRemaining} min remaining</span>
+                        </div>
                     </div>
                 )}
 
-                <div className="courses-row">
-                    <div className="section-card">
-                        <div className="section-title">
-                            My Courses ({appState.courses.length})
-                            <button className="add-btn" onClick={() => setModal({ show: true, type: 'course' })}>+</button>
+                {/* Courses & Upcoming */}
+                <div className="yc-courses-row">
+                    {/* My Courses */}
+                    <div className="yc-section-card">
+                        <div className="yc-section-header">
+                            <h2 className="yc-section-title">My Courses ({appState.courses.length})</h2>
+                            <button className="yc-add-btn" onClick={() => setModal({ show: true, type: 'course' })}>
+                                <IconComponent name="Plus" />
+                            </button>
                         </div>
-                        {appState.courses.length > 0 ? appState.courses.map(course => (
-                            <div key={course.id} className={`course-item ${selectedCourse === course.id ? 'selected' : ''}`} onClick={() => setSelectedCourse(course.id)}>
-                                <span className="course-code">{course.id}</span>
-                                <div className="course-name">{course.name}</div>
-                                <div className="course-instructor">{course.instructor}</div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                                    <span style={{ color: course.checkedIn ? '#22c55e' : '#64748b', fontSize: '0.9rem' }}>
-                                        {course.checkedIn ? 'Checked In' : 'Not checked in'}
-                                    </span>
-                                    <button className="delete-btn" onClick={(e) => { e.stopPropagation(); deleteCourse(course.id); }}>Delete</button>
+                        <div className="yc-courses-list">
+                            {appState.courses.length > 0 ? appState.courses.map(course => (
+                                <div 
+                                    key={course.id} 
+                                    className={`yc-course-item ${selectedCourse === course.id ? 'yc-selected' : ''}`}
+                                    onClick={() => setSelectedCourse(course.id)}
+                                >
+                                    <div className="yc-course-header">
+                                        <span className="yc-course-code">{course.id}</span>
+                                        <span className={`yc-check-status ${course.checkedIn ? 'yc-checked' : ''}`}>
+                                            {course.checkedIn ? (
+                                                <>
+                                                    <IconComponent name="Check" />
+                                                    Checked In
+                                                </>
+                                            ) : 'Not checked in'}
+                                        </span>
+                                    </div>
+                                    <div className="yc-course-name">{course.name}</div>
+                                    <div className="yc-course-instructor">{course.instructor}</div>
+                                    <div className="yc-course-footer">
+                                        <span className="yc-course-rate">{course.attendanceRate}%</span>
+                                        <button 
+                                            className="yc-delete-btn"
+                                            onClick={(e) => { e.stopPropagation(); deleteCourse(course.id); }}
+                                        >
+                                            <IconComponent name="Trash2" />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )) : (
-                            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-                                <p>No courses yet</p>
-                                <p>Click the + button to add your first course</p>
-                            </div>
-                        )}
+                            )) : (
+                                <div className="yc-empty-state">
+                                    <IconComponent name="BookOpen" />
+                                    <p>No courses yet</p>
+                                    <span>Click the + button to add your first course</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="section-card">
-                        <div className="section-title">
-                            Upcoming Classes ({appState.upcoming.length})
-                            <button className="add-btn" onClick={() => setModal({ show: true, type: 'upcoming' })}>+</button>
+                    {/* Upcoming Classes */}
+                    <div className="yc-section-card">
+                        <div className="yc-section-header">
+                            <h2 className="yc-section-title">Upcoming Classes ({appState.upcoming.length})</h2>
+                            <button className="yc-add-btn" onClick={() => setModal({ show: true, type: 'upcoming' })}>
+                                <IconComponent name="Plus" />
+                            </button>
                         </div>
-                        {appState.upcoming.length > 0 ? appState.upcoming.map(cls => (
-                            <div key={cls.id} className="upcoming-item" onClick={() => showNotification(`${cls.name} at ${cls.time} in Room ${cls.room}`)}>
-                                <div>
-                                    <div className="class-title">{cls.name}</div>
-                                    <div className="class-room">Room {cls.room}</div>
+                        <div className="yc-upcoming-list">
+                            {appState.upcoming.length > 0 ? appState.upcoming.map(cls => (
+                                <div key={cls.id} className="yc-upcoming-item">
+                                    <div className="yc-upcoming-info">
+                                        <span className="yc-upcoming-name">{cls.name}</span>
+                                        <span className="yc-upcoming-room">
+                                            <IconComponent name="Map" />
+                                            Room {cls.room}
+                                        </span>
+                                    </div>
+                                    <div className="yc-upcoming-time">
+                                        <span className="yc-time-badge">{cls.date}</span>
+                                        <span className="yc-time-value">{cls.time}</span>
+                                    </div>
                                 </div>
-                                <div className="class-time">{cls.date}, {cls.time}</div>
-                            </div>
-                        )) : (
-                            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-                                <p>No upcoming classes</p>
-                            </div>
-                        )}
+                            )) : (
+                                <div className="yc-empty-state">
+                                    <IconComponent name="Calendar" />
+                                    <p>No upcoming classes</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
+                {/* Selected Course Detail */}
                 {selectedCourse && appState.courses.find(c => c.id === selectedCourse) && (() => {
                     const course = appState.courses.find(c => c.id === selectedCourse);
                     return (
-                        <div className="course-detail-card">
-                            <div className="course-info">
+                        <div className="yc-course-detail">
+                            <div className="yc-course-detail-info">
                                 <h2>{course.id} - {course.name}</h2>
                                 <p>Instructor: {course.instructor}</p>
-                                <div className="course-meta">
-                                    <span>{course.schedule}</span>
-                                    <span>{course.students} Students</span>
-                                    <span>Room {course.room}</span>
+                                <div className="yc-course-meta">
+                                    <span><IconComponent name="Clock" /> {course.schedule}</span>
+                                    <span><IconComponent name="Users" /> {course.students} Students</span>
+                                    <span><IconComponent name="Map" /> Room {course.room}</span>
                                 </div>
                             </div>
-                            <div className="attendance-rate">
-                                <div className="rate-badge">{course.attendanceRate}%</div>
-                                <button className="check-in-btn" onClick={() => handleCheckIn(course.id)} disabled={course.checkedIn}>
-                                    {course.checkedIn ? 'Checked In' : 'Check In Now'}
+                            <div className="yc-course-detail-actions">
+                                <div className="yc-rate-badge">{course.attendanceRate}%</div>
+                                <button 
+                                    className={`yc-check-in-btn ${course.checkedIn ? 'yc-checked' : ''}`}
+                                    onClick={() => handleCheckIn(course.id)}
+                                    disabled={course.checkedIn}
+                                >
+                                    {course.checkedIn ? (
+                                        <>
+                                            <IconComponent name="Check" />
+                                            Checked In
+                                        </>
+                                    ) : 'Check In Now'}
                                 </button>
                             </div>
                         </div>
                     );
                 })()}
 
-                <div className="table-wrapper">
-                    <div className="section-title">This Week Attendance</div>
-                    <table className="week-table">
-                        <thead>
-                            <tr>
-                                <th>Course</th>
-                                <th>Class</th>
-                                <th>On-Time</th>
-                                <th>Late</th>
-                                <th>Absences</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {appState.attendance.length > 0 ? appState.attendance.map((item, idx) => (
-                                <tr key={idx} onClick={() => showNotification(`${item.name} - On Time: ${item.onTime}, Late: ${item.late}`)}>
-                                    <td><strong>{item.class}</strong></td>
-                                    <td>{item.name}</td>
-                                    <td>{item.onTime}</td>
-                                    <td>{item.late}</td>
-                                    <td>{item.absences}</td>
-                                    <td>{item.total}</td>
-                                </tr>
-                            )) : (
+                {/* Attendance Table */}
+                <div className="yc-table-card">
+                    <h2 className="yc-section-title">This Week Attendance</h2>
+                    <div className="yc-table-wrapper">
+                        <table className="yc-attendance-table">
+                            <thead>
                                 <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
-                                        No attendance records yet
-                                    </td>
+                                    <th>Course</th>
+                                    <th>Class</th>
+                                    <th>On-Time</th>
+                                    <th>Late</th>
+                                    <th>Absences</th>
+                                    <th>Total</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {appState.attendance.length > 0 ? appState.attendance.map((item, idx) => (
+                                    <tr key={idx}>
+                                        <td><strong>{item.class}</strong></td>
+                                        <td>{item.name}</td>
+                                        <td className="yc-success">{item.onTime}</td>
+                                        <td className="yc-warning">{item.late}</td>
+                                        <td className="yc-danger">{item.absences}</td>
+                                        <td>{item.total}</td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="6" className="yc-empty-table">
+                                            No attendance records yet
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div className="trend-card">
-                    <div className="section-title">Attendance Trend</div>
-                    <div className="chart-container">
-                        <div className="chart-bars">
+                {/* Attendance Trend Chart */}
+                <div className="yc-trend-card">
+                    <h2 className="yc-section-title">Attendance Trend</h2>
+                    <div className="yc-chart-container">
+                        <div className="yc-chart-bars">
                             {appState.trend.map((week, index) => (
-                                <div key={index} className="bar-wrapper" onClick={() => showNotification(`${week.week}: ${week.rate}%`)}>
-                                    <div className="bar" style={{ height: `${week.rate * 1.5}px` }}></div>
-                                    <span className="bar-label">{week.rate}%</span>
+                                <div key={index} className="yc-bar-wrapper">
+                                    <div 
+                                        className="yc-bar" 
+                                        style={{ height: `${week.rate * 1.5}px` }}
+                                        title={`${week.week}: ${week.rate}%`}
+                                    ></div>
+                                    <span className="yc-bar-value">{week.rate}%</span>
+                                    <span className="yc-bar-label">{week.week}</span>
                                 </div>
-                            ))}
-                        </div>
-                        <div className="axis-labels">
-                            {appState.trend.map((week, idx) => (
-                                <span key={idx}>{week.week}</span>
                             ))}
                         </div>
                     </div>
                 </div>
-            </div>
+            </main>
 
+            {/* Modal */}
             {modal.show && (
-                <div className="modal" onClick={() => setModal({ show: false, type: null })}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h3>
-                            {modal.type === 'course' ? 'Add New Course' : 
-                             modal.type === 'upcoming' ? 'Add Upcoming Class' : 
-                             'Change Password'}
-                        </h3>
+                <div className="yc-modal-overlay" onClick={() => setModal({ show: false, type: null })}>
+                    <div className="yc-modal" onClick={e => e.stopPropagation()}>
+                        <div className="yc-modal-header">
+                            <h3>
+                                {modal.type === 'course' ? 'Add New Course' : 
+                                 modal.type === 'upcoming' ? 'Add Upcoming Class' : 
+                                 'Change Password'}
+                            </h3>
+                            <button className="yc-modal-close" onClick={() => setModal({ show: false, type: null })}>
+                                <IconComponent name="X" />
+                            </button>
+                        </div>
                         
                         {modal.type === 'course' ? (
-                            <form onSubmit={handleAddCourse}>
-                                <input type="text" name="courseId" placeholder="Course ID (e.g., CS404)" required />
-                                <input type="text" name="courseName" placeholder="Course Name" required />
-                                <input type="text" name="instructor" placeholder="Instructor Name" required />
-                                <select name="days" required>
-                                    <option value="">Select Days</option>
-                                    <option value="Sun, Tue">Sunday, Tuesday</option>
-                                    <option value="Mon, Wed">Monday, Wednesday</option>
-                                    <option value="Tue, Thu">Tuesday, Thursday</option>
-                                    <option value="Wed, Fri">Wednesday, Friday</option>
-                                    <option value="Sat, Mon">Saturday, Monday</option>
-                                </select>
-                                <input type="text" name="time" placeholder="Time (e.g., 1:00 PM)" required />
-                                <input type="text" name="room" placeholder="Room Number" required />
-                                <input type="number" name="students" placeholder="Number of Students" />
-                                <div className="modal-buttons">
-                                    <button type="submit" className="save-btn">Add</button>
-                                    <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
+                            <form onSubmit={handleAddCourse} className="yc-form">
+                                <div className="yc-form-row">
+                                    <div className="yc-form-group">
+                                        <label>Course ID</label>
+                                        <input type="text" name="courseId" placeholder="e.g., CS404" required />
+                                    </div>
+                                    <div className="yc-form-group">
+                                        <label>Course Name</label>
+                                        <input type="text" name="courseName" placeholder="e.g., Machine Learning" required />
+                                    </div>
+                                </div>
+                                <div className="yc-form-group">
+                                    <label>Instructor Name</label>
+                                    <input type="text" name="instructor" placeholder="Dr. ..." required />
+                                </div>
+                                <div className="yc-form-row">
+                                    <div className="yc-form-group">
+                                        <label>Days</label>
+                                        <select name="days" required>
+                                            <option value="">Select Days</option>
+                                            <option value="Sun, Tue">Sunday, Tuesday</option>
+                                            <option value="Mon, Wed">Monday, Wednesday</option>
+                                            <option value="Tue, Thu">Tuesday, Thursday</option>
+                                            <option value="Wed, Fri">Wednesday, Friday</option>
+                                            <option value="Sat, Mon">Saturday, Monday</option>
+                                        </select>
+                                    </div>
+                                    <div className="yc-form-group">
+                                        <label>Time</label>
+                                        <input type="text" name="time" placeholder="e.g., 1:00 PM" required />
+                                    </div>
+                                </div>
+                                <div className="yc-form-row">
+                                    <div className="yc-form-group">
+                                        <label>Room Number</label>
+                                        <input type="text" name="room" placeholder="e.g., 201" required />
+                                    </div>
+                                    <div className="yc-form-group">
+                                        <label>Number of Students</label>
+                                        <input type="number" name="students" placeholder="e.g., 40" />
+                                    </div>
+                                </div>
+                                <div className="yc-form-actions">
+                                    <button type="button" className="yc-btn-secondary" onClick={() => setModal({ show: false, type: null })}>
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="yc-btn-primary">
+                                        Add Course
+                                    </button>
                                 </div>
                             </form>
                         ) : modal.type === 'upcoming' ? (
-                            <form onSubmit={handleAddUpcoming}>
-                                <input type="text" name="className" placeholder="Class Name" required />
-                                <input type="text" name="classTime" placeholder="Time (e.g., 2:00 PM)" required />
-                                <input type="text" name="classRoom" placeholder="Room Number" required />
-                                <select name="classDate" required>
-                                    <option value="Today">Today</option>
-                                    <option value="Tomorrow">Tomorrow</option>
-                                </select>
-                                <div className="modal-buttons">
-                                    <button type="submit" className="save-btn">Add</button>
-                                    <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
+                            <form onSubmit={handleAddUpcoming} className="yc-form">
+                                <div className="yc-form-group">
+                                    <label>Class Name</label>
+                                    <input type="text" name="className" placeholder="e.g., Data Structures" required />
+                                </div>
+                                <div className="yc-form-row">
+                                    <div className="yc-form-group">
+                                        <label>Time</label>
+                                        <input type="text" name="classTime" placeholder="e.g., 2:00 PM" required />
+                                    </div>
+                                    <div className="yc-form-group">
+                                        <label>Room</label>
+                                        <input type="text" name="classRoom" placeholder="e.g., 201" required />
+                                    </div>
+                                </div>
+                                <div className="yc-form-group">
+                                    <label>Date</label>
+                                    <select name="classDate" required>
+                                        <option value="Today">Today</option>
+                                        <option value="Tomorrow">Tomorrow</option>
+                                    </select>
+                                </div>
+                                <div className="yc-form-actions">
+                                    <button type="button" className="yc-btn-secondary" onClick={() => setModal({ show: false, type: null })}>
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="yc-btn-primary">
+                                        Add Class
+                                    </button>
                                 </div>
                             </form>
                         ) : (
-                            <form onSubmit={handleChangePassword} className="password-form">
-                                <div className="form-group">
+                            <form onSubmit={handleChangePassword} className="yc-form">
+                                <div className="yc-form-group">
                                     <label>Current Password</label>
                                     <input type="password" name="oldPassword" placeholder="••••••••" required />
                                 </div>
-                                <div className="form-group">
+                                <div className="yc-form-group">
                                     <label>New Password</label>
                                     <input type="password" name="newPassword" placeholder="••••••••" required />
                                 </div>
-                                <div className="form-group">
+                                <div className="yc-form-group">
                                     <label>Confirm New Password</label>
                                     <input type="password" name="confirmPassword" placeholder="••••••••" required />
                                 </div>
-                                <div className="modal-buttons">
-                                    <button type="submit" className="save-btn">Update Password</button>
-                                    <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
+                                <div className="yc-form-actions">
+                                    <button type="button" className="yc-btn-secondary" onClick={() => setModal({ show: false, type: null })}>
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="yc-btn-primary">
+                                        Update Password
+                                    </button>
                                 </div>
                             </form>
                         )}

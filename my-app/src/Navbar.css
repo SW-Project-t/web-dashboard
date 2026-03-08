@@ -1,443 +1,75 @@
-/* ============================================
-   YallaClass - Professional Navbar Styles
-   ALL classes prefixed with 'yc-' to avoid conflicts
-   ============================================ */
-
-/* CSS Variables */
-.yc-navbar {
-  /* Primary Colors */
-  --yc-blue-900: #1e3a8a;
-  --yc-blue-800: #1e40af;
-  --yc-blue-700: #1d4ed8;
-  --yc-blue-600: #2563eb;
-  --yc-blue-500: #3b82f6;
-  --yc-blue-400: #60a5fa;
-  
-  /* Cyan Colors */
-  --yc-cyan-600: #0891b2;
-  --yc-cyan-500: #06b6d4;
-  --yc-cyan-400: #22d3ee;
-  --yc-cyan-300: #67e8f9;
-  
-  /* Neutral Colors */
-  --yc-gray-900: #111827;
-  --yc-gray-700: #374151;
-  --yc-gray-600: #4b5563;
-  --yc-gray-500: #6b7280;
-  --yc-gray-400: #9ca3af;
-  --yc-gray-200: #e5e7eb;
-  --yc-gray-100: #f3f4f6;
-  --yc-white: #ffffff;
-  
-  /* Shadows */
-  --yc-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --yc-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --yc-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  --yc-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-  --yc-shadow-blue: 0 10px 40px -10px rgba(59, 130, 246, 0.3);
-  
-  /* Transitions */
-  --yc-transition-fast: 150ms ease;
-  --yc-transition-normal: 300ms ease;
-  
-  /* Border Radius */
-  --yc-radius-md: 0.5rem;
-  --yc-radius-lg: 0.75rem;
-  --yc-radius-xl: 1rem;
-  --yc-radius-full: 9999px;
+.navbar-container {
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 60px;
+    background-color: rgba(255, 255, 255, 0.98); 
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    z-index: 9999; 
+    box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
-/* ============================================
-   Navbar Base
-   ============================================ */
-.yc-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 9999;
-  padding: 0 1.5rem;
-  transition: all var(--yc-transition-normal);
-  background: transparent;
+.logo-text {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0070F3;
+    letter-spacing: -0.5px;
+    cursor: pointer;
 }
 
-.yc-navbar.yc-scrolled {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px rgba(30, 58, 138, 0.08);
+.nav-links {
+    display: flex;
+    gap: 30px;
 }
 
-.yc-navbar.yc-dashboard-nav {
-  display: none;
+.nav-links a {
+    text-decoration: none;
+    color: #4b5563;
+    font-weight: 500;
+    font-size: 15px;
+    transition: color 0.3s ease;
 }
 
-/* ============================================
-   Nav Container
-   ============================================ */
-.yc-nav-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 80px;
+.nav-links a:hover {
+    color: #0070F3;
 }
 
-/* ============================================
-   Logo
-   ============================================ */
-.yc-nav-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  text-decoration: none;
+.nav-buttons {
+    display: flex;
+    gap: 12px;
 }
 
-.yc-logo-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border-radius: var(--yc-radius-lg);
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  transition: all var(--yc-transition-normal);
-  color: white;
+.btn-signin {
+    padding: 10px 22px;
+    border: 1px solid #e5e7eb;
+    color: #0070F3;
+    border-radius: 8px;
+    background: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
 }
 
-.yc-logo-icon.yc-scrolled {
-  background: linear-gradient(135deg, var(--yc-blue-600), var(--yc-cyan-500));
-  box-shadow: var(--yc-shadow-blue);
+.btn-signin:hover {
+    border-color: #0070F3;
+    background-color: #f0f7ff;
 }
 
-.yc-logo-icon svg {
-  width: 24px;
-  height: 24px;
+.btn-getstarted:hover {
+    background-color: #0070d9;
 }
 
-.yc-logo-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white;
-  transition: color var(--yc-transition-normal);
-  letter-spacing: -0.5px;
-}
-
-.yc-logo-text.yc-scrolled {
-  color: var(--yc-gray-900);
-}
-
-.yc-logo-highlight {
-  color: var(--yc-cyan-400);
-}
-
-/* ============================================
-   Navigation Links
-   ============================================ */
-.yc-nav-links {
-  display: flex;
-  align-items: center;
-  gap: 2.5rem;
-}
-
-.yc-nav-link {
-  position: relative;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  transition: all var(--yc-transition-normal);
-  padding: 0.5rem 0;
-}
-
-.yc-nav-link:hover {
-  color: var(--yc-cyan-400);
-}
-
-.yc-nav-link.yc-scrolled {
-  color: var(--yc-gray-600);
-}
-
-.yc-nav-link.yc-scrolled:hover {
-  color: var(--yc-blue-600);
-}
-
-.yc-nav-link.yc-active {
-  color: var(--yc-cyan-400);
-  font-weight: 600;
-}
-
-.yc-nav-link.yc-active.yc-scrolled {
-  color: var(--yc-blue-600);
-}
-
-/* Link Indicator */
-.yc-link-indicator {
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--yc-cyan-400), var(--yc-blue-500));
-  border-radius: var(--yc-radius-full);
-}
-
-/* ============================================
-   Buttons
-   ============================================ */
-.yc-nav-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.yc-btn-signin {
-  padding: 0.625rem 1.5rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  background: transparent;
-  border: none;
-  border-radius: var(--yc-radius-lg);
-  cursor: pointer;
-  transition: all var(--yc-transition-normal);
-}
-
-.yc-btn-signin:hover {
-  color: var(--yc-cyan-400);
-}
-
-.yc-btn-signin.yc-scrolled {
-  color: var(--yc-gray-700);
-}
-
-.yc-btn-signin.yc-scrolled:hover {
-  color: var(--yc-blue-600);
-  background: rgba(59, 130, 246, 0.08);
-}
-
-.yc-btn-getstarted {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.625rem 1.5rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: white;
-  background: linear-gradient(135deg, var(--yc-blue-600), var(--yc-cyan-500));
-  border: none;
-  border-radius: var(--yc-radius-lg);
-  cursor: pointer;
-  transition: all var(--yc-transition-normal);
-  box-shadow: var(--yc-shadow-blue);
-}
-
-.yc-btn-getstarted:hover {
-  transform: scale(1.05);
-  box-shadow: 0 15px 40px -10px rgba(59, 130, 246, 0.4);
-}
-
-.yc-btn-getstarted svg {
-  width: 18px;
-  height: 18px;
-  transition: transform var(--yc-transition-normal);
-}
-
-.yc-btn-getstarted:hover svg {
-  transform: translateX(3px);
-}
-
-/* ============================================
-   Mobile Menu Button
-   ============================================ */
-.yc-mobile-menu-btn {
-  display: none;
-  padding: 0.5rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: white;
-  border-radius: var(--yc-radius-md);
-  transition: all var(--yc-transition-normal);
-}
-
-.yc-mobile-menu-btn.yc-scrolled {
-  color: var(--yc-gray-700);
-}
-
-.yc-mobile-menu-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.yc-mobile-menu-btn.yc-scrolled:hover {
-  background: var(--yc-gray-100);
-}
-
-.yc-mobile-menu-btn svg {
-  width: 24px;
-  height: 24px;
-}
-
-/* ============================================
-   Mobile Menu
-   ============================================ */
-.yc-mobile-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  box-shadow: var(--yc-shadow-xl);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: all var(--yc-transition-normal);
-  border-top: 1px solid var(--yc-gray-100);
-}
-
-.yc-mobile-menu.yc-open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.yc-mobile-menu-content {
-  padding: 1rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.yc-mobile-link {
-  display: block;
-  padding: 0.875rem 1rem;
-  color: var(--yc-gray-700);
-  text-decoration: none;
-  font-weight: 500;
-  border-radius: var(--yc-radius-lg);
-  transition: all var(--yc-transition-normal);
-}
-
-.yc-mobile-link:hover {
-  background: var(--yc-gray-100);
-  color: var(--yc-blue-600);
-}
-
-.yc-mobile-link.yc-active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1));
-  color: var(--yc-blue-600);
-  font-weight: 600;
-}
-
-.yc-mobile-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding-top: 1rem;
-  margin-top: 0.5rem;
-  border-top: 1px solid var(--yc-gray-100);
-}
-
-.yc-btn-signin-mobile,
-.yc-btn-getstarted-mobile {
-  width: 100%;
-  padding: 0.875rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--yc-radius-lg);
-  cursor: pointer;
-  transition: all var(--yc-transition-normal);
-  text-align: center;
-}
-
-.yc-btn-signin-mobile {
-  background: transparent;
-  color: var(--yc-gray-700);
-  border: 1px solid var(--yc-gray-200);
-}
-
-.yc-btn-signin-mobile:hover {
-  border-color: var(--yc-blue-500);
-  color: var(--yc-blue-600);
-  background: rgba(59, 130, 246, 0.05);
-}
-
-.yc-btn-getstarted-mobile {
-  background: linear-gradient(135deg, var(--yc-blue-600), var(--yc-cyan-500));
-  color: white;
-  border: none;
-  box-shadow: var(--yc-shadow-blue);
-}
-
-.yc-btn-getstarted-mobile:hover {
-  transform: scale(1.02);
-  box-shadow: 0 15px 40px -10px rgba(59, 130, 246, 0.4);
-}
-
-/* ============================================
-   Responsive Design
-   ============================================ */
-@media (max-width: 1024px) {
-  .yc-nav-links {
-    gap: 1.5rem;
-  }
-}
 
 @media (max-width: 768px) {
-  .yc-nav-links,
-  .yc-nav-buttons {
-    display: none;
-  }
-
-  .yc-mobile-menu-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .yc-nav-container {
-    height: 70px;
-  }
-
-  .yc-navbar {
-    padding: 0 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .yc-logo-text {
-    font-size: 1.25rem;
-  }
-
-  .yc-logo-icon {
-    padding: 0.375rem;
-  }
-
-  .yc-logo-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .yc-mobile-menu-content {
-    padding: 0.75rem 1rem;
-  }
-}
-
-/* ============================================
-   Animation
-   ============================================ */
-@keyframes yc-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.yc-mobile-menu.yc-open .yc-mobile-menu-content {
-  animation: yc-fade-in 0.3s ease-out;
+    .navbar-container {
+        padding: 15px 20px;
+    }
+    .nav-links {
+        display: none; 
+    }
 }

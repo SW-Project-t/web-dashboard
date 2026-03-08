@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from './firebase';
 import { 
     doc, getDoc, collection, getDocs, query, where, 
-    runTransaction, increment, serverTimestamp, setDoc 
+    runTransaction, increment, serverTimestamp
 } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
-// Icons as SVG components (تم اختصارها للتنسيق، هي موجودة في الكود الأصلي)
+// Icons as SVG components
 const Icons = {
   Dashboard: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>),
   BookOpen: () => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>),
@@ -52,7 +52,9 @@ const defaultData = {
         enrolledCourses: 3,
         activeSession: 1,
         gpsActive: true,
-        profileImage: null
+        profileImage: null,
+        department: "...", // جديد
+        email: "..." // جديد
     },
     courses: [],
     upcoming: [],
@@ -76,7 +78,6 @@ export default function StudentDashboard() {
     const [modal, setModal] = useState({ show: false, type: null });
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-    // --- [1] State جديد للكورسات المتاحة والتسجيل ---
     const [availableCourses, setAvailableCourses] = useState([]);
     const [isEnrolling, setIsEnrolling] = useState(false);
 
@@ -99,6 +100,8 @@ export default function StudentDashboard() {
                                 ...prev.user,
                                 name: userData.fullName || "No Name",
                                 id: userData.code || "No Code",
+                                department: userData.department || "N/A", // جلب القسم
+                                email: user.email || "No Email" // جلب الإيميل
                             }
                         }));
                     }
@@ -110,7 +113,6 @@ export default function StudentDashboard() {
         return () => unsubscribe();
     }, [navigate]);
 
-    // --- [2] جلب الكورسات من Firestore ---
     useEffect(() => {
         const fetchCourses = async () => {
             try {
@@ -138,22 +140,6 @@ export default function StudentDashboard() {
         localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(appState.attendance));
         localStorage.setItem(STORAGE_KEYS.TREND, JSON.stringify(appState.trend));
     }, [appState]);
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setAppState(prev => {
-                const newCourses = prev.courses.map(c => {
-                    if (c.id === "CS401" && c.timeRemaining > 0) {
-                        return { ...c, timeRemaining: c.timeRemaining - 1 };
-                    }
-                    return c;
-                });
-                return { ...prev, courses: newCourses };
-            });
-        }, 60000);
-
-        return () => clearInterval(timer);
-    }, []);
 
     const showNotification = (message, type = 'success') => {
         setToast({ show: true, message, type });
@@ -237,13 +223,12 @@ export default function StudentDashboard() {
         }
     };
 
-    // --- [3] دالة تسجيل الطالب في كورس (جديدة) ---
     const handleEnrollCourse = async (e) => {
         e.preventDefault();
         setIsEnrolling(true);
         
         const formData = new FormData(e.target);
-        const courseId = formData.get('courseId'); // اللي هيختاره من الـ Select
+        const courseId = formData.get('courseId');
         const studentUid = auth.currentUser?.uid;
 
         if (!studentUid) {
@@ -253,7 +238,6 @@ export default function StudentDashboard() {
         }
 
         try {
-            // 1. البحث عن الكورس في الفايرستور
             const q = query(collection(db, 'courses'), where('courseId', '==', courseId));
             const courseQuerySnapshot = await getDocs(q);
 
@@ -267,25 +251,15 @@ export default function StudentDashboard() {
             const courseRef = courseDoc.ref;
             const courseData = courseDoc.data();
 
-            // التحقق المحلي (سريع) هل هو مسجل بالفعل
             if (appState.courses.some(c => c.id === courseId)) {
                 showNotification('Already enrolled in this course', 'error');
                 setIsEnrolling(false);
                 return;
             }
 
-            // 2. تنفيذ الـ Transaction
-            const enrollmentRef = doc(collection(db, 'enrollments')); // إنشاء reference جديد
+            const enrollmentRef = doc(collection(db, 'enrollments'));
 
             await runTransaction(db, async (transaction) => {
-                // (اختياري) التحقق من السيرفر أيضاً
-                const existingEnrollmentQuery = query(collection(db, 'enrollments'), 
-                    where('studentUid', '==', studentUid), 
-                    where('courseId', '==', courseId));
-                
-                // ملاحظة: getDocs داخل transaction قد يسبب خطأ في بعض إصدارات SDK، 
-                // لكن للتبسيط سنكتفي بالتحقق المحلي أعلاه أو ننفذ الـ set مباشرة.
-                
                 transaction.set(enrollmentRef, {
                     studentUid: studentUid,
                     courseId: courseId,
@@ -297,7 +271,6 @@ export default function StudentDashboard() {
                 });
             });
 
-            // 3. تحديث الـ UI محلياً (Optimistic UI)
             const newCourse = {
                 id: courseId,
                 name: courseData.name,
@@ -376,9 +349,20 @@ export default function StudentDashboard() {
         showNotification('Profile image removed');
     };
 
+    // دالة مساعدة لإنشاء بيانات الـ QR Code
+    const generateQRData = () => {
+        const data = {
+            name: appState.user.name,
+            code: appState.user.id,
+            department: appState.user.department,
+            email: appState.user.email
+        };
+        // تحويل البيانات لـ JSON ثم تشفيرها لـ URL
+        return encodeURIComponent(JSON.stringify(data));
+    };
+
     return (
         <div className="yc-dashboard">
-            {/* Toast Notification */}
             {toast.show && (
                 <div className={`yc-toast ${toast.type}`}>
                     <span className="yc-toast-icon">
@@ -388,9 +372,7 @@ export default function StudentDashboard() {
                 </div>
             )}
 
-            {/* Sidebar */}
             <aside className="yc-sidebar">
-                {/* Logo */}
                 <div className="yc-sidebar-logo">
                     <div className="yc-logo-icon-wrapper">
                         <IconComponent name="GraduationCap" />
@@ -400,7 +382,6 @@ export default function StudentDashboard() {
                     </span>
                 </div>
 
-                {/* Profile Section */}
                 <div className="yc-sidebar-profile">
                     <div className="yc-profile-image-wrapper">
                         {appState.user.profileImage ? (
@@ -437,7 +418,6 @@ export default function StudentDashboard() {
                     )}
                 </div>
 
-                {/* Navigation */}
                 <nav className="yc-sidebar-nav">
                     <div className="yc-nav-item yc-active">
                         <IconComponent name="Dashboard" />
@@ -447,7 +427,8 @@ export default function StudentDashboard() {
                         <IconComponent name="BookOpen" />
                         <span>My Courses</span>
                     </div>
-                    <div className="yc-nav-item">
+                    {/* --- تعديل: إضافة onClick لفتح المودال --- */}
+                    <div className="yc-nav-item" onClick={() => setModal({ show: true, type: 'id' })}>
                         <IconComponent name="IdCard" />
                         <span>Student ID</span>
                     </div>
@@ -461,7 +442,6 @@ export default function StudentDashboard() {
                     </div>
                 </nav>
 
-                {/* Bottom Actions */}
                 <div className="yc-sidebar-actions">
                     <div className="yc-nav-item yc-change-password" onClick={() => setModal({ show: true, type: 'password' })}>
                         <IconComponent name="Lock" />
@@ -474,9 +454,7 @@ export default function StudentDashboard() {
                 </div>
             </aside>
 
-            {/* Main Content */}
             <main className="yc-main-content">
-                {/* Header */}
                 <header className="yc-header">
                     <div>
                         <h1 className="yc-page-title">Student Dashboard</h1>
@@ -484,7 +462,6 @@ export default function StudentDashboard() {
                     </div>
                 </header>
 
-                {/* Stats Cards */}
                 <div className="yc-stats-grid">
                     <div className="yc-stat-card yc-primary">
                         <div className="yc-stat-icon">
@@ -521,7 +498,6 @@ export default function StudentDashboard() {
                     </div>
                 </div>
 
-                {/* Active Session Banner */}
                 {appState.courses.some(c => c.timeRemaining > 0) && (
                     <div className="yc-active-banner">
                         <div className="yc-banner-info">
@@ -535,9 +511,7 @@ export default function StudentDashboard() {
                     </div>
                 )}
 
-                {/* Courses & Upcoming */}
                 <div className="yc-courses-row">
-                    {/* My Courses */}
                     <div className="yc-section-card">
                         <div className="yc-section-header">
                             <h2 className="yc-section-title">My Courses ({appState.courses.length})</h2>
@@ -585,7 +559,6 @@ export default function StudentDashboard() {
                         </div>
                     </div>
 
-                    {/* Upcoming Classes */}
                     <div className="yc-section-card">
                         <div className="yc-section-header">
                             <h2 className="yc-section-title">Upcoming Classes ({appState.upcoming.length})</h2>
@@ -618,7 +591,6 @@ export default function StudentDashboard() {
                     </div>
                 </div>
 
-                {/* Selected Course Detail */}
                 {selectedCourse && appState.courses.find(c => c.id === selectedCourse) && (() => {
                     const course = appState.courses.find(c => c.id === selectedCourse);
                     return (
@@ -651,7 +623,6 @@ export default function StudentDashboard() {
                     );
                 })()}
 
-                {/* Attendance Table */}
                 <div className="yc-table-card">
                     <h2 className="yc-section-title">This Week Attendance</h2>
                     <div className="yc-table-wrapper">
@@ -688,7 +659,6 @@ export default function StudentDashboard() {
                     </div>
                 </div>
 
-                {/* Attendance Trend Chart */}
                 <div className="yc-trend-card">
                     <h2 className="yc-section-title">Attendance Trend</h2>
                     <div className="yc-chart-container">
@@ -717,6 +687,7 @@ export default function StudentDashboard() {
                             <h3>
                                 {modal.type === 'course' ? 'Enroll in Course' : 
                                  modal.type === 'upcoming' ? 'Add Upcoming Class' : 
+                                 modal.type === 'id' ? 'Student ID Card' :
                                  'Change Password'}
                             </h3>
                             <button className="yc-modal-close" onClick={() => setModal({ show: false, type: null })}>
@@ -725,7 +696,6 @@ export default function StudentDashboard() {
                         </div>
                         
                         {modal.type === 'course' ? (
-                            // --- [4] تعديل شكل المودال ليصبح Select ---
                             <form onSubmit={handleEnrollCourse} className="yc-form">
                                 <div className="yc-form-group">
                                     <label>Select Course to Enroll</label>
@@ -780,6 +750,41 @@ export default function StudentDashboard() {
                                     </button>
                                 </div>
                             </form>
+                        ) : modal.type === 'id' ? (
+                            // --- واجهة بطاقة الطالب و الـ QR Code ---
+                            <div className="yc-form" style={{ textAlign: 'center' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                                    
+                                    <div className="yc-profile-placeholder" style={{ width: '80px', height: '80px', fontSize: '24px' }}>
+                                        {appState.user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                    </div>
+
+                                    <div>
+                                        <h2 style={{ margin: 0 }}>{appState.user.name}</h2>
+                                        <p style={{ margin: '5px 0 0', color: '#666' }}>{appState.user.id}</p>
+                                    </div>
+
+                                    <div style={{ background: '#f5f5f5', padding: '15px', borderRadius: '10px', width: '100%', textAlign: 'left' }}>
+                                        <p style={{ margin: '5px 0' }}><strong>Department:</strong> {appState.user.department}</p>
+                                        <p style={{ margin: '5px 0' }}><strong>Email:</strong> {appState.user.email}</p>
+                                    </div>
+
+                                    <div style={{ background: '#fff', padding: '15px', borderRadius: '10px', border: '1px solid #eee' }}>
+                                        <img 
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${generateQRData()}`} 
+                                            alt="Student QR Code" 
+                                            style={{ width: '150px', height: '150px' }}
+                                        />
+                                        <p style={{ fontSize: '12px', color: '#888', marginTop: '10px' }}>Scan to verify identity</p>
+                                    </div>
+                                </div>
+
+                                <div className="yc-form-actions" style={{ marginTop: '20px' }}>
+                                    <button type="button" className="yc-btn-primary" onClick={() => setModal({ show: false, type: null })}>
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
                         ) : (
                             <form onSubmit={handleChangePassword} className="yc-form">
                                 <div className="yc-form-group">

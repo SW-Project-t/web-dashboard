@@ -1,698 +1,689 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './AdminDashboard.css';
+import { 
+    LayoutDashboard, Users, BookOpen, TrendingUp, Settings, 
+    Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
+    Download, Shield, Building, X, Menu 
+} from 'lucide-react';
 import axios from 'axios';
-import { db } from './firebase'; 
-import { collection, onSnapshot, query, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-
-import { auth } from './firebase';
-import {getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { auth, db } from './firebase'; 
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
-  
-  const [users, setUsers] = useState([]);
-  const [courses, setCourses] = useState([]);
-  const [alerts, setAlerts] = useState([]);
-  const [departments, setDepartments] = useState([]);
-
-  const [adminData, setAdminData] = useState({ name: 'Admin...', code: 'Code...' });
-  
-  const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
-  
-  const [newUserData, setNewUserData] = useState({
-    fullName: '', email: '', password: '', role: '',
-    academicYear: '', code: '', department: '', phoneNumber: ''
-  });
-
-  const [newCourseData, setNewCourseData] = useState({
-    courseId: '', courseName: '', instructorName: '',
-    SelectDays: '', Time: '', RoomNumber: '', capacity: ''
-  });
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  // --- States لتغيير كلمة المرور ---
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [passwordFields, setPasswordFields] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
-  useEffect(() => {
-    const q = query(collection(db, "users"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const usersArray = [];
-      querySnapshot.forEach((doc) => {
-        usersArray.push({ id: doc.id, ...doc.data() });
-      });
-      setUsers(usersArray);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const q = query(collection(db, "courses"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const coursesArray = [];
-      querySnapshot.forEach((doc) => {
-        coursesArray.push({ id: doc.id, ...doc.data() });
-      });
-      setCourses(coursesArray);
-    });
-    return () => unsubscribe();
-  }, []);
-  
-  const quickActions = [
-    { name: 'Add Course', color: '#673ab7', action: () => setIsAddCourseModalOpen(true) },
-    { name: 'Export All Data', color: '#28a745', action: () => {} },
-    { name: 'Manage Permissions', color: '#17a228', action: () => {} },
-    { name: 'View Departments', color: '#ffc107', action: () => {} }
-  ];
-
-  const totalStudents = departments.length > 0 
-    ? departments.reduce((sum, dept) => sum + dept.count, 0) 
-    : 1; 
-
-  const handleImageUpload = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-              setAdminProfileImage(reader.result);
-              localStorage.setItem('admin_profile_image', reader.result);
-          };
-          reader.readAsDataURL(file);
-      }
-  };
-
-  const removeProfileImage = () => {
-      setAdminProfileImage(null);
-      localStorage.removeItem('admin_profile_image');
-  };
-
-  const handleUserInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewUserData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddUserSubmit = async (e) => {
-    e.preventDefault();
-    const userDataToSend = {
-        email: newUserData.email,
-        password: newUserData.password,
-        fullName: newUserData.fullName,
-        role: newUserData.role,
-        academicYear: newUserData.academicYear,
-        department: newUserData.department,
-        phoneNumber: newUserData.phoneNumber,
-        code: newUserData.code
-      };
-    const hasEmptyField = Object.values(userDataToSend).some(value => value.trim() === "");
-    if (hasEmptyField) {
-      alert("Please fill in all fields.");
-      return;
-    }
-    try {
-      const response = await axios.post('http://localhost:3001/admin/add-user', userDataToSend);
-      if (response.data.success) {
-        alert("User added successfully!");
-        setIsAddUserModalOpen(false);
-        setNewUserData({
-          fullName: '', email: '', password: '', role: '',
-          academicYear: '',department: '', phoneNumber: '', code: '' });
-      }
-    } catch (error) {
-      console.error("Error adding user:", error);
-      alert(error.response?.data?.error || "Something went wrong");
-   }
-  };
-  
-  const handleCourseInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewCourseData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddCourseSubmit = async (e) => {
-    e.preventDefault();
-    const isFormValid = Object.values(newCourseData).every(value => value.trim() !== "");
-
-  try {
-    const token = localStorage.getItem('token');
-    const response = await axios.post('http://localhost:3001/admin/add-course',newCourseData,{
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    if (response.data.success) {
-      alert("Course added successfully!");
-      setIsAddCourseModalOpen(false);
-      setNewCourseData({
-        courseId: '', 
-        courseName: '', 
-        instructorName: '',
-        SelectDays: '', 
-        Time: '', 
-        RoomNumber: '', 
-        capacity: ''
-      })
-    }
-  } catch (error) {
-    console.error("Error adding course:", error);
-    const errorMessage = error.response?.data?.error || "Failed to add course. Please try again.";
-    alert(errorMessage);
-  }
-  };
-
-const handleDelete = async (collectionName, id) => {
-  if (window.confirm("Are you sure?")) {
-    try {
-      await deleteDoc(doc(db, collectionName, id));
-      alert("Deleted successfully from Database!");
-    } catch (error) {
-      console.error("Firebase Delete Error:", error);
-      alert("Failed to delete from Database");
-    }
-  }
-};
-
-const handleView = (item) => {
-  setSelectedItem(item);
-  setIsViewModalOpen(true);
-};
-
-const handleChange = (item) => {
-  setSelectedItem(item);
-  setIsEditModalOpen(true);
-};
-
-const handleSaveChanges = async (e) => {
-  e.preventDefault();
-  const deptInput = e.target.elements[1].value; 
-
-  try {
-    const collectionName = selectedItem.courseName ? "courses" : "users";
-    const itemRef = doc(db, collectionName, selectedItem.id);
-
-    const updatedData = selectedItem.courseName 
-      ? { RoomNumber: deptInput } 
-      : { department: deptInput };
-
-    await updateDoc(itemRef, updatedData);
-    alert("Updated successfully!");
-    setIsEditModalOpen(false);
-  } catch (error) {
-    alert("Error: " + error.message);
-  }
-};
-
-// --- وظائف تغيير كلمة المرور ---
-const handlePasswordInputChange = (e) => {
-  const { name, value } = e.target;
-  setPasswordFields(prev => ({ ...prev, [name]: value }));
-};
-
-const handlePasswordUpdate = async (e) => {
-  e.preventDefault();
-  const user = auth.currentUser;
-
-  if (passwordFields.newPassword !== passwordFields.confirmPassword) {
-    alert("New passwords do not match!");
-    return;
-  }
-
-  try {
-    const credential = EmailAuthProvider.credential(user.email, passwordFields.currentPassword);
-    await reauthenticateWithCredential(user, credential);
-    await updatePassword(user, passwordFields.newPassword);
-    alert("Password updated successfully!");
-    setIsPasswordModalOpen(false);
-    setPasswordFields({ currentPassword: '', newPassword: '', confirmPassword: '' });
-  } catch (error) {
-    console.error(error);
-    alert("Error: Check your current password.");
-  }
-};
-
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        const token = localStorage.getItem('token');
-         if(!token){navigate('/');}
-        else if (docSnap.exists()) {
-          const data = docSnap.data();
-          setAdminData({
-            name: data.fullName || "System Admin",
-            code: data.code || "No Code"
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching admin data:", error);
-      }
-    }
-  });
-  return () => unsubscribe();
-}, [navigate]);
-
-const handleLogout = () => {
-    localStorage.removeItem('token');
-    setTimeout(() => {
-        navigate('/');
-    }, 1000);
-};
-
-  return (
-    <div className="dashboard-container">
+    const navigate = useNavigate();
+    const [sidebarOpen, setSidebarOpen] = useState(true);
     
-      {isAddUserModalOpen && (
-        <div className="modal-overlay">
-          <div className="modern-modal-content" dir="rtl">
-            <div className="modern-modal-header">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7e57c2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <line x1="20" y1="8" x2="20" y2="14"></line>
-                <line x1="23" y1="11" x2="17" y2="11"></line>
-              </svg>
-              <h2>Add User</h2>
-            </div>
+    const [users, setUsers] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [alerts, setAlerts] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [activeTab, setActiveTab] = useState('Dashboard');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const [adminData, setAdminData] = useState({ name: 'System Admin', code: 'ADM-001' });
+    const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
+
+    const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+    const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
+    const [newUserData, setNewUserData] = useState({
+        fullName: '', email: '', password: '', role: '',
+        academicYear: '', code: '', department: '', phoneNumber: ''
+    });
+
+    const [newCourseData, setNewCourseData] = useState({
+        courseId: '', courseName: '', instructorName: '',
+        SelectDays: '', Time: '', RoomNumber: '', capacity: ''
+    });
+
+    const [passwordFields, setPasswordFields] = useState({
+        currentPassword: '', newPassword: '', confirmPassword: ''
+    });
+
+    useEffect(() => {
+        const q = query(collection(db, "users"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const usersArray = [];
+            querySnapshot.forEach((doc) => {
+                usersArray.push({ id: doc.id, ...doc.data() });
+            });
+            setUsers(usersArray);
             
-            <form onSubmit={handleAddUserSubmit} className="modern-form">
-              <input type="text" name="fullName" className="modern-input" value={newUserData.fullName} onChange={handleUserInputChange} placeholder="Full Name" required />
+            const deptMap = {};
+            usersArray.forEach(u => {
+                const d = u.department || 'General';
+                deptMap[d] = (deptMap[d] || 0) + 1;
+            });
+            const deptList = Object.keys(deptMap).map(k => ({ name: k, count: deptMap[k] }));
+            setDepartments(deptList);
+        });
+        return () => unsubscribe();
+    }, []);
 
-              <div className="modern-form-row">
-                <input type="email" name="email" className="modern-input" value={newUserData.email} onChange={handleUserInputChange} placeholder="Email" required />
-                <input type="password" name="password" className="modern-input" value={newUserData.password} onChange={handleUserInputChange} placeholder="Password" required />
-              </div>
+    useEffect(() => {
+        const q = query(collection(db, "courses"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const coursesArray = [];
+            querySnapshot.forEach((doc) => {
+                coursesArray.push({ id: doc.id, ...doc.data() });
+            });
+            setCourses(coursesArray);
+        });
+        return () => unsubscribe();
+    }, []);
 
-              <div className="modern-form-row">
-                <select name="role" className={`modern-input ${newUserData.role === "" ? "placeholder-select" : ""}`} value={newUserData.role} onChange={handleUserInputChange} required>
-                  <option value="" disabled hidden>Choose Role</option>
-                  <option value="Student">Student</option>
-                  <option value="Instructor">Instructor</option>
-                  <option value="admin">Admin</option>
-                </select>
-                <input type="text" name="department" className="modern-input" value={newUserData.department} onChange={handleUserInputChange} placeholder="Department" />
-              </div>
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const docRef = doc(db, "users", user.uid);
+                    const docSnap = await getDoc(docRef);
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        navigate('/');
+                    } else if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setAdminData({
+                            name: data.fullName || "System Admin",
+                            code: data.code || "ADM-001"
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error fetching admin data:", error);
+                }
+            }
+        });
+        return () => unsubscribe();
+    }, [navigate]);
 
-              <div className="modern-form-row">
-                <input type="text" name="academicYear" className="modern-input" value={newUserData.academicYear} onChange={handleUserInputChange} placeholder="Academic Year (e.g., 2024)" />
-                <input type="text" name="code" className="modern-input" value={newUserData.code} onChange={handleUserInputChange} placeholder="Code" />
-              </div>
+    const totalStudents = departments.length > 0 
+        ? departments.reduce((sum, dept) => sum + dept.count, 0) 
+        : 1;
 
-              <input type="tel" name="phoneNumber" className="modern-input" value={newUserData.phoneNumber} onChange={handleUserInputChange} placeholder="Phone Number" required />
+    const filteredUsers = useMemo(() => {
+        return users.filter(u => 
+            u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            u.code?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [users, searchQuery]);
 
-              <div className="modern-modal-actions">
-                <button type="submit" className="modern-btn-primary">Add User</button>
-                <button type="button" className="modern-btn-secondary" onClick={() => setIsAddUserModalOpen(false)}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+    const filteredCourses = useMemo(() => {
+        return courses.filter(c => 
+            c.courseName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            c.courseId?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [courses, searchQuery]);
 
-      {isAddCourseModalOpen && (
-        <div className="modal-overlay">
-          <div className="modern-modal-content">
-            <div className="modern-modal-header">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7e57c2" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              <h2>Add New Course</h2>
-            </div>
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAdminProfileImage(reader.result);
+                localStorage.setItem('admin_profile_image', reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeProfileImage = () => {
+        setAdminProfileImage(null);
+        localStorage.removeItem('admin_profile_image');
+    };
+
+    const handleUserInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewUserData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleCourseInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewCourseData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handlePasswordInputChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordFields(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleAddUserSubmit = async (e) => {
+        e.preventDefault();
+        const hasEmptyField = Object.values(newUserData).some(value => value.trim() === "");
+        if (hasEmptyField) {
+            alert("Please fill in all fields.");
+            return;
+        }
+        try {
+            const response = await axios.post('http://localhost:3001/admin/add-user', newUserData);
+            if (response.data.success) {
+                alert("User added successfully!");
+                setIsAddUserModalOpen(false);
+                setNewUserData({
+                    fullName: '', email: '', password: '', role: '',
+                    academicYear: '', department: '', phoneNumber: '', code: '' 
+                });
+            }
+        } catch (error) {
+            alert(error.response?.data?.error || "Something went wrong");
+        }
+    };
+
+    const handleAddCourseSubmit = async (e) => {
+        e.preventDefault();
+        const isFormValid = Object.values(newCourseData).every(value => value.trim() !== "");
+        if (!isFormValid) {
+            alert("Please fill in all fields.");
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post('http://localhost:3001/admin/add-course', newCourseData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data.success) {
+                alert("Course added successfully!");
+                setIsAddCourseModalOpen(false);
+                setNewCourseData({ courseId: '', courseName: '', instructorName: '', SelectDays: '', Time: '', RoomNumber: '', capacity: '' });
+            }
+        } catch (error) {
+            alert(error.response?.data?.error || "Failed to add course.");
+        }
+    };
+
+    const handleDelete = async (collectionName, id) => {
+        if (window.confirm("Are you sure?")) {
+            try {
+                await deleteDoc(doc(db, collectionName, id));
+            } catch (error) {
+                alert("Failed to delete from Database");
+            }
+        }
+    };
+
+    const handleView = (item) => {
+        setSelectedItem(item);
+        setIsViewModalOpen(true);
+    };
+
+    const handleChange = (item) => {
+        setSelectedItem(item);
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveChanges = async (e) => {
+        e.preventDefault();
+        const deptInput = e.target.elements[1].value; 
+        try {
+            const collectionName = selectedItem.courseName ? "courses" : "users";
+            const itemRef = doc(db, collectionName, selectedItem.id);
+            const updatedData = selectedItem.courseName ? { RoomNumber: deptInput } : { department: deptInput };
+            await updateDoc(itemRef, updatedData);
+            alert("Updated successfully!");
+            setIsEditModalOpen(false);
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    };
+
+    const handlePasswordUpdate = async (e) => {
+        e.preventDefault();
+        const user = auth.currentUser;
+        if (passwordFields.newPassword !== passwordFields.confirmPassword) {
+            alert("New passwords do not match!");
+            return;
+        }
+        try {
+            const credential = EmailAuthProvider.credential(user.email, passwordFields.currentPassword);
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, passwordFields.newPassword);
+            alert("Password updated successfully!");
+            setIsPasswordModalOpen(false);
+            setPasswordFields({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (error) {
+            alert("Error: Check your current password.");
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        setTimeout(() => { navigate('/'); }, 1000);
+    };
+
+    return (
+        <div className="admin-layout">
             
-            <form onSubmit={handleAddCourseSubmit} className="modern-form">
-              <input type="text" name="courseId" className="modern-input" value={newCourseData.courseId} onChange={handleCourseInputChange} placeholder="Course ID (e.g., CS404)" required />
-              <input type="text" name="courseName" className="modern-input" value={newCourseData.courseName} onChange={handleCourseInputChange} placeholder="Course Name (e.g., Web Development)" required />
-              <input type="text" name="instructorName" className="modern-input" value={newCourseData.instructorName} onChange={handleCourseInputChange} placeholder="Instructor Name" required />
-              
-              <select name="SelectDays" className={`modern-input ${newCourseData.SelectDays === "" ? "placeholder-select" : ""}`} value={newCourseData.SelectDays} onChange={handleCourseInputChange} required>
-                <option value="" disabled hidden>SelectDays</option>
-                <option value="Saturday">Saturday</option>
-                <option value="Sunday">Sunday</option>
-                <option value="Monday">Monday</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Thursday">Thursday</option>
-              </select>
-
-              <input type="text" name="Time" className="modern-input" value={newCourseData.Time} onChange={handleCourseInputChange} placeholder="Time (e.g., 1:00 PM)" required />
-              <input type="text" name="RoomNumber" className="modern-input" value={newCourseData.RoomNumber} onChange={handleCourseInputChange} placeholder="Room Number (e.g., 201)" required />
-              <input type="number" name="capacity" className="modern-input" value={newCourseData.capacity} onChange={handleCourseInputChange} placeholder="Capacity (e.g., 50)" required />
-
-              <div className="modern-modal-actions" style={{ marginTop: '10px' }}>
-                <button type="submit" className="modern-btn-primary">Add</button>
-                <button type="button" className="modern-btn-secondary" onClick={() => setIsAddCourseModalOpen(false)}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        
-        <div className="sidebar-profile">
-            <div className="profile-image-wrapper">
-                {adminProfileImage ? (
-                    <img src={adminProfileImage} alt="Profile" className="sidebar-profile-image" />
-                ) : (
-                    <div className="sidebar-profile-placeholder">
-                        {adminData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+            <aside className="admin-sidebar">
+                <div className="sidebar-profile-section">
+                    <div className="profile-img-container" onClick={() => document.getElementById('admin-profile-upload').click()}>
+                        {adminProfileImage ? (
+                            <img src={adminProfileImage} alt="Admin" className="profile-img" />
+                        ) : (
+                            <div className="profile-placeholder">
+                                {adminData.name.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                        <div className="profile-status"></div>
                     </div>
-                )}
-                <div 
-                    className="image-upload-overlay" 
-                    onClick={() => document.getElementById('admin-profile-upload').click()}
-                    title="Upload new photo"
-                >
-                    <span>+</span>
+                    <input type="file" id="admin-profile-upload" style={{ display: 'none' }} accept="image/*" onChange={handleImageUpload} />
+                    <h3 className="profile-name">{adminData.name}</h3>
+                    <p className="profile-id">ID: {adminData.code}</p>
+                    {adminProfileImage && (
+                        <button className="remove-photo-text" onClick={removeProfileImage}>Remove Photo</button>
+                    )}
                 </div>
-            </div>
 
-            <div className="sidebar-profile-name">{adminData.name}</div>
-            <div className="sidebar-profile-id">{adminData.code}</div>
+                <nav className="sidebar-nav">
+                    <button className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('Dashboard')}>
+                        <LayoutDashboard size={20} />
+                        <span>Dashboard</span>
+                    </button>
+                    <button className={`nav-item ${activeTab === 'All Users' ? 'active' : ''}`} onClick={() => setActiveTab('All Users')}>
+                        <Users size={20} />
+                        <span>All Users</span>
+                    </button>
+                    <button className={`nav-item ${activeTab === 'Courses' ? 'active' : ''}`} onClick={() => setActiveTab('Courses')}>
+                        <BookOpen size={20} />
+                        <span>Courses</span>
+                    </button>
+                    <button className={`nav-item ${activeTab === 'Analytics' ? 'active' : ''}`} onClick={() => setActiveTab('Analytics')}>
+                        <TrendingUp size={20} />
+                        <span>Analytics</span>
+                    </button>
+                    <button className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`} onClick={() => setActiveTab('Settings')}>
+                        <Settings size={20} />
+                        <span>Settings</span>
+                    </button>
+                </nav>
 
-            <input
-                type="file"
-                id="admin-profile-upload"
-                style={{ display: 'none' }}
-                accept="image/*"
-                onChange={handleImageUpload}
-            />
+                <div className="sidebar-footer">
+                    <button className="nav-item btn-password" onClick={() => setIsPasswordModalOpen(true)}>
+                        <Key size={18} />
+                        <span>Change Password</span>
+                    </button>
+                    <button className="nav-item btn-logout" onClick={handleLogout}>
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </aside>
 
-            {adminProfileImage && (
-                <button className="remove-photo-btn" onClick={removeProfileImage}>
-                    Remove Photo
-                </button>
+            <main className="admin-main">
+                <header className="main-header">
+                    <div className="header-title">
+                       
+                        <div>
+                            <h1>{activeTab}</h1>
+                            <p>Welcome to YallaClass Management System</p>
+                        </div>
+                    </div>
+                    <div className="header-actions">
+                        <div className="search-bar">
+                            <Search size={18} className="search-icon" />
+                            <input 
+                                type="text" 
+                                placeholder="Search here..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <button className="bell-btn">
+                            <Bell size={20} />
+                            <span className="bell-badge"></span>
+                        </button>
+                    </div>
+                </header>
+
+                <div className="content-scroll">
+                    {activeTab === 'Dashboard' && (
+                        <div className="dashboard-view">
+                            <div className="quick-actions-row">
+                                <div className="action-card blue" onClick={() => setIsAddCourseModalOpen(true)}>
+                                    <BookOpen size={28} />
+                                    <span>New Course</span>
+                                </div>
+                                <div className="action-card green" onClick={() => setIsAddUserModalOpen(true)}>
+                                    <Users size={28} />
+                                    <span>New User</span>
+                                </div>
+                                <div className="action-card yellow" onClick={() => setActiveTab('Analytics')}>
+                                    <Download size={28} />
+                                    <span>Reports</span>
+                                </div>
+                                <div className="action-card red" onClick={() => setActiveTab('Settings')}>
+                                    <Shield size={28} />
+                                    <span>Settings</span>
+                                </div>
+                            </div>
+
+                            <div className="middle-row">
+                                <div className="chart-card dept-card">
+                                    <div className="card-heading">
+                                        <Building size={20} />
+                                        <h3>Students by Department</h3>
+                                    </div>
+                                    <div className="dept-list">
+                                        {departments.length === 0 ? <p className="no-data">No data available</p> : (
+                                            departments.map(dept => (
+                                                <div className="dept-item" key={dept.name}>
+                                                    <div className="dept-info">
+                                                        <span className="dept-name">{dept.name}</span>
+                                                        <span className="dept-count">{dept.count} Users</span>
+                                                    </div>
+                                                    <div className="progress-bg">
+                                                        <div className="progress-fill" style={{ width: `${(dept.count / totalStudents) * 100}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="chart-card activity-card">
+                                    <div className="card-heading">
+                                        <Bell size={20} className="text-red" />
+                                        <h3>Recent Activities</h3>
+                                    </div>
+                                    <div className="activity-list">
+                                        {courses.slice(0, 3).length === 0 ? <p className="no-data border-dash">No recent activities</p> : (
+                                            courses.slice(0, 3).map((act, i) => (
+                                                <div className="activity-item" key={i}>
+                                                    <div className="activity-icon"><Plus size={16}/></div>
+                                                    <div className="activity-text">
+                                                        <h4>New course added</h4>
+                                                        <p>{act.courseName}</p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="tables-row">
+                                <div className="table-card">
+                                    <div className="table-header">
+                                        <h3>Recent Users</h3>
+                                        <span className="view-all" onClick={() => setActiveTab('All Users')}>View All</span>
+                                    </div>
+                                    <div className="table-wrapper">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Full Name</th>
+                                                    <th>Role</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredUsers.slice(0, 4).length === 0 ? <tr><td colSpan="4" className="no-data">No data</td></tr> : filteredUsers.slice(0, 4).map(u => (
+                                                    <tr key={u.id}>
+                                                        <td className="text-muted">{u.code || '---'}</td>
+                                                        <td className="fw-bold">{u.fullName}</td>
+                                                        <td><span className="role-badge">{u.role || 'Student'}</span></td>
+                                                        <td className="actions-cell">
+                                                            <button className="icon-btn edit-btn" onClick={() => {setSelectedItem(u); setIsEditModalOpen(true);}}><Edit size={16}/></button>
+                                                            <button className="icon-btn delete-btn" onClick={() => handleDelete('users', u.id)}><Trash2 size={16}/></button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div className="table-card">
+                                    <div className="table-header">
+                                        <h3>Recent Courses</h3>
+                                        <span className="view-all" onClick={() => setActiveTab('Courses')}>View All</span>
+                                    </div>
+                                    <div className="table-wrapper">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Code</th>
+                                                    <th>Course Name</th>
+                                                    <th>Instructor</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredCourses.slice(0, 4).length === 0 ? <tr><td colSpan="4" className="no-data">No data</td></tr> : filteredCourses.slice(0, 4).map(c => (
+                                                    <tr key={c.id}>
+                                                        <td className="text-muted">{c.courseId}</td>
+                                                        <td className="text-primary fw-bold">{c.courseName}</td>
+                                                        <td>{c.instructorName}</td>
+                                                        <td className="actions-cell">
+                                                            <button className="icon-btn edit-btn" onClick={() => {setSelectedItem(c); setIsEditModalOpen(true);}}><Edit size={16}/></button>
+                                                            <button className="icon-btn delete-btn" onClick={() => handleDelete('courses', c.id)}><Trash2 size={16}/></button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'All Users' && (
+                        <div className="table-card full-page">
+                            <div className="table-header">
+                                <div className="flex-align">
+                                    <Users size={24} className="text-primary mr-2" />
+                                    <h3>User Management ({filteredUsers.length})</h3>
+                                </div>
+                                <button className="primary-btn" onClick={() => setIsAddUserModalOpen(true)}>
+                                    <Plus size={18} /> Add User
+                                </button>
+                            </div>
+                            <div className="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Full Name</th>
+                                            <th>Role</th>
+                                            <th>Department</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredUsers.length === 0 ? <tr><td colSpan="5" className="no-data">No data</td></tr> : filteredUsers.map(u => (
+                                            <tr key={u.id}>
+                                                <td className="text-muted">{u.code || '---'}</td>
+                                                <td className="fw-bold">{u.fullName}</td>
+                                                <td><span className="role-badge">{u.role || 'Student'}</span></td>
+                                                <td className="text-muted">{u.department || 'General'}</td>
+                                                <td className="actions-cell">
+                                                    <button className="icon-btn edit-btn" onClick={() => {setSelectedItem(u); setIsEditModalOpen(true);}}><Edit size={16}/></button>
+                                                    <button className="icon-btn delete-btn" onClick={() => handleDelete('users', u.id)}><Trash2 size={16}/></button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Courses' && (
+                        <div className="table-card full-page">
+                            <div className="table-header">
+                                <div className="flex-align">
+                                    <BookOpen size={24} className="text-primary mr-2" />
+                                    <h3>Course Management ({filteredCourses.length})</h3>
+                                </div>
+                                <button className="primary-btn" onClick={() => setIsAddCourseModalOpen(true)}>
+                                    <Plus size={18} /> Add Course
+                                </button>
+                            </div>
+                            <div className="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Course Name</th>
+                                            <th>Instructor</th>
+                                            <th>Days</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredCourses.length === 0 ? <tr><td colSpan="5" className="no-data">No data</td></tr> : filteredCourses.map(c => (
+                                            <tr key={c.id}>
+                                                <td className="text-muted">{c.courseId}</td>
+                                                <td className="text-primary fw-bold">{c.courseName}</td>
+                                                <td>{c.instructorName}</td>
+                                                <td><span className="day-badge">{c.SelectDays}</span></td>
+                                                <td className="actions-cell">
+                                                    <button className="icon-btn edit-btn" onClick={() => {setSelectedItem(c); setIsEditModalOpen(true);}}><Edit size={16}/></button>
+                                                    <button className="icon-btn delete-btn" onClick={() => handleDelete('courses', c.id)}><Trash2 size={16}/></button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {(activeTab === 'Analytics' || activeTab === 'Settings') && (
+                        <div className="under-development">
+                            <Settings size={60} className="spin-icon text-muted" />
+                            <h2>This page is currently under development</h2>
+                        </div>
+                    )}
+                </div>
+            </main>
+
+            {isAddCourseModalOpen && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal">
+                        <div className="modal-head">
+                            <div className="flex-align">
+                                <h2>Add Course</h2>
+                                <BookOpen size={24} className="text-primary ml-2" />
+                            </div>
+                        </div>
+                        <form onSubmit={handleAddCourseSubmit} className="modal-form">
+                            <div className="form-grid">
+                                <input type="text" name="courseName" className="input-field full-width" value={newCourseData.courseName} onChange={handleCourseInputChange} placeholder="Course Name" required />
+                                <input type="text" name="courseId" className="input-field" value={newCourseData.courseId} onChange={handleCourseInputChange} placeholder="Course Code" required />
+                                <input type="text" name="instructorName" className="input-field" value={newCourseData.instructorName} onChange={handleCourseInputChange} placeholder="Instructor" required />
+                                <select name="SelectDays" className="input-field select-field" value={newCourseData.SelectDays} onChange={handleCourseInputChange} required>
+                                    <option value="" disabled hidden>Select Day</option>
+                                    <option value="Saturday">Saturday</option>
+                                    <option value="Sunday">Sunday</option>
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                </select>
+                                <input type="text" name="Time" className="input-field" value={newCourseData.Time} onChange={handleCourseInputChange} placeholder="Time" required />
+                                <input type="text" name="RoomNumber" className="input-field" value={newCourseData.RoomNumber} onChange={handleCourseInputChange} placeholder="Room Number" required />
+                                <input type="number" name="capacity" className="input-field" value={newCourseData.capacity} onChange={handleCourseInputChange} placeholder="Capacity" required />
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-cancel" onClick={() => setIsAddCourseModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="btn-submit">Add Course</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isAddUserModalOpen && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal">
+                        <div className="modal-head">
+                            <div className="flex-align">
+                                <h2>Add User</h2>
+                                <Users size={24} className="text-primary ml-2" />
+                            </div>
+                        </div>
+                        <form onSubmit={handleAddUserSubmit} className="modal-form">
+                            <div className="form-grid">
+                                <input type="text" name="fullName" className="input-field full-width" value={newUserData.fullName} onChange={handleUserInputChange} placeholder="Full Name" required />
+                                <input type="email" name="email" className="input-field" value={newUserData.email} onChange={handleUserInputChange} placeholder="Email" required />
+                                <input type="password" name="password" className="input-field" value={newUserData.password} onChange={handleUserInputChange} placeholder="Password" required />
+                                <select name="role" className="input-field select-field" value={newUserData.role} onChange={handleUserInputChange} required>
+                                    <option value="" disabled hidden>Choose Role</option>
+                                    <option value="Student">Student</option>
+                                    <option value="Instructor">Instructor</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                                <select name="department" className="input-field select-field" value={newUserData.department} onChange={handleUserInputChange}>
+                                    <option value="" disabled hidden>Department</option>
+                                    <option value="General">General</option>
+                                    <option value="CS">CS</option>
+                                    <option value="IT">IT</option>
+                                    <option value="IS">IS</option>
+                                </select>
+                                <input type="text" name="academicYear" className="input-field" value={newUserData.academicYear} onChange={handleUserInputChange} placeholder="Academic Year" />
+                                <input type="text" name="code" className="input-field" value={newUserData.code} onChange={handleUserInputChange} placeholder="Code" />
+                                <input type="tel" name="phoneNumber" className="input-field full-width" value={newUserData.phoneNumber} onChange={handleUserInputChange} placeholder="Phone Number" required />
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-cancel" onClick={() => setIsAddUserModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="btn-submit">Add User</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isEditModalOpen && selectedItem && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal small-modal">
+                        <h2 className="modal-title-simple">Update Details</h2>
+                        <form className="modal-form" onSubmit={handleSaveChanges}>
+                            <div className="form-group">
+                                <label>Name (Read Only)</label>
+                                <input type="text" className="input-field disabled-input" value={selectedItem.fullName || selectedItem.courseName} disabled />
+                            </div>
+                            <div className="form-group">
+                                <label>New {selectedItem.courseName ? 'Room Number' : 'Department'}</label>
+                                <input type="text" className="input-field" defaultValue={selectedItem.department || selectedItem.RoomNumber || ""} placeholder="Enter new value" required />
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-cancel" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="btn-submit success-btn">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isPasswordModalOpen && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal small-modal">
+                        <div className="modal-head">
+                            <div className="flex-align">
+                                <h2>Change Password</h2>
+                                <Key size={24} className="text-primary ml-2" />
+                            </div>
+                        </div>
+                        <form onSubmit={handlePasswordUpdate} className="modal-form vertical-form">
+                            <input type="password" name="currentPassword" required className="input-field full-width" value={passwordFields.currentPassword} onChange={handlePasswordInputChange} placeholder="Current Password" />
+                            <input type="password" name="newPassword" required className="input-field full-width" value={passwordFields.newPassword} onChange={handlePasswordInputChange} placeholder="New Password" />
+                            <input type="password" name="confirmPassword" required className="input-field full-width" value={passwordFields.confirmPassword} onChange={handlePasswordInputChange} placeholder="Confirm Password" />
+                            <div className="modal-actions">
+                                <button type="button" className="btn-cancel" onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="btn-submit">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
-        <nav className="sidebar-nav">
-          <ul>
-            <li className="active"><span>Dashboard</span></li>
-            <li><span>All Users</span></li>
-            <li><span>Courses</span></li>
-            <li><span>Analytics</span></li>
-            <li><span>Settings</span></li>
-          </ul>
-        </nav>
-
-        <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '20px' }}>
-          {/* زرار تغيير كلمة المرور */}
-          <button 
-            onClick={() => setIsPasswordModalOpen(true)} 
-            style={{ 
-              display: 'block', width: '100%', padding: '10px', 
-              background: 'none', border: 'none', color: '#ff5252', 
-              cursor: 'pointer', fontWeight: 'bold', textAlign: 'center',
-              marginBottom: '5px' 
-            }}
-          >
-            Change Password
-          </button>
-
-          <button onClick={handleLogout} className="logout-btn" style={{ display: 'block', width: '100%', padding: '10px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '6px', color: '#d32f2f', cursor: 'pointer', fontWeight: 'bold' }}>
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      <main className="main-content">
-        <header className="header">
-          <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} style={{fontSize: '24px', lineHeight: '1', padding: '0 10px'}}>
-            ☰
-          </button>
-          <div className="header-left">
-             <p className="header-subtitle" style={{ margin: 0, color: '#666', fontWeight: 500 }}>Admin Dashboard & System Management</p>
-          </div>
-          <div className="header-right">
-            <div className="search-box">
-              <input type="text" placeholder="Search users..." />
-            </div>
-          </div>
-        </header>
-
-        <div className="grid-2col">
-          <div className="card">
-            <h3 className="card-title">System Alerts</h3>
-            <div className="alerts-list">
-              {alerts.length === 0 ? (
-                <p className="empty-state">No active alerts at this time.</p>
-              ) : (
-                alerts.map(alert => (
-                  <div key={alert.id} className={`alert-item ${alert.type}`}>
-                    <div className="alert-content">
-                      <p className="alert-message">{alert.message}</p>
-                      <span className="alert-time">{alert.time}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-          
-          <div className="card">
-            <h3 className="card-title">Students by Department</h3>
-            <div className="stats-list">
-              {departments.length === 0 ? (
-                <p className="empty-state">No department statistics available.</p>
-              ) : (
-                departments.map(dept => (
-                  <div key={dept.name} className="stat-item">
-                    <div className="stat-label">
-                      <span className="dept-name">{dept.name}</span>
-                      <span className="dept-count">{dept.count.toLocaleString()}</span>
-                    </div>
-                    <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${(dept.count / totalStudents) * 100}%`, backgroundColor: dept.color }}/>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid-2col">
-          
-         <div className="card span-2 custom-card-border">
-  <div className="card-header">
-    <h3 className="card-title">Recent Users</h3>
-    <button 
-      className="btn-primary"
-      onClick={() => setIsAddUserModalOpen(true)}
-    >
-      Add User
-    </button>
-  </div>
-  <div className="table-responsive">
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Role</th>
-          <th>Department</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.length === 0 ? (
-          <tr>
-            <td colSpan="6" className="empty-state">No users found. Data will appear here once loaded.</td>
-          </tr>
-        ) : (
-          users.map(user => (
-            <tr key={user.id}>
-              <td>{user.code || user.id?.toString().slice(0, 5)}</td>
-              <td>{user.fullName || user.name || "N/A"}</td>
-              <td>{user.role}</td>
-              <td>{user.department || "General"}</td>
-              <td><span className={`status-badge ${user.status || 'Active'}`}>{user.status || 'Active'}</span></td>
-              <td>
-                <div className="action-buttons">
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}} onClick={() => handleView(user)}>View</button>
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}} onClick={() => handleChange(user)}>Change</button>
-                  <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}} onClick={() => handleDelete("users", user.id)}>Delete</button>
-                </div>
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
-          <div className="card span-2 custom-card-border">
-            <div className="card-header">
-              <h3 className="card-title">Recent Courses</h3>
-              <button 
-                className="btn-primary"
-                onClick={() => setIsAddCourseModalOpen(true)}>
-                Add Course
-              </button>
-            </div>
-            <div className="table-responsive">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Course ID</th>
-                    <th>Course Name</th>
-                    <th>Instructor</th>
-                    <th>Days</th>
-                    <th>Time</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-  {courses.length === 0 ? (
-    <tr>
-      <td colSpan="6" className="empty-state">No courses found. Data will appear here once loaded.</td>
-    </tr>
-  ) : (
-    courses.map(course => (
-      <tr key={course.id}>
-        <td>{course.courseId || "N/A"}</td>
-        <td>{course.courseName || "Unknown Course"}</td>
-        <td>{course.instructorName || "No Instructor"}</td>
-        <td>{course.SelectDays || course.days || "TBD"}</td>
-        <td>{course.Time || course.time || "TBD"}</td>
-        <td>
-          <div className="action-buttons">
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#2196f3'}} onClick={() => handleView(course)}>View</button>
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#4caf50'}} onClick={() => handleChange(course)}>Change</button>
-            <button className="icon-btn text-action" style={{fontSize: '13px', color: '#f44336'}} onClick={() => handleDelete("courses", course.id)}>Delete</button>
-          </div>
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
-              </table>
-            </div>
-          </div>
-          <div className="card span-2">
-            <h3 className="card-title">Quick Actions</h3>
-            <div className="actions-grid">
-              {quickActions.map(action => (
-                <button 
-                  key={action.name} 
-                  className="action-card" 
-                  style={{ backgroundColor: action.color, textAlign: 'center', justifyContent: 'center' }}
-                  onClick={action.action}
-                >
-                  <span className="action-name">{action.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
-
-{isPasswordModalOpen && (
-  <div className="modal-overlay" style={{zIndex: 9999}}>
-    <div className="modern-modal-content" style={{padding: '35px', borderRadius: '20px', width: '450px'}}>
-      <h2 style={{color: '#2c3e50', marginBottom: '25px', fontSize: '24px'}}>Change Password</h2>
-      <form onSubmit={handlePasswordUpdate}>
-        <div style={{marginBottom: '15px'}}>
-          <label style={{display: 'block', marginBottom: '5px', fontSize: '14px', color: '#666'}}>Current Password</label>
-          <input 
-            type="password" name="currentPassword" required className="modern-input"
-            value={passwordFields.currentPassword} onChange={handlePasswordInputChange} placeholder="••••••••"
-          />
-        </div>
-        <div style={{marginBottom: '15px'}}>
-          <label style={{display: 'block', marginBottom: '5px', fontSize: '14px', color: '#666'}}>New Password</label>
-          <input 
-            type="password" name="newPassword" required className="modern-input"
-            value={passwordFields.newPassword} onChange={handlePasswordInputChange} placeholder="••••••••"
-          />
-        </div>
-        <div style={{marginBottom: '25px'}}>
-          <label style={{display: 'block', marginBottom: '5px', fontSize: '14px', color: '#666'}}>Confirm New Password</label>
-          <input 
-            type="password" name="confirmPassword" required className="modern-input"
-            value={passwordFields.confirmPassword} onChange={handlePasswordInputChange} placeholder="••••••••"
-          />
-        </div>
-        <div className="modern-modal-actions">
-          <button type="submit" className="modern-btn-primary" style={{flex: 1}}>Update Password</button>
-          <button type="button" className="modern-btn-secondary" style={{flex: 1}} onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-
-{isViewModalOpen && selectedItem && (
-  <div className="modal-overlay" style={{position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999}}>
-    <div className="modern-modal-content" style={{background: 'white', padding: '30px', borderRadius: '15px', width: '400px', textAlign: 'left', color: '#333'}}>
-      <h2 style={{color: '#7e57c2', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '15px'}}>Item Details</h2>
-      
-      <div style={{lineHeight: '2', fontSize: '16px'}}>
-        <p><strong>Name:</strong> {selectedItem.fullName || selectedItem.courseName || selectedItem.name || "N/A"}</p>
-        <p><strong>ID:</strong> {selectedItem.code || selectedItem.courseId || selectedItem.id || "N/A"}</p>
-        <p><strong>Role/Instructor:</strong> {selectedItem.role || selectedItem.instructorName || "N/A"}</p>
-        <p><strong>Department:</strong> {selectedItem.department || "General"}</p>
-        {selectedItem.courseName && (
-          <p><strong>Schedule:</strong> {selectedItem.SelectDays || selectedItem.days} at {selectedItem.Time || selectedItem.time}</p>
-        )}
-        
-        <p><strong>Status:</strong> <span style={{color: '#4caf50'}}>{selectedItem.status || 'Active'}</span></p>
-      </div>
-
-      <button 
-        onClick={() => setIsViewModalOpen(false)}
-        style={{marginTop: '25px', width: '100%', padding: '12px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}
-      >
-        Close
-      </button>
-    </div>
-  </div>
-)}
-{isEditModalOpen && selectedItem && (
-  <div className="modal-overlay" style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.7)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:9999}}>
-    <div className="modern-modal-content" style={{background:'white', padding:'30px', borderRadius:'15px', width:'450px'}}>
-      <h2 style={{color:'#4caf50', marginBottom:'20px'}}>Update Details</h2>
-      
-      <form className="modern-form" onSubmit={handleSaveChanges}>
-        <label style={{display:'block', marginBottom:'5px', textAlign:'left'}}>Name (Read Only):</label>
-        <input 
-          type="text" 
-          className="modern-input" 
-          value={selectedItem.fullName || selectedItem.courseName} 
-          disabled 
-          style={{backgroundColor: '#f5f5f5', cursor: 'not-allowed'}} 
-        />
-        
-        <label style={{display:'block', marginBottom:'5px', textAlign:'left', marginTop:'15px'}}>New {selectedItem.courseName ? 'Room Number' : 'Department'}:</label>
-        <input 
-          type="text" 
-          className="modern-input" 
-          defaultValue={selectedItem.department || selectedItem.RoomNumber || ""} 
-          placeholder="Enter new value"
-          required
-        />
-
-        <div className="modern-modal-actions" style={{marginTop:'25px'}}>
-           <button type="submit" className="modern-btn-primary" style={{backgroundColor:'#4caf50'}}>Update Now</button>
-           <button type="button" className="modern-btn-secondary" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-    </div>
-  );
+    );
 };
 export default AdminDashboard;

@@ -741,11 +741,12 @@ export default function ProfessorDashboard() {
                                         <X size={20} />
                                     </button>
                                 </div>
-                                
-                               <div className="modal-form grid">
+    
+ 
+                         <div className="modal-form grid">
     {modalType === 'add' && (
         <div className="form-group full-width">
-            <label style={{ color: '#4f46e5', fontWeight: 'bold' }}>Select Course from Admin List</label>
+            <label style={{ color: '#4f46e5', fontWeight: 'bold' }}>Select Course You Want To Teach</label>
             <select 
                 className="modern-input"
                 value={newCourse.id}
@@ -759,7 +760,6 @@ export default function ProfessorDashboard() {
                     </option>
                 ))}
             </select>
-            <small style={{ color: '#666' }}>This list is managed by the Admin</small>
         </div>
     )}
 

@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import './ProfessorDashboard.css';
 import { useNavigate } from 'react-router-dom';
+import { 
+    LayoutDashboard, BookOpen, Users, Calendar, Settings, 
+    LogOut, Key, Plus, Edit, Trash2, Bell, Download,
+    TrendingUp, Clock, CheckCircle, XCircle, AlertCircle,
+    Menu, Search, ChevronRight, BarChart3, UserPlus,
+    X  // تم إضافة X هنا
+} from 'lucide-react';
 
 import { auth, db } from './firebase'; 
-import { doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 const STORAGE_KEYS = {
     PROF_IMAGE: 'yallaclass_prof_image'
@@ -16,6 +23,17 @@ export default function ProfessorDashboard() {
     const [profileImage, setProfileImage] = useState(localStorage.getItem(STORAGE_KEYS.PROF_IMAGE) || null);
     const [profData, setProfData] = useState({ name: 'Loading...', code: '...' });
     const [isLoading, setIsLoading] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [activeTab, setActiveTab] = useState('Dashboard');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // حالات النوافذ المنبثقة
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [passwordFields, setPasswordFields] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
 
     const fetchUserData = async (user) => {
         try {
@@ -61,6 +79,43 @@ export default function ProfessorDashboard() {
             navigate('/');
         }, 1000);
     };
+
+    // دوال تغيير كلمة المرور
+    const handlePasswordInputChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordFields(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handlePasswordUpdate = async (e) => {
+        e.preventDefault();
+        const user = auth.currentUser;
+        
+        if (passwordFields.newPassword !== passwordFields.confirmPassword) {
+            showNotification("New passwords do not match!", 'error');
+            return;
+        }
+
+        if (passwordFields.newPassword.length < 6) {
+            showNotification("Password must be at least 6 characters!", 'error');
+            return;
+        }
+
+        try {
+            const credential = EmailAuthProvider.credential(user.email, passwordFields.currentPassword);
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, passwordFields.newPassword);
+            
+            showNotification("Password updated successfully!", 'success');
+            setIsPasswordModalOpen(false);
+            setPasswordFields({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (error) {
+            if (error.code === 'auth/wrong-password') {
+                showNotification("Current password is incorrect!", 'error');
+            } else {
+                showNotification("Error updating password. Please try again.", 'error');
+            }
+        }
+    };
    
     const [courses, setCourses] = useState([
         {
@@ -101,8 +156,6 @@ export default function ProfessorDashboard() {
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('');
     const [selectedCourse, setSelectedCourse] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState('name');
     const [notifications, setNotifications] = useState([]);
     const [newCourse, setNewCourse] = useState({
         id: '', name: '', schedule: '', room: '', students: ''
@@ -150,16 +203,9 @@ export default function ProfessorDashboard() {
     };
 
     const filteredCourses = courses.filter(course =>
-        course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.id.toLowerCase().includes(searchTerm.toLowerCase())
+        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.id.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-    const sortedCourses = [...filteredCourses].sort((a, b) => {
-        if (sortBy === 'name') return a.name.localeCompare(b.name);
-        if (sortBy === 'students') return b.students - a.students;
-        if (sortBy === 'attendance') return b.avgAttendance - a.avgAttendance;
-        return 0;
-    });
 
     const openAddModal = () => {
         setModalType('add');
@@ -225,16 +271,6 @@ export default function ProfessorDashboard() {
         showNotification(`Attendance updated for ${courseId}`);
     };
 
-    const duplicateCourse = (course) => {
-        const newId = course.id + ' Copy';
-        setCourses([...courses, {
-            ...course,
-            id: newId,
-            name: course.name + ' (Copy)'
-        }]);
-        showNotification(`Course duplicated as ${newId}`);
-    };
-
     const exportData = () => {
         const dataStr = JSON.stringify(courses, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -258,7 +294,8 @@ export default function ProfessorDashboard() {
     ];
 
     return (
-        <div className="app professor-app">
+        <div className="professor-layout">
+            {/* نظام الإشعارات العلوي - من Admin */}
             <div className="notifications-container">
                 {notifications.map(n => (
                     <div key={n.id} className={`notification ${n.type}`}>
@@ -267,279 +304,494 @@ export default function ProfessorDashboard() {
                 ))}
             </div>
 
-            <div className="sidebar">
-                <div className="sidebar-profile">
-                    <div className="profile-image-wrapper">
+            {/* الشريط الجانبي - مأخوذ من Admin مع تعديل */}
+            <aside className={`professor-sidebar ${sidebarOpen ? 'open' : ''}`}>
+                <div className="sidebar-profile-section">
+                    <div className="profile-img-container" onClick={() => document.getElementById('prof-profile-upload').click()}>
                         {profileImage ? (
-                            <img src={profileImage} alt="Profile" className="sidebar-profile-image" />
+                            <img src={profileImage} alt="Profile" className="profile-img" />
                         ) : (
-                            <div className="sidebar-profile-placeholder">
+                            <div className="profile-placeholder">
                                 {profData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
                             </div>
                         )}
-                        <div 
-                           className="image-upload-overlay" 
-                           onClick={() => document.getElementById('prof-profile-upload').click()}
-                           title="Upload new photo"
-                        >
-                            <span>+</span>
-                        </div>
+                        <div className="profile-status"></div>
                     </div>
-
-                    <div className="sidebar-profile-name">{profData.name}</div>
-                    <div className="sidebar-profile-id">{profData.code}</div>
-
-                    <input
-                        type="file"
-                        id="prof-profile-upload"
-                        style={{ display: 'none' }}
-                        accept="image/*"
-                        onChange={handleImageUpload}
+                    <input 
+                        type="file" 
+                        id="prof-profile-upload" 
+                        style={{ display: 'none' }} 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
                     />
-
+                    <h3 className="profile-name">{profData.name}</h3>
+                    <p className="profile-id">ID: {profData.code}</p>
                     {profileImage && (
-                        <button className="remove-photo-btn" onClick={removeProfileImage}>
+                        <button className="remove-photo-text" onClick={removeProfileImage}>
                             Remove Photo
                         </button>
                     )}
                 </div>
 
-                <div className="nav-item active">Dashboard</div>
-                <div className="nav-item">My Courses</div>
-                <div className="nav-item">Students</div>
-                <div className="nav-item">Schedule</div>
-                <div className="nav-item">Settings</div>
-                
-                <div className="nav-item" onClick={exportData} style={{ cursor: 'pointer' }}>
-                    Export Data
-                </div>
-                
-                <div className="nav-item logout" onClick={handleLogout} style={{ cursor: 'pointer' }}>Logout</div>
-            </div>
+                <nav className="sidebar-nav">
+                    <button 
+                        className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Dashboard')}
+                    >
+                        <LayoutDashboard size={20} />
+                        <span>Dashboard</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'My Courses' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('My Courses')}
+                    >
+                        <BookOpen size={20} />
+                        <span>My Courses</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'Students' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Students')}
+                    >
+                        <Users size={20} />
+                        <span>Students</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'Schedule' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Schedule')}
+                    >
+                        <Calendar size={20} />
+                        <span>Schedule</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'Analytics' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Analytics')}
+                    >
+                        <BarChart3 size={20} />
+                        <span>Analytics</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Settings')}
+                    >
+                        <Settings size={20} />
+                        <span>Settings</span>
+                    </button>
+                </nav>
 
-            <div className="main-content">
-                
-                <div className="header">
-                    <div className="header-info">
-                        <h1> Dashboard </h1>
-                        <p>Welcome back, {profData.name}!</p>
-                    </div>
-                    
-                    <div className="search-sort-container">
-                        <button className="refresh-btn" onClick={() => fetchUserData(auth.currentUser)} title="Sync Profile">
-                           🔄
+                <div className="sidebar-footer">
+                    <button className="nav-item btn-password" onClick={() => setIsPasswordModalOpen(true)}>
+                        <Key size={18} />
+                        <span>Change Password</span>
+                    </button>
+                    <button className="nav-item btn-logout" onClick={handleLogout}>
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </aside>
+
+            {/* المحتوى الرئيسي - مأخوذ من Admin مع تعديل */}
+            <main className="professor-main">
+                <header className="main-header">
+                    <div className="header-title">
+                        <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                            <Menu size={24} />
                         </button>
-                        <input
-                            type="text"
-                            placeholder="Search courses..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="search-input"
-                        />
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="sort-select"
-                        >
-                            <option value="name">Sort by Name</option>
-                            <option value="students">Sort by Students</option>
-                            <option value="attendance">Sort by Attendance</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <div className="stat-label">Total Courses</div>
-                        <div className="stat-value">{courses.length}</div>
-                        <small className="stat-subtext">Active courses</small>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-label">Total Students</div>
-                        <div className="stat-value">{totalStudents}</div>
-                        <small className="stat-subtext">Enrolled students</small>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-label">Avg Attendance</div>
-                        <div className="stat-value">{avgAttendance}%</div>
-                        <small className="stat-subtext">Overall average</small>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-label">Today's Present</div>
-                        <div className="stat-value">{totalPresent}</div>
-                        <small className="stat-subtext">Checked in today</small>
-                    </div>
-                </div>
-
-                <div className="quick-actions">
-                    <button className="btn btn-primary" onClick={openAddModal}>
-                        Add New Course
-                    </button>
-                    <button className="btn btn-outline" onClick={resetAllAttendance}>
-                        Reset All Today
-                    </button>
-                    <button className="btn btn-outline" onClick={() => {
-                        setSearchTerm('');
-                        showNotification('Filters cleared');
-                    }}>
-                        Clear Search
-                    </button>
-                </div>
-
-                <div>
-                    <div className="section-title">
-                        My Courses ({sortedCourses.length})
-                        <button className="add-btn" onClick={openAddModal}>+</button>
-                    </div>
-
-                    {sortedCourses.length === 0 ? (
-                        <div className="empty-state">
-                            <h3>No courses found</h3>
-                            <p>Try adjusting your search or add a new course</p>
-                            <button className="btn btn-primary" onClick={openAddModal}>
-                                Add Your First Course
-                            </button>
+                        <div>
+                            <h1>{activeTab}</h1>
+                            <p>Welcome to your teaching dashboard</p>
                         </div>
-                    ) : (
-                        sortedCourses.map(course => (
-                            <div key={course.id} className="course-card">
-                                <div className="course-info">
-                                    <div className="course-header">
-                                        <span className="course-code">{course.id}</span>
-                                        <span className="course-schedule">{course.schedule}</span>
-                                    </div>
-                                    <h3 className="course-name">{course.name}</h3>
-                                    <p className="course-meta">
-                                        {course.room} • {course.students} Students
-                                    </p>
-                                    
-                                    <div className="attendance-badge">
-                                        Avg Attendance <span>{course.avgAttendance}%</span>
-                                    </div>
+                    </div>
+                    <div className="header-actions">
+                        <div className="search-bar">
+                            <Search size={18} className="search-icon" />
+                            <input 
+                                type="text" 
+                                placeholder="Search courses..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <button className="bell-btn" onClick={() => showNotification('No new notifications', 'info')}>
+                            <Bell size={20} />
+                            <span className="bell-badge"></span>
+                        </button>
+                        <button className="export-btn" onClick={exportData} title="Export Data">
+                            <Download size={20} />
+                        </button>
+                    </div>
+                </header>
 
-                                    <div className="attendance-buttons">
-                                        <button className="btn btn-present" onClick={() => updateAttendance(course.id, 'present')}>
-                                            +Present
-                                        </button>
-                                        <button className="btn btn-late" onClick={() => updateAttendance(course.id, 'late')}>
-                                            +Late
-                                        </button>
-                                        <button className="btn btn-absent" onClick={() => updateAttendance(course.id, 'absent')}>
-                                            +Absent
-                                        </button>
-                                    </div>
-
-                                    <div className="today-stats">
-                                        <span className="stat-present" title="Present">{course.todayPresent}</span>
-                                        <span className="stat-late" title="Late">{course.todayLate}</span>
-                                        <span className="stat-absent" title="Absent">{course.todayAbsent}</span>
-                                    </div>
+                <div className="content-scroll">
+                    {activeTab === 'Dashboard' && (
+                        <div className="dashboard-view">
+                            {/* بطاقات الإجراءات السريعة - من Admin */}
+                            <div className="quick-actions-row">
+                                <div className="action-card blue" onClick={openAddModal}>
+                                    <BookOpen size={28} />
+                                    <span>New Course</span>
                                 </div>
-
-                                <div className="action-buttons">
-                                    <button className="btn btn-primary" onClick={() => openAttendanceModal(course)}>
-                                        Start
-                                    </button>
-                                    <button className="btn btn-outline" onClick={() => openEditModal(course)}>
-                                        Edit
-                                    </button>
-                                    <button className="btn btn-outline" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
-                                        Reset
-                                    </button>
-                                    <button className="btn btn-delete" onClick={() => deleteCourse(course.id)}>
-                                        Delete
-                                    </button>
+                                <div className="action-card green" onClick={() => {
+                                    setActiveTab('Students');
+                                    showNotification('Navigating to Students page', 'info');
+                                }}>
+                                    <UserPlus size={28} />
+                                    <span>Add Students</span>
+                                </div>
+                                <div className="action-card yellow" onClick={exportData}>
+                                    <Download size={28} />
+                                    <span>Export Data</span>
+                                </div>
+                                <div className="action-card red" onClick={resetAllAttendance}>
+                                    <Clock size={28} />
+                                    <span>Reset Today</span>
                                 </div>
                             </div>
-                        ))
+
+                            {/* بطاقات الإحصائيات - محسنة */}
+                            <div className="stats-grid">
+                                <div className="stat-card">
+                                    <BookOpen className="stat-icon blue" />
+                                    <div className="stat-info">
+                                        <span className="stat-label">Total Courses</span>
+                                        <span className="stat-value">{courses.length}</span>
+                                    </div>
+                                </div>
+                                <div className="stat-card">
+                                    <Users className="stat-icon green" />
+                                    <div className="stat-info">
+                                        <span className="stat-label">Total Students</span>
+                                        <span className="stat-value">{totalStudents}</span>
+                                    </div>
+                                </div>
+                                <div className="stat-card">
+                                    <TrendingUp className="stat-icon purple" />
+                                    <div className="stat-info">
+                                        <span className="stat-label">Avg Attendance</span>
+                                        <span className="stat-value">{avgAttendance}%</span>
+                                    </div>
+                                </div>
+                                <div className="stat-card">
+                                    <CheckCircle className="stat-icon orange" />
+                                    <div className="stat-info">
+                                        <span className="stat-label">Today's Present</span>
+                                        <span className="stat-value">{totalPresent}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* قسم الكورسات - محسن */}
+                            <div className="courses-section">
+                                <div className="section-header">
+                                    <h2>My Courses</h2>
+                                    <button className="view-all-btn" onClick={() => setActiveTab('My Courses')}>
+                                        View All <ChevronRight size={16} />
+                                    </button>
+                                </div>
+
+                                <div className="courses-grid">
+                                    {filteredCourses.slice(0, 3).map(course => (
+                                        <div key={course.id} className="course-card-modern">
+                                            <div className="course-header">
+                                                <span className="course-code">{course.id}</span>
+                                                <div className="course-actions">
+                                                    <button className="icon-btn" onClick={() => openEditModal(course)} title="Edit">
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button className="icon-btn delete" onClick={() => deleteCourse(course.id)} title="Delete">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <h3 className="course-name">{course.name}</h3>
+                                            <div className="course-details">
+                                                <p><Clock size={14} /> {course.schedule}</p>
+                                                <p><Calendar size={14} /> {course.room}</p>
+                                            </div>
+                                            <div className="attendance-summary">
+                                                <div className="attendance-item present">
+                                                    <CheckCircle size={14} />
+                                                    <span>{course.todayPresent} Present</span>
+                                                </div>
+                                                <div className="attendance-item late">
+                                                    <AlertCircle size={14} />
+                                                    <span>{course.todayLate} Late</span>
+                                                </div>
+                                                <div className="attendance-item absent">
+                                                    <XCircle size={14} />
+                                                    <span>{course.todayAbsent} Absent</span>
+                                                </div>
+                                            </div>
+                                            <button className="start-attendance-btn" onClick={() => openAttendanceModal(course)}>
+                                                Start Attendance
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* بطاقة الرسم البياني للأسبوع */}
+                            <div className="chart-card">
+                                <div className="chart-header">
+                                    <h3>Weekly Attendance Overview</h3>
+                                    <span className="chart-badge">Last 5 days</span>
+                                </div>
+                                <div className="chart-bars">
+                                    {weeklyData.map((item, i) => (
+                                        <div key={i} className="bar-item">
+                                            <div 
+                                                className="bar" 
+                                                style={{ height: `${item.value * 2}px` }}
+                                            ></div>
+                                            <span className="bar-day">{item.day}</span>
+                                            <span className="bar-value">{item.value}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* صفحة My Courses - محسنة */}
+                    {activeTab === 'My Courses' && (
+                        <div className="courses-full-view">
+                            <div className="page-header">
+                                <h2>All Courses ({filteredCourses.length})</h2>
+                                <button className="primary-btn" onClick={openAddModal}>
+                                    <Plus size={18} /> Add Course
+                                </button>
+                            </div>
+                            <div className="courses-table-container">
+                                <table className="modern-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Course Name</th>
+                                            <th>Schedule</th>
+                                            <th>Room</th>
+                                            <th>Students</th>
+                                            <th>Attendance</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredCourses.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="7" className="no-data">No courses found</td>
+                                            </tr>
+                                        ) : (
+                                            filteredCourses.map(course => (
+                                                <tr key={course.id}>
+                                                    <td className="code-cell">{course.id}</td>
+                                                    <td className="name-cell">{course.name}</td>
+                                                    <td>{course.schedule}</td>
+                                                    <td>{course.room}</td>
+                                                    <td>{course.students}</td>
+                                                    <td>
+                                                        <span className="attendance-badge">
+                                                            {course.avgAttendance}%
+                                                        </span>
+                                                    </td>
+                                                    <td className="actions-cell">
+                                                        <button className="icon-btn primary" onClick={() => openAttendanceModal(course)} title="Start Attendance">
+                                                            <CheckCircle size={18} />
+                                                        </button>
+                                                        <button className="icon-btn" onClick={() => openEditModal(course)} title="Edit">
+                                                            <Edit size={18} />
+                                                        </button>
+                                                        <button className="icon-btn" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
+                                                            <Clock size={18} />
+                                                        </button>
+                                                        <button className="icon-btn delete" onClick={() => deleteCourse(course.id)} title="Delete">
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* صفحات أخرى تحت التطوير */}
+                    {(activeTab === 'Students' || activeTab === 'Schedule' || activeTab === 'Analytics' || activeTab === 'Settings') && (
+                        <div className="under-development">
+                            <Settings size={60} className="spin-icon" />
+                            <h2>This page is currently under development</h2>
+                            <p>Check back soon for updates!</p>
+                        </div>
                     )}
                 </div>
+            </main>
 
-                <div className="chart-card">
-                    <div className="section-title">Weekly Attendance Overview</div>
-                    <div className="chart-bars">
-                        {weeklyData.map((item, i) => (
-                            <div key={i} className="bar-item">
-                                <div 
-                                    className="bar" 
-                                    style={{ height: `${item.value * 2}px` }}
-                                ></div>
-                                <span className="bar-day">{item.day}</span>
-                                <span className="bar-value">{item.value}%</span>
+            {/* مودال تغيير كلمة المرور - محسن */}
+            {isPasswordModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsPasswordModalOpen(false)}>
+                    <div className="modern-modal small" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Change Password</h2>
+                            <button className="close-btn" onClick={() => setIsPasswordModalOpen(false)}>
+                                <X size={20} />  {/* الآن X معرف بشكل صحيح */}
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handlePasswordUpdate} className="modal-form vertical">
+                            <div className="form-group">
+                                <label>Current Password</label>
+                                <input
+                                    type="password"
+                                    name="currentPassword"
+                                    value={passwordFields.currentPassword}
+                                    onChange={handlePasswordInputChange}
+                                    placeholder="Enter current password"
+                                    required
+                                    className="modern-input"
+                                />
                             </div>
-                        ))}
-                    </div>
-                    <div className="chart-footer">
-                        Higher attendance on Wednesdays
+
+                            <div className="form-group">
+                                <label>New Password</label>
+                                <input
+                                    type="password"
+                                    name="newPassword"
+                                    value={passwordFields.newPassword}
+                                    onChange={handlePasswordInputChange}
+                                    placeholder="Enter new password"
+                                    required
+                                    minLength="6"
+                                    className="modern-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Confirm Password</label>
+                                <input
+                                    type="password"
+                                    name="confirmPassword"
+                                    value={passwordFields.confirmPassword}
+                                    onChange={handlePasswordInputChange}
+                                    placeholder="Confirm new password"
+                                    required
+                                    className="modern-input"
+                                />
+                            </div>
+
+                            <div className="password-requirements">
+                                <p>Password must be at least 6 characters long</p>
+                            </div>
+
+                            <div className="modal-actions">
+                                <button type="button" className="cancel-btn" onClick={() => setIsPasswordModalOpen(false)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="update-btn">
+                                    Update Password
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            </div>
+            )}
 
+            {/* مودال إضافة/تعديل الكورس - محسن */}
             {showModal && (
-                <div className="modal" onClick={() => setShowModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                    <div className="modern-modal" onClick={e => e.stopPropagation()}>
                         {modalType === 'attendance' ? (
                             <>
-                                <h3>Start Attendance</h3>
+                                <div className="modal-header">
+                                    <h3>Start Attendance Session</h3>
+                                    <button className="close-btn" onClick={() => setShowModal(false)}>
+                                        <X size={20} />  {/* الآن X معرف بشكل صحيح */}
+                                    </button>
+                                </div>
                                 <p className="modal-subtitle">Course: {selectedCourse?.name}</p>
                                 
-                                <div className="attendance-code">2478</div>
+                                <div className="attendance-code-display">2478</div>
+                                <p className="modal-instruction">Share this 4-digit code with your students</p>
 
-                                <p className="modal-instruction">Share this code with students</p>
-
-                                <div className="modal-buttons">
-                                    <button className="modal-btn confirm" onClick={() => {
-                                        showNotification('Attendance session started!');
+                                <div className="modal-actions centered">
+                                    <button className="primary-btn large" onClick={() => {
+                                        showNotification('Attendance session started successfully!');
                                         setShowModal(false);
                                     }}>
                                         Start Session
                                     </button>
-                                    <button className="modal-btn cancel" onClick={() => setShowModal(false)}>
-                                        Close
+                                    <button className="secondary-btn" onClick={() => setShowModal(false)}>
+                                        Cancel
                                     </button>
                                 </div>
                             </>
                         ) : (
                             <>
-                                <h3>{modalType === 'add' ? 'Add New Course' : 'Edit Course'}</h3>
-                                <input
-                                    className="modal-input"
-                                    placeholder="Course ID (e.g., CS401)"
-                                    value={newCourse.id}
-                                    onChange={(e) => setNewCourse({...newCourse, id: e.target.value})}
-                                />
-                                <input
-                                    className="modal-input"
-                                    placeholder="Course Name"
-                                    value={newCourse.name}
-                                    onChange={(e) => setNewCourse({...newCourse, name: e.target.value})}
-                                />
-                                <input
-                                    className="modal-input"
-                                    placeholder="Schedule"
-                                    value={newCourse.schedule}
-                                    onChange={(e) => setNewCourse({...newCourse, schedule: e.target.value})}
-                                />
-                                <input
-                                    className="modal-input"
-                                    placeholder="Room"
-                                    value={newCourse.room}
-                                    onChange={(e) => setNewCourse({...newCourse, room: e.target.value})}
-                                />
-                                <input
-                                    className="modal-input"
-                                    type="number"
-                                    placeholder="Number of Students"
-                                    value={newCourse.students}
-                                    onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
-                                />
-
-                                <div className="modal-buttons">
-                                    <button className="modal-btn confirm" onClick={saveCourse}>
-                                        {modalType === 'add' ? 'Create Course' : 'Save Changes'}
+                                <div className="modal-header">
+                                    <h3>{modalType === 'add' ? 'Add New Course' : 'Edit Course'}</h3>
+                                    <button className="close-btn" onClick={() => setShowModal(false)}>
+                                        <X size={20} />  {/* الآن X معرف بشكل صحيح */}
                                     </button>
-                                    <button className="modal-btn cancel" onClick={() => setShowModal(false)}>
+                                </div>
+                                
+                                <div className="modal-form grid">
+                                    <div className="form-group full-width">
+                                        <label>Course ID</label>
+                                        <input
+                                            className="modern-input"
+                                            placeholder="e.g., CS401"
+                                            value={newCourse.id}
+                                            onChange={(e) => setNewCourse({...newCourse, id: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group full-width">
+                                        <label>Course Name</label>
+                                        <input
+                                            className="modern-input"
+                                            placeholder="e.g., Data Structures"
+                                            value={newCourse.name}
+                                            onChange={(e) => setNewCourse({...newCourse, name: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Schedule</label>
+                                        <input
+                                            className="modern-input"
+                                            placeholder="Mon, Wed 10:00 AM"
+                                            value={newCourse.schedule}
+                                            onChange={(e) => setNewCourse({...newCourse, schedule: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Room</label>
+                                        <input
+                                            className="modern-input"
+                                            placeholder="Room 201"
+                                            value={newCourse.room}
+                                            onChange={(e) => setNewCourse({...newCourse, room: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group full-width">
+                                        <label>Number of Students</label>
+                                        <input
+                                            className="modern-input"
+                                            type="number"
+                                            placeholder="45"
+                                            value={newCourse.students}
+                                            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="modal-actions">
+                                    <button className="secondary-btn" onClick={() => setShowModal(false)}>
                                         Cancel
+                                    </button>
+                                    <button className="primary-btn" onClick={saveCourse}>
+                                        {modalType === 'add' ? 'Create Course' : 'Save Changes'}
                                     </button>
                                 </div>
                             </>

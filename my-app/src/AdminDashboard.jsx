@@ -289,67 +289,67 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div className="admin-layout">
+        <div className="dashboard-container">
             
-            <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
-                <div className="sidebar-profile-section">
-                    <div className="profile-img-container" onClick={() => document.getElementById('admin-profile-upload').click()}>
+            <aside className={`sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
+                <div className="profile-section">
+                    <div className="profile-image-wrapper" onClick={() => document.getElementById('admin-profile-upload').click()}>
                         {adminProfileImage ? (
-                            <img src={adminProfileImage} alt="Admin" className="profile-img" />
+                            <img src={adminProfileImage} alt="Admin" className="profile-image" />
                         ) : (
-                            <div className="profile-placeholder">
+                            <div className="profile-image-placeholder">
                                 {adminData.name.charAt(0).toUpperCase()}
                             </div>
                         )}
-                        <div className="profile-status"></div>
+                        <div className="profile-status-indicator"></div>
                     </div>
                     <input type="file" id="admin-profile-upload" style={{ display: 'none' }} accept="image/*" onChange={handleImageUpload} />
                     <h3 className="profile-name">{adminData.name}</h3>
                     <p className="profile-id">ID: {adminData.code}</p>
                     {adminProfileImage && (
-                        <button className="remove-photo-text" onClick={removeProfileImage}>Remove Photo</button>
+                        <button className="remove-photo-button" onClick={removeProfileImage}>Remove Photo</button>
                     )}
                 </div>
 
-                <nav className="sidebar-nav">
-                    <button className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('Dashboard')}>
+                <nav className="navigation-menu">
+                    <button className={`nav-button ${activeTab === 'Dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('Dashboard')}>
                         <LayoutDashboard size={20} />
                         <span>Dashboard</span>
                     </button>
-                    <button className={`nav-item ${activeTab === 'All Users' ? 'active' : ''}`} onClick={() => setActiveTab('All Users')}>
+                    <button className={`nav-button ${activeTab === 'All Users' ? 'active' : ''}`} onClick={() => setActiveTab('All Users')}>
                         <Users size={20} />
                         <span>All Users</span>
                     </button>
-                    <button className={`nav-item ${activeTab === 'Courses' ? 'active' : ''}`} onClick={() => setActiveTab('Courses')}>
+                    <button className={`nav-button ${activeTab === 'Courses' ? 'active' : ''}`} onClick={() => setActiveTab('Courses')}>
                         <BookOpen size={20} />
                         <span>Courses</span>
                     </button>
-                    <button className={`nav-item ${activeTab === 'Analytics' ? 'active' : ''}`} onClick={() => setActiveTab('Analytics')}>
+                    <button className={`nav-button ${activeTab === 'Analytics' ? 'active' : ''}`} onClick={() => setActiveTab('Analytics')}>
                         <TrendingUp size={20} />
                         <span>Analytics</span>
                     </button>
-                    <button className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`} onClick={() => setActiveTab('Settings')}>
+                    <button className={`nav-button ${activeTab === 'Settings' ? 'active' : ''}`} onClick={() => setActiveTab('Settings')}>
                         <Settings size={20} />
                         <span>Settings</span>
                     </button>
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button className="nav-item btn-password" onClick={() => setIsPasswordModalOpen(true)}>
+                    <button className="nav-button password-button" onClick={() => setIsPasswordModalOpen(true)}>
                         <Key size={18} />
                         <span>Change Password</span>
                     </button>
-                    <button className="nav-item btn-logout" onClick={handleLogout}>
+                    <button className="nav-button logout-button" onClick={handleLogout}>
                         <LogOut size={18} />
                         <span>Logout</span>
                     </button>
                 </div>
             </aside>
 
-            <main className="admin-main">
-                <header className="main-header">
-                    <div className="header-title">
-                        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <main className="main-content-area">
+                <header className="content-header">
+                    <div className="page-title">
+                        <button className="mobile-menu-trigger" onClick={() => setSidebarOpen(!sidebarOpen)}>
                             <Menu size={24} />
                         </button>
                         <div>
@@ -357,61 +357,62 @@ const AdminDashboard = () => {
                             <p>Welcome to YallaClass Management System</p>
                         </div>
                     </div>
-                    <div className="header-actions">
-                        <div className="search-bar">
+                    <div className="header-controls">
+                        <div className="search-container">
                             <Search size={18} className="search-icon" />
                             <input 
                                 type="text" 
                                 placeholder="Search here..." 
+                                className="search-input"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button className="bell-btn">
+                        <button className="notification-button">
                             <Bell size={20} />
-                            <span className="bell-badge"></span>
+                            <span className="notification-badge"></span>
                         </button>
                     </div>
                 </header>
 
-                <div className="content-scroll">
+                <div className="scrollable-content">
                     {activeTab === 'Dashboard' && (
                         <div className="dashboard-view">
-                            <div className="quick-actions-row">
-                                <div className="action-card blue" onClick={() => setIsAddCourseModalOpen(true)}>
+                            <div className="quick-actions-grid">
+                                <div className="action-card-item card-blue" onClick={() => setIsAddCourseModalOpen(true)}>
                                     <BookOpen size={28} />
                                     <span>New Course</span>
                                 </div>
-                                <div className="action-card green" onClick={() => setIsAddUserModalOpen(true)}>
+                                <div className="action-card-item card-green" onClick={() => setIsAddUserModalOpen(true)}>
                                     <Users size={28} />
                                     <span>New User</span>
                                 </div>
-                                <div className="action-card yellow" onClick={() => setActiveTab('Analytics')}>
+                                <div className="action-card-item card-yellow" onClick={() => setActiveTab('Analytics')}>
                                     <Download size={28} />
                                     <span>Reports</span>
                                 </div>
-                                <div className="action-card red" onClick={() => setActiveTab('Settings')}>
+                                <div className="action-card-item card-red" onClick={() => setActiveTab('Settings')}>
                                     <Shield size={28} />
                                     <span>Settings</span>
                                 </div>
                             </div>
 
-                            <div className="middle-row">
-                                <div className="chart-card dept-card">
-                                    <div className="card-heading">
+                            <div className="middle-row-grid">
+                                <div className="chart-card-container">
+                                    <div className="card-header">
                                         <Building size={20} />
                                         <h3>Students by Department</h3>
                                     </div>
-                                    <div className="dept-list">
-                                        {departments.length === 0 ? <p className="no-data">No data available</p> : (
+                                    <div className="department-list">
+                                        {departments.length === 0 ? <p className="no-data-message">No data available</p> : (
                                             departments.map(dept => (
-                                                <div className="dept-item" key={dept.name}>
-                                                    <div className="dept-info">
-                                                        <span className="dept-name">{dept.name}</span>
-                                                        <span className="dept-count">{dept.count} Users</span>
+                                                <div className="department-item" key={dept.name}>
+                                                    <div className="department-info">
+                                                        <span className="department-name">{dept.name}</span>
+                                                        <span className="department-count">{dept.count} Users</span>
                                                     </div>
-                                                    <div className="progress-bg">
-                                                        <div className="progress-fill" style={{ width: `${(dept.count / totalStudents) * 100}%` }}></div>
+                                                    <div className="progress-bar-bg">
+                                                        <div className="progress-bar-fill" style={{ width: `${(dept.count / totalStudents) * 100}%` }}></div>
                                                     </div>
                                                 </div>
                                             ))
@@ -419,16 +420,16 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
 
-                                <div className="chart-card activity-card">
-                                    <div className="card-heading">
-                                        <Bell size={20} className="text-red" />
+                                <div className="chart-card-container">
+                                    <div className="card-header">
+                                        <Bell size={20} className="text-primary" />
                                         <h3>Recent Activities</h3>
                                     </div>
-                                    <div className="activity-list">
-                                        {courses.slice(0, 3).length === 0 ? <p className="no-data border-dash">No recent activities</p> : (
+                                    <div className="activity-list-container">
+                                        {courses.slice(0, 3).length === 0 ? <p className="no-data-message">No recent activities</p> : (
                                             courses.slice(0, 3).map((act, i) => (
-                                                <div className="activity-item" key={i}>
-                                                    <div className="activity-icon"><Plus size={16}/></div>
+                                                <div className="activity-list-item" key={i}>
+                                                    <div className="activity-icon-wrapper"><Plus size={16}/></div>
                                                     <div className="activity-text">
                                                         <h4>New course added</h4>
                                                         <p>{act.courseName}</p>
@@ -440,14 +441,14 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="tables-row">
-                                <div className="table-card">
+                            <div className="tables-row-grid">
+                                <div className="table-card-container">
                                     <div className="table-header">
                                         <h3>Recent Users</h3>
-                                        <span className="view-all" onClick={() => setActiveTab('All Users')}>View All</span>
+                                        <span className="view-all-link" onClick={() => setActiveTab('All Users')}>View All</span>
                                     </div>
-                                    <div className="table-wrapper">
-                                        <table>
+                                    <div className="table-responsive">
+                                        <table className="data-table">
                                             <thead>
                                                 <tr>
                                                     <th>ID</th>
@@ -457,23 +458,23 @@ const AdminDashboard = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredUsers.slice(0, 4).length === 0 ? <tr><td colSpan="4" className="no-data">No data</td></tr> : filteredUsers.slice(0, 4).map(u => (
+                                                {filteredUsers.slice(0, 4).length === 0 ? <tr><td colSpan="4" className="no-data-message">No data</td></tr> : filteredUsers.slice(0, 4).map(u => (
                                                     <tr key={u.id}>
                                                         <td className="text-muted">{u.code || '---'}</td>
-                                                        <td className="fw-bold">{u.fullName}</td>
+                                                        <td className="text-bold">{u.fullName}</td>
                                                         <td>
                                                             <span className={`role-badge ${u.role === 'instructor' ? 'instructor-badge' : 'student-badge'}`}>
                                                                 {getRoleIcon(u.role)} {u.role || 'Student'}
                                                             </span>
                                                         </td>
-                                                        <td className="actions-cell">
-                                                            <button className="icon-btn view-btn" onClick={() => handleView(u)} title="View Details">
+                                                        <td className="action-buttons">
+                                                            <button className="icon-button view-button" onClick={() => handleView(u)} title="View Details">
                                                                 <Eye size={16}/>
                                                             </button>
-                                                            <button className="icon-btn edit-btn" onClick={() => handleEdit(u)} title="Edit">
+                                                            <button className="icon-button edit-button" onClick={() => handleEdit(u)} title="Edit">
                                                                 <Edit size={16}/>
                                                             </button>
-                                                            <button className="icon-btn delete-btn" onClick={() => handleDelete('users', u.id)} title="Delete">
+                                                            <button className="icon-button delete-button" onClick={() => handleDelete('users', u.id)} title="Delete">
                                                                 <Trash2 size={16}/>
                                                             </button>
                                                         </td>
@@ -484,13 +485,13 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
 
-                                <div className="table-card">
+                                <div className="table-card-container">
                                     <div className="table-header">
                                         <h3>Recent Courses</h3>
-                                        <span className="view-all" onClick={() => setActiveTab('Courses')}>View All</span>
+                                        <span className="view-all-link" onClick={() => setActiveTab('Courses')}>View All</span>
                                     </div>
-                                    <div className="table-wrapper">
-                                        <table>
+                                    <div className="table-responsive">
+                                        <table className="data-table">
                                             <thead>
                                                 <tr>
                                                     <th>Code</th>
@@ -500,19 +501,19 @@ const AdminDashboard = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredCourses.slice(0, 4).length === 0 ? <tr><td colSpan="4" className="no-data">No data</td></tr> : filteredCourses.slice(0, 4).map(c => (
+                                                {filteredCourses.slice(0, 4).length === 0 ? <tr><td colSpan="4" className="no-data-message">No data</td></tr> : filteredCourses.slice(0, 4).map(c => (
                                                     <tr key={c.id}>
                                                         <td className="text-muted">{c.courseId}</td>
-                                                        <td className="text-primary fw-bold">{c.courseName}</td>
+                                                        <td className="text-primary text-bold">{c.courseName}</td>
                                                         <td>{c.instructorName}</td>
-                                                        <td className="actions-cell">
-                                                            <button className="icon-btn view-btn" onClick={() => handleView(c)} title="View Details">
+                                                        <td className="action-buttons">
+                                                            <button className="icon-button view-button" onClick={() => handleView(c)} title="View Details">
                                                                 <Eye size={16}/>
                                                             </button>
-                                                            <button className="icon-btn edit-btn" onClick={() => handleEdit(c)} title="Edit">
+                                                            <button className="icon-button edit-button" onClick={() => handleEdit(c)} title="Edit">
                                                                 <Edit size={16}/>
                                                             </button>
-                                                            <button className="icon-btn delete-btn" onClick={() => handleDelete('courses', c.id)} title="Delete">
+                                                            <button className="icon-button delete-button" onClick={() => handleDelete('courses', c.id)} title="Delete">
                                                                 <Trash2 size={16}/>
                                                             </button>
                                                         </td>
@@ -527,18 +528,18 @@ const AdminDashboard = () => {
                     )}
 
                     {activeTab === 'All Users' && (
-                        <div className="table-card full-page">
+                        <div className="table-card-container full-page">
                             <div className="table-header">
-                                <div className="flex-align">
-                                    <Users size={24} className="text-primary mr-2" />
+                                <div className="flex-align-center">
+                                    <Users size={24} className="text-primary margin-right-2" />
                                     <h3>User Management ({filteredUsers.length})</h3>
                                 </div>
-                                <button className="primary-btn" onClick={() => setIsAddUserModalOpen(true)}>
+                                <button className="primary-action-button" onClick={() => setIsAddUserModalOpen(true)}>
                                     <Plus size={18} /> Add User
                                 </button>
                             </div>
-                            <div className="table-wrapper">
-                                <table>
+                            <div className="table-responsive">
+                                <table className="data-table">
                                     <thead>
                                         <tr>
                                             <th>ID</th>
@@ -551,10 +552,10 @@ const AdminDashboard = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredUsers.length === 0 ? <tr><td colSpan="7" className="no-data">No data</td></tr> : filteredUsers.map(u => (
+                                        {filteredUsers.length === 0 ? <tr><td colSpan="7" className="no-data-message">No data</td></tr> : filteredUsers.map(u => (
                                             <tr key={u.id}>
                                                 <td className="text-muted">{u.code || '---'}</td>
-                                                <td className="fw-bold">{u.fullName}</td>
+                                                <td className="text-bold">{u.fullName}</td>
                                                 <td>{u.email}</td>
                                                 <td>
                                                     <span className={`role-badge ${u.role === 'instructor' ? 'instructor-badge' : 'student-badge'}`}>
@@ -563,14 +564,14 @@ const AdminDashboard = () => {
                                                 </td>
                                                 <td className="text-muted">{u.department || 'General'}</td>
                                                 <td>{u.phoneNumber}</td>
-                                                <td className="actions-cell">
-                                                    <button className="icon-btn view-btn" onClick={() => handleView(u)} title="View Details">
+                                                <td className="action-buttons">
+                                                    <button className="icon-button view-button" onClick={() => handleView(u)} title="View Details">
                                                         <Eye size={16}/>
                                                     </button>
-                                                    <button className="icon-btn edit-btn" onClick={() => handleEdit(u)} title="Edit">
+                                                    <button className="icon-button edit-button" onClick={() => handleEdit(u)} title="Edit">
                                                         <Edit size={16}/>
                                                     </button>
-                                                    <button className="icon-btn delete-btn" onClick={() => handleDelete('users', u.id)} title="Delete">
+                                                    <button className="icon-button delete-button" onClick={() => handleDelete('users', u.id)} title="Delete">
                                                         <Trash2 size={16}/>
                                                     </button>
                                                 </td>
@@ -583,18 +584,18 @@ const AdminDashboard = () => {
                     )}
 
                     {activeTab === 'Courses' && (
-                        <div className="table-card full-page">
+                        <div className="table-card-container full-page">
                             <div className="table-header">
-                                <div className="flex-align">
-                                    <BookOpen size={24} className="text-primary mr-2" />
+                                <div className="flex-align-center">
+                                    <BookOpen size={24} className="text-primary margin-right-2" />
                                     <h3>Course Management ({filteredCourses.length})</h3>
                                 </div>
-                                <button className="primary-btn" onClick={() => setIsAddCourseModalOpen(true)}>
+                                <button className="primary-action-button" onClick={() => setIsAddCourseModalOpen(true)}>
                                     <Plus size={18} /> Add Course
                                 </button>
                             </div>
-                            <div className="table-wrapper">
-                                <table>
+                            <div className="table-responsive">
+                                <table className="data-table">
                                     <thead>
                                         <tr>
                                             <th>Code</th>
@@ -608,23 +609,23 @@ const AdminDashboard = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredCourses.length === 0 ? <tr><td colSpan="8" className="no-data">No data</td></tr> : filteredCourses.map(c => (
+                                        {filteredCourses.length === 0 ? <tr><td colSpan="8" className="no-data-message">No data</td></tr> : filteredCourses.map(c => (
                                             <tr key={c.id}>
                                                 <td className="text-muted">{c.courseId}</td>
-                                                <td className="text-primary fw-bold">{c.courseName}</td>
+                                                <td className="text-primary text-bold">{c.courseName}</td>
                                                 <td>{c.instructorName}</td>
                                                 <td><span className="day-badge">{c.SelectDays}</span></td>
                                                 <td>{c.Time}</td>
                                                 <td>{c.RoomNumber}</td>
                                                 <td>{c.capacity}</td>
-                                                <td className="actions-cell">
-                                                    <button className="icon-btn view-btn" onClick={() => handleView(c)} title="View Details">
+                                                <td className="action-buttons">
+                                                    <button className="icon-button view-button" onClick={() => handleView(c)} title="View Details">
                                                         <Eye size={16}/>
                                                     </button>
-                                                    <button className="icon-btn edit-btn" onClick={() => handleEdit(c)} title="Edit">
+                                                    <button className="icon-button edit-button" onClick={() => handleEdit(c)} title="Edit">
                                                         <Edit size={16}/>
                                                     </button>
-                                                    <button className="icon-btn delete-btn" onClick={() => handleDelete('courses', c.id)} title="Delete">
+                                                    <button className="icon-button delete-button" onClick={() => handleDelete('courses', c.id)} title="Delete">
                                                         <Trash2 size={16}/>
                                                     </button>
                                                 </td>
@@ -637,33 +638,31 @@ const AdminDashboard = () => {
                     )}
 
                     {(activeTab === 'Analytics' || activeTab === 'Settings') && (
-                        <div className="under-development">
-                            <Settings size={60} className="spin-icon text-muted" />
+                        <div className="under-development-page">
+                            <Settings size={60} className="text-muted" />
                             <h2>This page is currently under development</h2>
                         </div>
                     )}
                 </div>
             </main>
-
-            {/* Add Course Modal */}
             {isAddCourseModalOpen && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal">
-                        <div className="modal-head">
-                            <div className="flex-align">
+                <div className="modal-overlay">
+                    <div className="modal-container">
+                        <div className="modal-header">
+                            <div className="flex-align-center">
                                 <h2>Add Course</h2>
-                                <BookOpen size={24} className="text-primary ml-2" />
+                                <BookOpen size={24} className="text-primary margin-left-2" />
                             </div>
-                            <button className="close-modal" onClick={() => setIsAddCourseModalOpen(false)}>
+                            <button className="close-modal-button" onClick={() => setIsAddCourseModalOpen(false)}>
                                 <X size={24} />
                             </button>
                         </div>
                         <form onSubmit={handleAddCourseSubmit} className="modal-form">
-                            <div className="form-grid">
-                                <input type="text" name="courseName" className="input-field full-width" value={newCourseData.courseName} onChange={handleCourseInputChange} placeholder="Course Name" required />
-                                <input type="text" name="courseId" className="input-field" value={newCourseData.courseId} onChange={handleCourseInputChange} placeholder="Course Code" required />
-                                <input type="text" name="instructorName" className="input-field" value={newCourseData.instructorName} onChange={handleCourseInputChange} placeholder="Instructor" required />
-                                <select name="SelectDays" className="input-field select-field" value={newCourseData.SelectDays} onChange={handleCourseInputChange} required>
+                            <div className="form-grid-layout">
+                                <input type="text" name="courseName" className="form-input input-full-width" value={newCourseData.courseName} onChange={handleCourseInputChange} placeholder="Course Name" required />
+                                <input type="text" name="courseId" className="form-input" value={newCourseData.courseId} onChange={handleCourseInputChange} placeholder="Course Code" required />
+                                <input type="text" name="instructorName" className="form-input" value={newCourseData.instructorName} onChange={handleCourseInputChange} placeholder="Instructor" required />
+                                <select name="SelectDays" className="form-input select-input" value={newCourseData.SelectDays} onChange={handleCourseInputChange} required>
                                     <option value="" disabled hidden>Select Day</option>
                                     <option value="Saturday">Saturday</option>
                                     <option value="Sunday">Sunday</option>
@@ -672,44 +671,42 @@ const AdminDashboard = () => {
                                     <option value="Wednesday">Wednesday</option>
                                     <option value="Thursday">Thursday</option>
                                 </select>
-                                <input type="text" name="Time" className="input-field" value={newCourseData.Time} onChange={handleCourseInputChange} placeholder="Time" required />
-                                <input type="text" name="RoomNumber" className="input-field" value={newCourseData.RoomNumber} onChange={handleCourseInputChange} placeholder="Room Number" required />
-                                <input type="number" name="capacity" className="input-field" value={newCourseData.capacity} onChange={handleCourseInputChange} placeholder="Capacity" required />
+                                <input type="text" name="Time" className="form-input" value={newCourseData.Time} onChange={handleCourseInputChange} placeholder="Time" required />
+                                <input type="text" name="RoomNumber" className="form-input" value={newCourseData.RoomNumber} onChange={handleCourseInputChange} placeholder="Room Number" required />
+                                <input type="number" name="capacity" className="form-input" value={newCourseData.capacity} onChange={handleCourseInputChange} placeholder="Capacity" required />
                             </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-cancel" onClick={() => setIsAddCourseModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="btn-submit">Add Course</button>
+                            <div className="modal-action-buttons">
+                                <button type="button" className="cancel-button" onClick={() => setIsAddCourseModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="submit-button">Add Course</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
-
-            {/* Add User Modal */}
             {isAddUserModalOpen && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal">
-                        <div className="modal-head">
-                            <div className="flex-align">
+                <div className="modal-overlay">
+                    <div className="modal-container">
+                        <div className="modal-header">
+                            <div className="flex-align-center">
                                 <h2>Add User</h2>
-                                <Users size={24} className="text-primary ml-2" />
+                                <Users size={24} className="text-primary margin-left-2" />
                             </div>
-                            <button className="close-modal" onClick={() => setIsAddUserModalOpen(false)}>
+                            <button className="close-modal-button" onClick={() => setIsAddUserModalOpen(false)}>
                                 <X size={24} />
                             </button>
                         </div>
                         <form onSubmit={handleAddUserSubmit} className="modal-form">
-                            <div className="form-grid">
-                                <input type="text" name="fullName" className="input-field full-width" value={newUserData.fullName} onChange={handleUserInputChange} placeholder="Full Name" required />
-                                <input type="email" name="email" className="input-field" value={newUserData.email} onChange={handleUserInputChange} placeholder="Email" required />
-                                <input type="password" name="password" className="input-field" value={newUserData.password} onChange={handleUserInputChange} placeholder="Password" required />
-                                <select name="role" className="input-field select-field" value={newUserData.role} onChange={handleUserInputChange} required>
+                            <div className="form-grid-layout">
+                                <input type="text" name="fullName" className="form-input input-full-width" value={newUserData.fullName} onChange={handleUserInputChange} placeholder="Full Name" required />
+                                <input type="email" name="email" className="form-input" value={newUserData.email} onChange={handleUserInputChange} placeholder="Email" required />
+                                <input type="password" name="password" className="form-input" value={newUserData.password} onChange={handleUserInputChange} placeholder="Password" required />
+                                <select name="role" className="form-input select-input" value={newUserData.role} onChange={handleUserInputChange} required>
                                     <option value="" disabled hidden>Choose Role</option>
                                     <option value="student">Student</option>
                                     <option value="instructor">Instructor</option>
                                     <option value="admin">Admin</option>
                                 </select>
-                                <select name="department" className="input-field select-field" value={newUserData.department} onChange={handleUserInputChange}>
+                                <select name="department" className="form-input select-input" value={newUserData.department} onChange={handleUserInputChange}>
                                     <option value="" disabled hidden>Department</option>
                                     <option value="CS">CS</option>
                                     <option value="IT">IT</option>
@@ -717,24 +714,22 @@ const AdminDashboard = () => {
                                     <option value="AI">AI</option>
                                     <option value="General">General</option>
                                 </select>
-                                <input type="text" name="academicYear" className="input-field" value={newUserData.academicYear} onChange={handleUserInputChange} placeholder="Academic Year" />
-                                <input type="text" name="code" className="input-field" value={newUserData.code} onChange={handleUserInputChange} placeholder="Code" />
-                                <input type="tel" name="phoneNumber" className="input-field full-width" value={newUserData.phoneNumber} onChange={handleUserInputChange} placeholder="Phone Number" required />
+                                <input type="text" name="academicYear" className="form-input" value={newUserData.academicYear} onChange={handleUserInputChange} placeholder="Academic Year" />
+                                <input type="text" name="code" className="form-input" value={newUserData.code} onChange={handleUserInputChange} placeholder="Code" />
+                                <input type="tel" name="phoneNumber" className="form-input input-full-width" value={newUserData.phoneNumber} onChange={handleUserInputChange} placeholder="Phone Number" required />
                             </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-cancel" onClick={() => setIsAddUserModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="btn-submit">Add User</button>
+                            <div className="modal-action-buttons">
+                                <button type="button" className="cancel-button" onClick={() => setIsAddUserModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="submit-button">Add User</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
-
-            {/* View Modal */}
             {isViewModalOpen && selectedItem && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal view-modal">
-                        <div className="view-header">
+                <div className="modal-overlay">
+                    <div className="modal-container view-modal-container">
+                        <div className="view-modal-header">
                             {selectedItem.courseName ? (
                                 <BookOpen size={32} />
                             ) : selectedItem.role === 'instructor' ? (
@@ -746,13 +741,12 @@ const AdminDashboard = () => {
                                 {selectedItem.courseName ? 'Course Details' : 
                                  selectedItem.role === 'instructor' ? 'Instructor Details' : 'Student Details'}
                             </h2>
-                            <button className="close-modal" onClick={() => setIsViewModalOpen(false)}>
+                            <button className="close-modal-button" onClick={() => setIsViewModalOpen(false)}>
                                 <X size={24} />
                             </button>
                         </div>
 
                         {selectedItem.courseName ? (
-                            /* Course Details View */
                             <div className="view-content">
                                 <div className="view-badge course">Course</div>
                                 <div className="view-grid">
@@ -792,7 +786,7 @@ const AdminDashboard = () => {
                                         </div>
                                         <div className="view-value">{selectedItem.RoomNumber}</div>
                                     </div>
-                                    <div className="view-item full-width">
+                                    <div className="view-item view-item-full-width">
                                         <div className="view-label">
                                             <Users size={16} /> Capacity
                                         </div>
@@ -801,13 +795,12 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
                         ) : (
-                            /* User Details View (Student/Instructor) */
                             <div className="view-content">
                                 <div className={`view-badge ${selectedItem.role === 'instructor' ? 'instructor' : 'student'}`}>
                                     {selectedItem.role === 'instructor' ? '👨‍🏫 Instructor' : '👨‍🎓 Student'}
                                 </div>
                                 <div className="view-grid">
-                                    <div className="view-item full-width">
+                                    <div className="view-item view-item-full-width">
                                         <div className="view-label">
                                             <Users size={16} /> Full Name
                                         </div>
@@ -847,9 +840,9 @@ const AdminDashboard = () => {
                             </div>
                         )}
                         
-                        <div className="modal-actions">
-                            <button type="button" className="btn-cancel" onClick={() => setIsViewModalOpen(false)}>Close</button>
-                            <button type="button" className="btn-submit" onClick={() => {
+                        <div className="modal-action-buttons">
+                            <button type="button" className="cancel-button" onClick={() => setIsViewModalOpen(false)}>Close</button>
+                            <button type="button" className="submit-button" onClick={() => {
                                 setIsViewModalOpen(false);
                                 handleEdit(selectedItem);
                             }}>Edit</button>
@@ -858,23 +851,22 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Edit Modal */}
             {isEditModalOpen && selectedItem && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal small-modal">
-                        <div className="modal-head">
-                            <div className="flex-align">
+                <div className="modal-overlay">
+                    <div className="modal-container modal-small">
+                        <div className="modal-header">
+                            <div className="flex-align-center">
                                 <h2>Update Details</h2>
-                                <Edit size={24} className="text-primary ml-2" />
+                                <Edit size={24} className="text-primary margin-left-2" />
                             </div>
-                            <button className="close-modal" onClick={() => setIsEditModalOpen(false)}>
+                            <button className="close-modal-button" onClick={() => setIsEditModalOpen(false)}>
                                 <X size={24} />
                             </button>
                         </div>
                         <form className="modal-form" onSubmit={handleSaveChanges}>
                             <div className="form-group">
                                 <label className="view-label">Name (Read Only)</label>
-                                <input type="text" className="input-field disabled-input" value={selectedItem.fullName || selectedItem.courseName} disabled />
+                                <input type="text" className="form-input disabled-input" value={selectedItem.fullName || selectedItem.courseName} disabled />
                             </div>
                             <div className="form-group-single">
                                 <label className="view-label">
@@ -882,31 +874,30 @@ const AdminDashboard = () => {
                                 </label>
                                 <input 
                                     type="text" 
-                                    className="input-field" 
+                                    className="form-input" 
                                     defaultValue={selectedItem.department || selectedItem.RoomNumber || ""} 
                                     placeholder={`Enter new ${selectedItem.courseName ? 'room number' : 'department'}`}
                                     required 
                                 />
                             </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-cancel" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="btn-submit success-btn">Update</button>
+                            <div className="modal-action-buttons">
+                                <button type="button" className="cancel-button" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="submit-button success-button">Update</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* Password Modal */}
             {isPasswordModalOpen && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal small-modal">
-                        <div className="modal-head">
-                            <div className="flex-align">
+                <div className="modal-overlay">
+                    <div className="modal-container modal-small">
+                        <div className="modal-header">
+                            <div className="flex-align-center">
                                 <h2>Change Password</h2>
-                                <Key size={24} className="text-primary ml-2" />
+                                <Key size={24} className="text-primary margin-left-2" />
                             </div>
-                            <button className="close-modal" onClick={() => setIsPasswordModalOpen(false)}>
+                            <button className="close-modal-button" onClick={() => setIsPasswordModalOpen(false)}>
                                 <X size={24} />
                             </button>
                         </div>
@@ -915,7 +906,7 @@ const AdminDashboard = () => {
                                 type="password" 
                                 name="currentPassword" 
                                 required 
-                                className="input-field full-width" 
+                                className="form-input input-full-width" 
                                 value={passwordFields.currentPassword} 
                                 onChange={handlePasswordInputChange} 
                                 placeholder="Current Password" 
@@ -924,7 +915,7 @@ const AdminDashboard = () => {
                                 type="password" 
                                 name="newPassword" 
                                 required 
-                                className="input-field full-width" 
+                                className="form-input input-full-width" 
                                 value={passwordFields.newPassword} 
                                 onChange={handlePasswordInputChange} 
                                 placeholder="New Password" 
@@ -933,14 +924,14 @@ const AdminDashboard = () => {
                                 type="password" 
                                 name="confirmPassword" 
                                 required 
-                                className="input-field full-width" 
+                                className="form-input input-full-width" 
                                 value={passwordFields.confirmPassword} 
                                 onChange={handlePasswordInputChange} 
                                 placeholder="Confirm Password" 
                             />
-                            <div className="modal-actions">
-                                <button type="button" className="btn-cancel" onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="btn-submit">Update</button>
+                            <div className="modal-action-buttons">
+                                <button type="button" className="cancel-button" onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="submit-button">Update</button>
                             </div>
                         </form>
                     </div>

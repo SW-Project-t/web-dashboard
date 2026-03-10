@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './StudentDashboard.css';
 import { useNavigate } from 'react-router-dom';
+import { 
+    LayoutDashboard, Users, BookOpen, TrendingUp, Settings, 
+    Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
+    Download, Shield, Building, X, Menu, User, Calendar,
+    Clock, MapPin, CheckCircle, AlertCircle
+} from 'lucide-react';
 
 import { auth, db } from './firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 const STORAGE_KEYS = {
@@ -14,54 +20,48 @@ const STORAGE_KEYS = {
     TREND: 'yallaclass_trend'
 };
 
-const defaultData = {
-    user: {
-        name: "loading...",
-        id: "...",
-        overallAttendance: 92,
-        enrolledCourses: 3,
-        activeSession: 1,
-        gpsActive: true,
-        profileImage: null
-    },
-    courses: [
-        { id: "CS401", name: "Data Structures", instructor: "Dr. Sarah Ahmed", schedule: "Mon, Wed 10:00 AM", students: 45, attendanceRate: 95, checkedIn: false, timeRemaining: 8, room: "201", days: ["Mon", "Wed"], time: "10:00 AM" },
-        { id: "CS402", name: "Algorithms", instructor: "Dr. Mohammed Ali", schedule: "Tue, Thu 2:00 PM", students: 38, attendanceRate: 88, checkedIn: false, room: "102", days: ["Tue", "Thu"], time: "2:00 PM" },
-        { id: "CS403", name: "Database Systems", instructor: "Dr. Fatima Khan", schedule: "Wed, Fri 11:00 AM", students: 42, attendanceRate: 92, checkedIn: false, room: "305", days: ["Wed", "Fri"], time: "11:00 AM" }
-    ],
-    upcoming: [
-        { id: 1, name: "Data Structures", time: "10:00 AM", room: "201", date: "Today", courseId: "CS401" },
-        { id: 2, name: "Database Systems", time: "11:00 AM", room: "305", date: "Today", courseId: "CS403" },
-        { id: 3, name: "Algorithms", time: "2:00 PM", room: "102", date: "Tomorrow", courseId: "CS402" }
-    ],
-    attendance: [
-        { class: "CS402", name: "Algorithms", onTime: 15, late: 2, absences: 1, total: 18 },
-        { class: "CS401", name: "Data Structures", onTime: 12, late: 4, absences: 2, total: 18 }
-    ],
-    trend: [
-        { week: "Week 1", rate: 92 }, { week: "Week 2", rate: 88 }, { week: "Week 3", rate: 95 },
-        { week: "Week 4", rate: 89 }, { week: "Week 5", rate: 93 }, { week: "Week 6", rate: 92 }
-    ]
-};
-
-const loadData = () => {
-    return {
-        user: JSON.parse(localStorage.getItem(STORAGE_KEYS.USER)) || defaultData.user,
-        courses: JSON.parse(localStorage.getItem(STORAGE_KEYS.COURSES)) || defaultData.courses,
-        upcoming: JSON.parse(localStorage.getItem(STORAGE_KEYS.UPCOMING)) || defaultData.upcoming,
-        attendance: JSON.parse(localStorage.getItem(STORAGE_KEYS.ATTENDANCE)) || defaultData.attendance,
-        trend: JSON.parse(localStorage.getItem(STORAGE_KEYS.TREND)) || defaultData.trend
-    };
-};
-
 export default function StudentDashboard() {
-    const [appState, setAppState] = useState(loadData());
-    const [selectedCourse, setSelectedCourse] = useState(appState.courses[0]?.id || null);
-    const [modal, setModal] = useState({ show: false, type: null });
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [activeTab, setActiveTab] = useState('Dashboard');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [studentData, setStudentData] = useState({
+        name: "Loading...",
+        id: "...",
+        email: "",
+        department: "",
+        academicYear: "",
+        overallAttendance: 92,
+        enrolledCourses: 0,
+        profileImage: null
+    });
+    
+    const [courses, setCourses] = useState([]);
+    const [attendance, setAttendance] = useState([]);
+    const [upcoming, setUpcoming] = useState([]);
+    const [trend, setTrend] = useState([]);
+    const [selectedCourse, setSelectedCourse] = useState(null);
+    
+    // Modal states
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isViewCourseModalOpen, setIsViewCourseModalOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+    
+    const [passwordFields, setPasswordFields] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const [editProfileData, setEditProfileData] = useState({
+        phoneNumber: '',
+        address: '',
+        emergencyContact: ''
+    });
 
     const navigate = useNavigate();
-    
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -69,200 +69,102 @@ export default function StudentDashboard() {
                 try {
                     const userDocRef = doc(db, "users", user.uid);
                     const userDocSnap = await getDoc(userDocRef);
-                  
-                    if(!token){navigate('/');}
-                    else if (userDocSnap.exists()) {
+                    
+                    if(!token){
+                        navigate('/');
+                    } else if (userDocSnap.exists()) {
                         const userData = userDocSnap.data();
-                        setAppState(prev => ({
+                        setStudentData(prev => ({
                             ...prev,
-                            user: {
-                                ...prev.user,
-                                name: userData.fullName || "No Name",
-                                id: userData.code || "No Code",
-                            }
+                            name: userData.fullName || "No Name",
+                            id: userData.code || "No Code",
+                            email: userData.email || user.email,
+                            department: userData.department || "General",
+                            academicYear: userData.academicYear || "Year 1",
+                            profileImage: localStorage.getItem('student_profile_image') || null
                         }));
+                        
+                        // Load student's courses
+                        await loadStudentCourses(user.uid);
                     }
                 } catch (error) {
                     console.error("Error fetching student data:", error);
                 }
-            } else {navigate('/');}
+            } else {
+                navigate('/');
+            }
         });
         return () => unsubscribe();
     }, [navigate]);
-    
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        setTimeout(() => {
-            navigate('/');
-        }, 1000);
-    };
 
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(appState.user));
-        localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(appState.courses));
-        localStorage.setItem(STORAGE_KEYS.UPCOMING, JSON.stringify(appState.upcoming));
-        localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(appState.attendance));
-        localStorage.setItem(STORAGE_KEYS.TREND, JSON.stringify(appState.trend));
-    }, [appState]);
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setAppState(prev => {
-                const newCourses = prev.courses.map(c => {
-                    if (c.id === "CS401" && c.timeRemaining > 0) {
-                        return { ...c, timeRemaining: c.timeRemaining - 1 };
-                    }
-                    return c;
-                });
-                return { ...prev, courses: newCourses };
+    const loadStudentCourses = async (userId) => {
+        try {
+            // Get courses from Firestore
+            const coursesRef = collection(db, "courses");
+            const coursesSnap = await getDocs(coursesRef);
+            const coursesList = [];
+            coursesSnap.forEach((doc) => {
+                coursesList.push({ id: doc.id, ...doc.data() });
             });
-        }, 60000);
-
-        return () => clearInterval(timer);
-    }, []);
+            
+            // For demo, take first 3 courses
+            const enrolledCourses = coursesList.slice(0, 3).map(c => ({
+                id: c.courseId,
+                name: c.courseName,
+                instructor: c.instructorName,
+                schedule: `${c.SelectDays || 'Mon, Wed'} ${c.Time || '10:00 AM'}`,
+                days: c.SelectDays ? c.SelectDays.split(', ') : ['Mon', 'Wed'],
+                time: c.Time || '10:00 AM',
+                room: c.RoomNumber || '101',
+                students: parseInt(c.capacity) || 30,
+                attendanceRate: Math.floor(Math.random() * 20) + 80,
+                checkedIn: false,
+                timeRemaining: 0
+            }));
+            
+            setCourses(enrolledCourses);
+            setStudentData(prev => ({
+                ...prev,
+                enrolledCourses: enrolledCourses.length
+            }));
+            
+            // Set upcoming classes
+            const upcomingClasses = enrolledCourses.map((c, index) => ({
+                id: index + 1,
+                name: c.name,
+                time: c.time,
+                room: c.room,
+                date: index === 0 ? "Today" : index === 1 ? "Today" : "Tomorrow",
+                courseId: c.id
+            }));
+            setUpcoming(upcomingClasses);
+            
+            // Set attendance records
+            const attendanceRecords = enrolledCourses.map(c => ({
+                class: c.id,
+                name: c.name,
+                onTime: Math.floor(Math.random() * 10) + 5,
+                late: Math.floor(Math.random() * 3),
+                absences: Math.floor(Math.random() * 2),
+                total: 18
+            }));
+            setAttendance(attendanceRecords);
+            
+            // Set trend data
+            setTrend([
+                { week: "Week 1", rate: 92 }, { week: "Week 2", rate: 88 }, 
+                { week: "Week 3", rate: 95 }, { week: "Week 4", rate: 89 },
+                { week: "Week 5", rate: 93 }, { week: "Week 6", rate: 92 }
+            ]);
+            
+        } catch (error) {
+            console.error("Error loading courses:", error);
+        }
+    };
 
     const showNotification = (message, type = 'success') => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
-    };
-
-    const handleChangePassword = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const oldPass = formData.get('oldPassword');
-        const newPass = formData.get('newPassword');
-        const confirmPass = formData.get('confirmPassword');
-
-        if (newPass !== confirmPass) {
-            showNotification('New passwords do not match!', 'error');
-            return;
-        }
-
-        try {
-            const user = auth.currentUser;
-            const credential = EmailAuthProvider.credential(user.email, oldPass);
-            
-            await reauthenticateWithCredential(user, credential);
-            await updatePassword(user, newPass);
-            
-            showNotification('Password updated successfully!');
-            setModal({ show: false, type: null });
-        } catch (error) {
-            console.error(error);
-            showNotification('Error: Current password incorrect or session expired', 'error');
-        }
-    };
-
-    const handleCheckIn = (courseId) => {
-        setAppState(prev => {
-            const newCourses = prev.courses.map(c => {
-                if (c.id === courseId && !c.checkedIn) {
-                    return { ...c, checkedIn: true, attendanceRate: Math.min(100, c.attendanceRate + 1) };
-                }
-                return c;
-            });
-            
-            const newUser = { ...prev.user, overallAttendance: Math.min(100, prev.user.overallAttendance + 0.5) };
-            
-            const newAttendance = prev.attendance.map(a => {
-                if (a.class === courseId) {
-                    return { ...a, onTime: a.onTime + 1, total: a.total + 1 };
-                }
-                return a;
-            });
-
-            return { ...prev, courses: newCourses, user: newUser, attendance: newAttendance };
-        });
-        showNotification(`Checked in to ${appState.courses.find(c => c.id === courseId)?.name}`);
-    };
-
-    const toggleGPS = () => {
-        setAppState(prev => ({
-            ...prev,
-            user: { ...prev.user, gpsActive: !prev.user.gpsActive }
-        }));
-        showNotification(`GPS ${!appState.user.gpsActive ? 'Activated' : 'Deactivated'}`);
-    };
-
-    const deleteCourse = (courseId) => {
-        if (window.confirm('Are you sure you want to delete this course?')) {
-            setAppState(prev => {
-                const newCourses = prev.courses.filter(c => c.id !== courseId);
-                return {
-                    ...prev,
-                    courses: newCourses,
-                    upcoming: prev.upcoming.filter(u => u.courseId !== courseId),
-                    attendance: prev.attendance.filter(a => a.class !== courseId),
-                    user: { ...prev.user, enrolledCourses: newCourses.length }
-                };
-            });
-            if (selectedCourse === courseId) {
-                setSelectedCourse(appState.courses.find(c => c.id !== courseId)?.id || null);
-            }
-            showNotification(`Course ${courseId} deleted`);
-        }
-    };
-
-    const handleAddCourse = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const courseId = formData.get('courseId').toUpperCase();
-        const time = formData.get('time');
-        const days = formData.get('days');
-        const courseName = formData.get('courseName');
-
-        if (appState.courses.some(c => c.id === courseId)) {
-            showNotification('Course ID already exists', 'error');
-            return;
-        }
-
-        const newCourse = {
-            id: courseId,
-            name: courseName,
-            instructor: formData.get('instructor'),
-            schedule: `${days} ${time}`,
-            days: days.split(', '),
-            time: time,
-            room: formData.get('room'),
-            students: parseInt(formData.get('students')) || 0,
-            attendanceRate: 0,
-            checkedIn: false,
-            timeRemaining: 0
-        };
-
-        const currentHour = new Date().getHours();
-        const classHour = parseInt(time.split(':')[0]);
-        const dateStr = classHour > currentHour ? "Today" : "Tomorrow";
-
-        setAppState(prev => ({
-            ...prev,
-            courses: [...prev.courses, newCourse],
-            user: { ...prev.user, enrolledCourses: prev.courses.length + 1 },
-            upcoming: [...prev.upcoming, { id: Date.now(), name: courseName, time, room: newCourse.room, date: dateStr, courseId }],
-            attendance: [...prev.attendance, { class: courseId, name: courseName, onTime: 0, late: 0, absences: 0, total: newCourse.students }],
-            trend: [...prev.trend, { week: `Week ${prev.trend.length + 1}`, rate: prev.trend[prev.trend.length - 1]?.rate || 0 }]
-        }));
-
-        setModal({ show: false, type: null });
-        showNotification(`Course ${courseId} added successfully!`);
-    };
-
-    const handleAddUpcoming = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const name = formData.get('className');
-
-        const newClass = {
-            id: Date.now(),
-            name: name,
-            time: formData.get('classTime'),
-            room: formData.get('classRoom'),
-            date: formData.get('classDate')
-        };
-
-        setAppState(prev => ({ ...prev, upcoming: [...prev.upcoming, newClass] }));
-        setModal({ show: false, type: null });
-        showNotification(`Added upcoming class: ${name}`);
     };
 
     const handleImageUpload = (e) => {
@@ -270,13 +172,11 @@ export default function StudentDashboard() {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setAppState(prev => ({
+                setStudentData(prev => ({
                     ...prev,
-                    user: {
-                        ...prev.user,
-                        profileImage: reader.result
-                    }
+                    profileImage: reader.result
                 }));
+                localStorage.setItem('student_profile_image', reader.result);
                 showNotification('Profile image updated successfully!');
             };
             reader.readAsDataURL(file);
@@ -284,294 +184,819 @@ export default function StudentDashboard() {
     };
 
     const removeProfileImage = () => {
-        setAppState(prev => ({
+        setStudentData(prev => ({
             ...prev,
-            user: {
-                ...prev.user,
-                profileImage: null
-            }
+            profileImage: null
         }));
+        localStorage.removeItem('student_profile_image');
         showNotification('Profile image removed');
     };
 
+    const handlePasswordInputChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordFields(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleEditProfileChange = (e) => {
+        const { name, value } = e.target;
+        setEditProfileData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handlePasswordUpdate = async (e) => {
+        e.preventDefault();
+        const user = auth.currentUser;
+        
+        if (passwordFields.newPassword !== passwordFields.confirmPassword) {
+            showNotification('New passwords do not match!', 'error');
+            return;
+        }
+
+        try {
+            const credential = EmailAuthProvider.credential(user.email, passwordFields.currentPassword);
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, passwordFields.newPassword);
+            
+            showNotification('Password updated successfully!');
+            setIsPasswordModalOpen(false);
+            setPasswordFields({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (error) {
+            showNotification('Error: Current password incorrect', 'error');
+        }
+    };
+
+    const handleCheckIn = (courseId) => {
+        setCourses(prev => prev.map(c => {
+            if (c.id === courseId && !c.checkedIn) {
+                showNotification(`Checked in to ${c.name}`);
+                return { ...c, checkedIn: true, attendanceRate: Math.min(100, c.attendanceRate + 1) };
+            }
+            return c;
+        }));
+        
+        setStudentData(prev => ({
+            ...prev,
+            overallAttendance: Math.min(100, prev.overallAttendance + 0.5)
+        }));
+    };
+
+    const toggleGPS = () => {
+        showNotification(`GPS ${!studentData.gpsActive ? 'Activated' : 'Deactivated'}`);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('student_profile_image');
+        setTimeout(() => {
+            navigate('/');
+        }, 1000);
+    };
+
+    const viewCourseDetails = (course) => {
+        setSelectedCourse(course);
+        setIsViewCourseModalOpen(true);
+    };
+
+    const viewAttendanceHistory = () => {
+        setIsAttendanceModalOpen(true);
+    };
+
+    const filteredCourses = courses.filter(c => 
+        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        c.id?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const filteredUpcoming = upcoming.filter(u => 
+        u.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
-        <div className="app">
+        <div className="admin-layout student-layout">
             {toast.show && (
                 <div className={`notification ${toast.type}`}>
                     {toast.message}
                 </div>
             )}
 
-            <div className="sidebar">
-                <div className="sidebar-profile">
-                    <div className="profile-image-wrapper">
-                        {appState.user.profileImage ? (
-                            <img src={appState.user.profileImage} alt="Profile" className="sidebar-profile-image" />
+            {/* Sidebar - Admin style */}
+            <aside className={`admin-sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
+                <div className="sidebar-profile-section">
+                    <div className="profile-img-container" onClick={() => document.getElementById('student-profile-upload').click()}>
+                        {studentData.profileImage ? (
+                            <img src={studentData.profileImage} alt="Student" className="profile-img" />
                         ) : (
-                            <div className="sidebar-profile-placeholder">
-                                {appState.user.name.split(' ').map(n => n[0]).join('')}
+                            <div className="profile-placeholder">
+                                {studentData.name.charAt(0).toUpperCase()}
                             </div>
                         )}
-                        <div 
-                           className="image-upload-overlay" 
-                           onClick={() => document.getElementById('profile-upload').click()}
-                           title="Upload new photo"
-                        >
-                            <span>+</span>
-                        </div>
+                        <div className="profile-status"></div>
                     </div>
-
-                    <div className="sidebar-profile-name">{appState.user.name}</div>
-                    <div className="sidebar-profile-id">{appState.user.id}</div>
-
-                    <input
-                        type="file"
-                        id="profile-upload"
-                        style={{ display: 'none' }}
-                        accept="image/*"
-                        onChange={handleImageUpload}
+                    <input 
+                        type="file" 
+                        id="student-profile-upload" 
+                        style={{ display: 'none' }} 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
                     />
-
-                    {appState.user.profileImage && (
-                        <button className="remove-photo-btn" onClick={removeProfileImage}>
+                    <h3 className="profile-name">{studentData.name}</h3>
+                    <p className="profile-id">ID: {studentData.id}</p>
+                    <p className="profile-dept">{studentData.department}</p>
+                    {studentData.profileImage && (
+                        <button className="remove-photo-text" onClick={removeProfileImage}>
                             Remove Photo
                         </button>
                     )}
                 </div>
 
-                <div className="nav-item active" onClick={() => showNotification('Dashboard')}>Dashboard</div>
-                <div className="nav-item" onClick={() => showNotification(`My Courses: ${appState.courses.length} courses`)}>My Courses</div>
-                <div className="nav-item" onClick={() => showNotification(`Student ID: ${appState.user.id}`)}>Student ID: {appState.user.id}</div>
-                <div className="nav-item" onClick={() => showNotification('Attendance Records')}>Attendance</div>
-                <div className="nav-item" onClick={() => showNotification('Settings')}>Settings</div>
-                
-                <div className="nav-item logout" onClick={() => setModal({ show: true, type: 'password' })}>Change Password</div>
-                <div className="nav-item logout" onClick={handleLogout}>Logout</div>
-            </div>
+                <nav className="sidebar-nav">
+                    <button 
+                        className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Dashboard')}
+                    >
+                        <LayoutDashboard size={20} />
+                        <span>Dashboard</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'My Courses' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('My Courses')}
+                    >
+                        <BookOpen size={20} />
+                        <span>My Courses</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'Attendance' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Attendance')}
+                    >
+                        <TrendingUp size={20} />
+                        <span>Attendance</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'Schedule' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Schedule')}
+                    >
+                        <Calendar size={20} />
+                        <span>Schedule</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'Profile' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Profile')}
+                    >
+                        <User size={20} />
+                        <span>Profile</span>
+                    </button>
+                </nav>
 
-            <div className="main-content">
-                <div className="header">
-                    <div>
-                        <h1>Student Dashboard</h1>
-                        <p>Welcome back, {appState.user.name}!</p>
-                    </div>
+                <div className="sidebar-footer">
+                    <button className="nav-item btn-password" onClick={() => setIsPasswordModalOpen(true)}>
+                        <Key size={18} />
+                        <span>Change Password</span>
+                    </button>
+                    <button className="nav-item btn-logout" onClick={handleLogout}>
+                        <LogOut size={18} />
+                        <span>Logout</span>
+                    </button>
                 </div>
+            </aside>
 
-                <div className="dashboard-grid">
-                    <div className="card" onClick={() => showNotification(`Overall Attendance: ${appState.user.overallAttendance}%`)}>
-                        <div className="card-label">Overall Attendance</div>
-                        <div className="card-value">{appState.user.overallAttendance}%</div>
-                    </div>
-                    <div className="card" onClick={() => showNotification(`Enrolled Courses: ${appState.courses.length}`)}>
-                        <div className="card-label">Enrolled Courses</div>
-                        <div className="card-value">{appState.courses.length}</div>
-                    </div>
-                    <div className="card" onClick={() => showNotification(`Active Sessions: ${appState.user.activeSession}`)}>
-                        <div className="card-label">Active Session</div>
-                        <div className="card-value">{appState.user.activeSession}</div>
-                    </div>
-                    <div className="card" onClick={toggleGPS}>
-                        <div className="location-badge">
-                            GPS {appState.user.gpsActive ? 'Active' : 'Inactive'}
+            {/* Main Content - Admin style */}
+            <main className="admin-main">
+                <header className="main-header">
+                    <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                        <Menu size={24} />
+                    </button>
+                    <div className="header-title">
+                        <div>
+                            <h1>{activeTab}</h1>
+                            <p>Welcome to your Student Dashboard</p>
                         </div>
                     </div>
-                </div>
-
-                {appState.courses.some(c => c.timeRemaining > 0) && (
-                    <div className="active-session">
-                        <p>Attendance Active for {appState.courses.find(c => c.timeRemaining > 0)?.id} - {appState.courses.find(c => c.timeRemaining > 0)?.name}</p>
-                        <div className="timer">{appState.courses.find(c => c.timeRemaining > 0)?.timeRemaining} minutes remaining</div>
-                    </div>
-                )}
-
-                <div className="courses-row">
-                    <div className="section-card">
-                        <div className="section-title">
-                            My Courses ({appState.courses.length})
-                            <button className="add-btn" onClick={() => setModal({ show: true, type: 'course' })}>+</button>
+                    <div className="header-actions">
+                        <div className="search-bar">
+                            <Search size={18} className="search-icon" />
+                            <input 
+                                type="text" 
+                                placeholder="Search courses..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
-                        {appState.courses.length > 0 ? appState.courses.map(course => (
-                            <div key={course.id} className={`course-item ${selectedCourse === course.id ? 'selected' : ''}`} onClick={() => setSelectedCourse(course.id)}>
-                                <span className="course-code">{course.id}</span>
-                                <div className="course-name">{course.name}</div>
-                                <div className="course-instructor">{course.instructor}</div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                                    <span style={{ color: course.checkedIn ? '#22c55e' : '#64748b', fontSize: '0.9rem' }}>
-                                        {course.checkedIn ? 'Checked In' : 'Not checked in'}
-                                    </span>
-                                    <button className="delete-btn" onClick={(e) => { e.stopPropagation(); deleteCourse(course.id); }}>Delete</button>
-                                </div>
-                            </div>
-                        )) : (
-                            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-                                <p>No courses yet</p>
-                                <p>Click the + button to add your first course</p>
-                            </div>
-                        )}
+                        <button className="bell-btn">
+                            <Bell size={20} />
+                            <span className="bell-badge">3</span>
+                        </button>
                     </div>
+                </header>
 
-                    <div className="section-card">
-                        <div className="section-title">
-                            Upcoming Classes ({appState.upcoming.length})
-                            <button className="add-btn" onClick={() => setModal({ show: true, type: 'upcoming' })}>+</button>
-                        </div>
-                        {appState.upcoming.length > 0 ? appState.upcoming.map(cls => (
-                            <div key={cls.id} className="upcoming-item" onClick={() => showNotification(`${cls.name} at ${cls.time} in Room ${cls.room}`)}>
-                                <div>
-                                    <div className="class-title">{cls.name}</div>
-                                    <div className="class-room">Room {cls.room}</div>
+                <div className="content-scroll">
+                    {/* Dashboard View */}
+                    {activeTab === 'Dashboard' && (
+                        <div className="dashboard-view">
+                            {/* بطاقات الإحصائيات */}
+                            <div className="stats-grid">
+                                <div className="stat-card blue" onClick={() => showNotification(`Overall Attendance: ${studentData.overallAttendance}%`)}>
+                                    <div className="stat-icon blue">
+                                        <TrendingUp size={24} />
+                                    </div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Attendance</span>
+                                        <span className="stat-value">{studentData.overallAttendance}%</span>
+                                    </div>
                                 </div>
-                                <div className="class-time">{cls.date}, {cls.time}</div>
+                                
+                                <div className="stat-card green" onClick={() => setActiveTab('My Courses')}>
+                                    <div className="stat-icon green">
+                                        <BookOpen size={24} />
+                                    </div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Courses</span>
+                                        <span className="stat-value">{courses.length}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="stat-card purple" onClick={viewAttendanceHistory}>
+                                    <div className="stat-icon purple">
+                                        <Calendar size={24} />
+                                    </div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">This Week</span>
+                                        <span className="stat-value">{attendance.reduce((sum, a) => sum + a.onTime, 0)}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="stat-card orange" onClick={toggleGPS}>
+                                    <div className="stat-icon orange">
+                                        <MapPin size={24} />
+                                    </div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">GPS</span>
+                                        <span className="stat-value">Active</span>
+                                    </div>
+                                </div>
                             </div>
-                        )) : (
-                            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-                                <p>No upcoming classes</p>
+
+                            {/* Today's Schedule */}
+                            <div className="middle-row">
+                                <div className="chart-card schedule-card">
+                                    <div className="card-heading">
+                                        <Calendar size={20} />
+                                        <h3>Today's Schedule</h3>
+                                    </div>
+                                    <div className="schedule-list">
+                                        {upcoming.filter(u => u.date === "Today").length === 0 ? (
+                                            <p className="no-data">No classes today</p>
+                                        ) : (
+                                            upcoming.filter(u => u.date === "Today").map((cls, idx) => (
+                                                <div className="schedule-item" key={idx}>
+                                                    <div className="schedule-time">
+                                                        <Clock size={16} />
+                                                        <span>{cls.time}</span>
+                                                    </div>
+                                                    <div className="schedule-details">
+                                                        <h4>{cls.name}</h4>
+                                                        <p>Room {cls.room}</p>
+                                                    </div>
+                                                    <button 
+                                                        className="check-in-mini"
+                                                        onClick={() => {
+                                                            const course = courses.find(c => c.id === cls.courseId);
+                                                            if (course && !course.checkedIn) {
+                                                                handleCheckIn(cls.courseId);
+                                                            }
+                                                        }}
+                                                        disabled={courses.find(c => c.id === cls.courseId)?.checkedIn}
+                                                    >
+                                                        {courses.find(c => c.id === cls.courseId)?.checkedIn ? '✓' : 'Check In'}
+                                                    </button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="chart-card activity-card">
+                                    <div className="card-heading">
+                                        <Bell size={20} />
+                                        <h3>Recent Activity</h3>
+                                    </div>
+                                    <div className="activity-list">
+                                        {courses.filter(c => c.checkedIn).slice(0, 3).map((course, i) => (
+                                            <div className="activity-item" key={i}>
+                                                <div className="activity-icon success">
+                                                    <CheckCircle size={16}/>
+                                                </div>
+                                                <div className="activity-text">
+                                                    <h4>Checked in to {course.name}</h4>
+                                                    <p>Today at {course.time}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {courses.filter(c => !c.checkedIn).length === courses.length && (
+                                            <p className="no-data">No recent activity</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        )}
+
+                            {/* My Courses Preview */}
+                            <div className="tables-row">
+                                <div className="table-card">
+                                    <div className="table-header">
+                                        <h3>My Courses</h3>
+                                        <span className="view-all" onClick={() => setActiveTab('My Courses')}>
+                                            View All
+                                        </span>
+                                    </div>
+                                    <div className="courses-grid-mini">
+                                        {courses.slice(0, 3).map(course => (
+                                            <div className="course-mini-card" key={course.id} onClick={() => viewCourseDetails(course)}>
+                                                <div className="course-mini-header">
+                                                    <span className="course-code">{course.id}</span>
+                                                    <span className={`status-badge ${course.checkedIn ? 'checked' : 'pending'}`}>
+                                                        {course.checkedIn ? 'Checked' : 'Pending'}
+                                                    </span>
+                                                </div>
+                                                <h4>{course.name}</h4>
+                                                <p>{course.instructor}</p>
+                                                <div className="course-mini-footer">
+                                                    <span>{course.schedule}</span>
+                                                    <span className="attendance-small">{course.attendanceRate}%</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Attendance Trend Preview */}
+                                <div className="table-card">
+                                    <div className="table-header">
+                                        <h3>Attendance Trend</h3>
+                                        <span className="view-all" onClick={viewAttendanceHistory}>
+                                            View Details
+                                        </span>
+                                    </div>
+                                    <div className="trend-mini">
+                                        <div className="chart-bars">
+                                            {trend.slice(-4).map((week, index) => (
+                                                <div key={index} className="bar-wrapper">
+                                                    <div className="bar" style={{ height: `${week.rate}px` }}></div>
+                                                    <span className="bar-label">{week.rate}%</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="axis-labels">
+                                            {trend.slice(-4).map((week, idx) => (
+                                                <span key={idx}>{week.week}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* My Courses View */}
+                    {activeTab === 'My Courses' && (
+                        <div className="table-card full-page">
+                            <div className="table-header">
+                                <div className="flex-align">
+                                    <BookOpen size={24} className="text-primary mr-2" />
+                                    <h3>My Courses ({filteredCourses.length})</h3>
+                                </div>
+                            </div>
+                            <div className="courses-grid">
+                                {filteredCourses.length === 0 ? (
+                                    <p className="no-data">No courses found</p>
+                                ) : (
+                                    filteredCourses.map(course => (
+                                        <div className="course-card" key={course.id}>
+                                            <div className="course-card-header">
+                                                <span className="course-code-large">{course.id}</span>
+                                                <span className={`status-large ${course.checkedIn ? 'checked' : 'pending'}`}>
+                                                    {course.checkedIn ? 'Checked In' : 'Not Checked In'}
+                                                </span>
+                                            </div>
+                                            <h3>{course.name}</h3>
+                                            <p className="instructor">{course.instructor}</p>
+                                            <div className="course-details">
+                                                <div className="detail-item">
+                                                    <Calendar size={16} />
+                                                    <span>{course.schedule}</span>
+                                                </div>
+                                                <div className="detail-item">
+                                                    <MapPin size={16} />
+                                                    <span>Room {course.room}</span>
+                                                </div>
+                                                <div className="detail-item">
+                                                    <Users size={16} />
+                                                    <span>{course.students} Students</span>
+                                                </div>
+                                            </div>
+                                            <div className="course-card-footer">
+                                                <div className="attendance-progress">
+                                                    <div className="progress-bar">
+                                                        <div className="progress-fill" style={{ width: `${course.attendanceRate}%` }}></div>
+                                                    </div>
+                                                    <span className="attendance-percent">{course.attendanceRate}%</span>
+                                                </div>
+                                                <button 
+                                                    className="check-in-btn"
+                                                    onClick={() => handleCheckIn(course.id)}
+                                                    disabled={course.checkedIn}
+                                                >
+                                                    {course.checkedIn ? 'Checked In' : 'Check In'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Attendance View */}
+                    {activeTab === 'Attendance' && (
+                        <div className="table-card full-page">
+                            <div className="table-header">
+                                <div className="flex-align">
+                                    <TrendingUp size={24} className="text-primary mr-2" />
+                                    <h3>Attendance Records</h3>
+                                </div>
+                                <button className="primary-btn" onClick={() => showNotification('Downloading report...')}>
+                                    <Download size={18} /> Export
+                                </button>
+                            </div>
+                            
+                            {/* Summary Cards */}
+                            <div className="attendance-summary">
+                                <div className="summary-item">
+                                    <span className="summary-label">Overall Attendance</span>
+                                    <span className="summary-value">{studentData.overallAttendance}%</span>
+                                </div>
+                                <div className="summary-item">
+                                    <span className="summary-label">Total Classes</span>
+                                    <span className="summary-value">{attendance.reduce((sum, a) => sum + a.total, 0)}</span>
+                                </div>
+                                <div className="summary-item">
+                                    <span className="summary-label">On Time</span>
+                                    <span className="summary-value success">{attendance.reduce((sum, a) => sum + a.onTime, 0)}</span>
+                                </div>
+                                <div className="summary-item">
+                                    <span className="summary-label">Late</span>
+                                    <span className="summary-value warning">{attendance.reduce((sum, a) => sum + a.late, 0)}</span>
+                                </div>
+                                <div className="summary-item">
+                                    <span className="summary-label">Absences</span>
+                                    <span className="summary-value danger">{attendance.reduce((sum, a) => sum + a.absences, 0)}</span>
+                                </div>
+                            </div>
+
+                            {/* Attendance Table */}
+                            <div className="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Course Code</th>
+                                            <th>Course Name</th>
+                                            <th>On Time</th>
+                                            <th>Late</th>
+                                            <th>Absences</th>
+                                            <th>Total</th>
+                                            <th>Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {attendance.length === 0 ? (
+                                            <tr><td colSpan="7" className="no-data">No attendance records</td></tr>
+                                        ) : (
+                                            attendance.map((item, idx) => {
+                                                const rate = Math.round((item.onTime / item.total) * 100);
+                                                return (
+                                                    <tr key={idx}>
+                                                        <td className="text-muted">{item.class}</td>
+                                                        <td className="fw-bold">{item.name}</td>
+                                                        <td className="success-text">{item.onTime}</td>
+                                                        <td className="warning-text">{item.late}</td>
+                                                        <td className="danger-text">{item.absences}</td>
+                                                        <td>{item.total}</td>
+                                                        <td>
+                                                            <span className={`rate-badge ${rate >= 90 ? 'excellent' : rate >= 75 ? 'good' : 'poor'}`}>
+                                                                {rate}%
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Trend Chart */}
+                            <div className="trend-card">
+                                <h4>6-Week Attendance Trend</h4>
+                                <div className="chart-container">
+                                    <div className="chart-bars">
+                                        {trend.map((week, index) => (
+                                            <div key={index} className="bar-wrapper">
+                                                <div className="bar" style={{ height: `${week.rate * 1.5}px` }}></div>
+                                                <span className="bar-label">{week.rate}%</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="axis-labels">
+                                        {trend.map((week, idx) => (
+                                            <span key={idx}>{week.week}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Schedule View */}
+                    {activeTab === 'Schedule' && (
+                        <div className="table-card full-page">
+                            <div className="table-header">
+                                <div className="flex-align">
+                                    <Calendar size={24} className="text-primary mr-2" />
+                                    <h3>Weekly Schedule</h3>
+                                </div>
+                            </div>
+                            
+                            <div className="schedule-grid">
+                                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => {
+                                    const dayClasses = upcoming.filter(u => {
+                                        const course = courses.find(c => c.id === u.courseId);
+                                        return course?.days.includes(day.substring(0, 3));
+                                    });
+                                    
+                                    return (
+                                        <div className="schedule-day-card" key={day}>
+                                            <h4>{day}</h4>
+                                            {dayClasses.length === 0 ? (
+                                                <p className="no-classes">No classes</p>
+                                            ) : (
+                                                dayClasses.map((cls, idx) => (
+                                                    <div className="day-class" key={idx}>
+                                                        <span className="class-time">{cls.time}</span>
+                                                        <span className="class-name">{cls.name}</span>
+                                                        <span className="class-room">Room {cls.room}</span>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Profile View */}
+                    {activeTab === 'Profile' && (
+                        <div className="profile-view">
+                            <div className="profile-card">
+                                <div className="profile-header">
+                                    <div className="profile-avatar-large">
+                                        {studentData.profileImage ? (
+                                            <img src={studentData.profileImage} alt="Profile" />
+                                        ) : (
+                                            <div className="avatar-placeholder">
+                                                {studentData.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="profile-title">
+                                        <h2>{studentData.name}</h2>
+                                        <p>{studentData.email}</p>
+                                        <p className="student-id">Student ID: {studentData.id}</p>
+                                    </div>
+                                    <button className="edit-profile-btn" onClick={() => setIsProfileModalOpen(true)}>
+                                        <Edit size={16} /> Edit Profile
+                                    </button>
+                                </div>
+                                
+                                <div className="profile-details">
+                                    <div className="detail-section">
+                                        <h3>Academic Information</h3>
+                                        <div className="detail-grid">
+                                            <div className="detail-row">
+                                                <span className="detail-label">Department:</span>
+                                                <span className="detail-value">{studentData.department}</span>
+                                            </div>
+                                            <div className="detail-row">
+                                                <span className="detail-label">Academic Year:</span>
+                                                <span className="detail-value">{studentData.academicYear}</span>
+                                            </div>
+                                            <div className="detail-row">
+                                                <span className="detail-label">Enrolled Courses:</span>
+                                                <span className="detail-value">{courses.length}</span>
+                                            </div>
+                                            <div className="detail-row">
+                                                <span className="detail-label">Overall Attendance:</span>
+                                                <span className="detail-value">{studentData.overallAttendance}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="detail-section">
+                                        <h3>Contact Information</h3>
+                                        <div className="detail-grid">
+                                            <div className="detail-row">
+                                                <span className="detail-label">Email:</span>
+                                                <span className="detail-value">{studentData.email}</span>
+                                            </div>
+                                            <div className="detail-row">
+                                                <span className="detail-label">Phone:</span>
+                                                <span className="detail-value">{editProfileData.phoneNumber || 'Not provided'}</span>
+                                            </div>
+                                            <div className="detail-row">
+                                                <span className="detail-label">Address:</span>
+                                                <span className="detail-value">{editProfileData.address || 'Not provided'}</span>
+                                            </div>
+                                            <div className="detail-row">
+                                                <span className="detail-label">Emergency Contact:</span>
+                                                <span className="detail-value">{editProfileData.emergencyContact || 'Not provided'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </main>
+
+            {/* Change Password Modal */}
+            {isPasswordModalOpen && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal small-modal">
+                        <div className="modal-head">
+                            <div className="flex-align">
+                                <h2>Change Password</h2>
+                                <Key size={24} className="text-primary ml-2" />
+                            </div>
+                        </div>
+                        <form onSubmit={handlePasswordUpdate} className="modal-form vertical-form">
+                            <input 
+                                type="password" 
+                                name="currentPassword" 
+                                required 
+                                className="input-field full-width" 
+                                value={passwordFields.currentPassword} 
+                                onChange={handlePasswordInputChange} 
+                                placeholder="Current Password" 
+                            />
+                            <input 
+                                type="password" 
+                                name="newPassword" 
+                                required 
+                                className="input-field full-width" 
+                                value={passwordFields.newPassword} 
+                                onChange={handlePasswordInputChange} 
+                                placeholder="New Password" 
+                            />
+                            <input 
+                                type="password" 
+                                name="confirmPassword" 
+                                required 
+                                className="input-field full-width" 
+                                value={passwordFields.confirmPassword} 
+                                onChange={handlePasswordInputChange} 
+                                placeholder="Confirm Password" 
+                            />
+                            <div className="modal-actions">
+                                <button type="button" className="btn-cancel" onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="btn-submit">Update</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
+            )}
 
-                {selectedCourse && appState.courses.find(c => c.id === selectedCourse) && (() => {
-                    const course = appState.courses.find(c => c.id === selectedCourse);
-                    return (
-                        <div className="course-detail-card">
-                            <div className="course-info">
-                                <h2>{course.id} - {course.name}</h2>
-                                <p>Instructor: {course.instructor}</p>
-                                <div className="course-meta">
-                                    <span>{course.schedule}</span>
-                                    <span>{course.students} Students</span>
-                                    <span>Room {course.room}</span>
+            {/* View Course Modal */}
+            {isViewCourseModalOpen && selectedCourse && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal">
+                        <div className="modal-head">
+                            <h2>Course Details</h2>
+                            <button className="close-btn" onClick={() => setIsViewCourseModalOpen(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="course-detail-modal">
+                            <div className="detail-header">
+                                <span className="course-code-big">{selectedCourse.id}</span>
+                                <h3>{selectedCourse.name}</h3>
+                                <p className="instructor-name">{selectedCourse.instructor}</p>
+                            </div>
+                            
+                            <div className="detail-info-grid">
+                                <div className="info-item">
+                                    <Calendar size={18} />
+                                    <div>
+                                        <label>Schedule</label>
+                                        <span>{selectedCourse.schedule}</span>
+                                    </div>
+                                </div>
+                                <div className="info-item">
+                                    <MapPin size={18} />
+                                    <div>
+                                        <label>Room</label>
+                                        <span>{selectedCourse.room}</span>
+                                    </div>
+                                </div>
+                                <div className="info-item">
+                                    <Users size={18} />
+                                    <div>
+                                        <label>Class Size</label>
+                                        <span>{selectedCourse.students} students</span>
+                                    </div>
+                                </div>
+                                <div className="info-item">
+                                    <TrendingUp size={18} />
+                                    <div>
+                                        <label>Your Attendance</label>
+                                        <span>{selectedCourse.attendanceRate}%</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="attendance-rate">
-                                <div className="rate-badge">{course.attendanceRate}%</div>
-                                <button className="check-in-btn" onClick={() => handleCheckIn(course.id)} disabled={course.checkedIn}>
-                                    {course.checkedIn ? 'Checked In' : 'Check In Now'}
+                            
+                            <div className="attendance-history">
+                                <h4>Recent Attendance</h4>
+                                <div className="history-list">
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div className="history-item" key={i}>
+                                            <span className="history-date">Week {i}</span>
+                                            <span className="history-status present">Present</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="modal-actions">
+                                <button 
+                                    className="btn-submit full-width"
+                                    onClick={() => {
+                                        handleCheckIn(selectedCourse.id);
+                                        setIsViewCourseModalOpen(false);
+                                    }}
+                                    disabled={selectedCourse.checkedIn}
+                                >
+                                    {selectedCourse.checkedIn ? 'Already Checked In' : 'Check In Now'}
                                 </button>
                             </div>
                         </div>
-                    );
-                })()}
-
-                <div className="table-wrapper">
-                    <div className="section-title">This Week Attendance</div>
-                    <table className="week-table">
-                        <thead>
-                            <tr>
-                                <th>Course</th>
-                                <th>Class</th>
-                                <th>On-Time</th>
-                                <th>Late</th>
-                                <th>Absences</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {appState.attendance.length > 0 ? appState.attendance.map((item, idx) => (
-                                <tr key={idx} onClick={() => showNotification(`${item.name} - On Time: ${item.onTime}, Late: ${item.late}`)}>
-                                    <td><strong>{item.class}</strong></td>
-                                    <td>{item.name}</td>
-                                    <td>{item.onTime}</td>
-                                    <td>{item.late}</td>
-                                    <td>{item.absences}</td>
-                                    <td>{item.total}</td>
-                                </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
-                                        No attendance records yet
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="trend-card">
-                    <div className="section-title">Attendance Trend</div>
-                    <div className="chart-container">
-                        <div className="chart-bars">
-                            {appState.trend.map((week, index) => (
-                                <div key={index} className="bar-wrapper" onClick={() => showNotification(`${week.week}: ${week.rate}%`)}>
-                                    <div className="bar" style={{ height: `${week.rate * 1.5}px` }}></div>
-                                    <span className="bar-label">{week.rate}%</span>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="axis-labels">
-                            {appState.trend.map((week, idx) => (
-                                <span key={idx}>{week.week}</span>
-                            ))}
-                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {modal.show && (
-                <div className="modal" onClick={() => setModal({ show: false, type: null })}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h3>
-                            {modal.type === 'course' ? 'Add New Course' : 
-                             modal.type === 'upcoming' ? 'Add Upcoming Class' : 
-                             'Change Password'}
-                        </h3>
-                        
-                        {modal.type === 'course' ? (
-                            <form onSubmit={handleAddCourse}>
-                                <input type="text" name="courseId" placeholder="Course ID (e.g., CS404)" required />
-                                <input type="text" name="courseName" placeholder="Course Name" required />
-                                <input type="text" name="instructor" placeholder="Instructor Name" required />
-                                <select name="days" required>
-                                    <option value="">Select Days</option>
-                                    <option value="Sun, Tue">Sunday, Tuesday</option>
-                                    <option value="Mon, Wed">Monday, Wednesday</option>
-                                    <option value="Tue, Thu">Tuesday, Thursday</option>
-                                    <option value="Wed, Fri">Wednesday, Friday</option>
-                                    <option value="Sat, Mon">Saturday, Monday</option>
-                                </select>
-                                <input type="text" name="time" placeholder="Time (e.g., 1:00 PM)" required />
-                                <input type="text" name="room" placeholder="Room Number" required />
-                                <input type="number" name="students" placeholder="Number of Students" />
-                                <div className="modal-buttons">
-                                    <button type="submit" className="save-btn">Add</button>
-                                    <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
-                                </div>
-                            </form>
-                        ) : modal.type === 'upcoming' ? (
-                            <form onSubmit={handleAddUpcoming}>
-                                <input type="text" name="className" placeholder="Class Name" required />
-                                <input type="text" name="classTime" placeholder="Time (e.g., 2:00 PM)" required />
-                                <input type="text" name="classRoom" placeholder="Room Number" required />
-                                <select name="classDate" required>
-                                    <option value="Today">Today</option>
-                                    <option value="Tomorrow">Tomorrow</option>
-                                </select>
-                                <div className="modal-buttons">
-                                    <button type="submit" className="save-btn">Add</button>
-                                    <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
-                                </div>
-                            </form>
-                        ) : (
-                            <form onSubmit={handleChangePassword} className="password-form">
-                                <div className="form-group">
-                                    <label>Current Password</label>
-                                    <input type="password" name="oldPassword" placeholder="••••••••" required />
-                                </div>
-                                <div className="form-group">
-                                    <label>New Password</label>
-                                    <input type="password" name="newPassword" placeholder="••••••••" required />
-                                </div>
-                                <div className="form-group">
-                                    <label>Confirm New Password</label>
-                                    <input type="password" name="confirmPassword" placeholder="••••••••" required />
-                                </div>
-                                <div className="modal-buttons">
-                                    <button type="submit" className="save-btn">Update Password</button>
-                                    <button type="button" onClick={() => setModal({ show: false, type: null })}>Cancel</button>
-                                </div>
-                            </form>
-                        )}
+            {/* Edit Profile Modal */}
+            {isProfileModalOpen && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal">
+                        <div className="modal-head">
+                            <h2>Edit Profile</h2>
+                        </div>
+                        <form className="modal-form">
+                            <div className="form-grid">
+                                <input 
+                                    type="text" 
+                                    name="phoneNumber"
+                                    className="input-field full-width"
+                                    value={editProfileData.phoneNumber}
+                                    onChange={handleEditProfileChange}
+                                    placeholder="Phone Number"
+                                />
+                                <input 
+                                    type="text" 
+                                    name="address"
+                                    className="input-field full-width"
+                                    value={editProfileData.address}
+                                    onChange={handleEditProfileChange}
+                                    placeholder="Address"
+                                />
+                                <input 
+                                    type="text" 
+                                    name="emergencyContact"
+                                    className="input-field full-width"
+                                    value={editProfileData.emergencyContact}
+                                    onChange={handleEditProfileChange}
+                                    placeholder="Emergency Contact"
+                                />
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-cancel" onClick={() => setIsProfileModalOpen(false)}>Cancel</button>
+                                <button 
+                                    type="button" 
+                                    className="btn-submit"
+                                    onClick={() => {
+                                        showNotification('Profile updated successfully!');
+                                        setIsProfileModalOpen(false);
+                                    }}
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

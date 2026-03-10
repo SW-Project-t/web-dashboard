@@ -52,7 +52,7 @@ function ForgetPassword() {
           disabled={isLoading}>
           {isLoading ? "Sending..." : "Send Reset Link"}
           </button>
-          <Link to="/" className="forgot_password" style={{ textAlign: 'left', marginTop: '20px' }}>
+          <Link to="/login" className="forgot_password" style={{ textAlign: 'left', marginTop: '20px' }}>
             Back to Login
           </Link>
         </div>

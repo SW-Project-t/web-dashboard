@@ -37,12 +37,12 @@ function Login() {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('userRole', userRole);
         
-        if (userRole === "Instructor") {
+        if (userRole.toLowerCase() === "instructor") {
         navigate('/ProfessorDashboard');
-      } else if(userRole ==="Student") {
+      } else if(userRole.toLowerCase() ==="student") {
         navigate('/StudentDashboard');
       }
-      else if(userRole ==="admin") {
+      else if(userRole.toLowerCase() ==="admin") {
         navigate('/AdminDashboard');
        }
 

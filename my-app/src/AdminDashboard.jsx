@@ -4,7 +4,8 @@ import {
     LayoutDashboard, Users, BookOpen, TrendingUp, Settings, 
     Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
     Download, Shield, Building, X, Menu, Mail, Phone, Calendar,
-    BookMarked, Clock, Hash, DoorOpen, UserCheck, GraduationCap
+    BookMarked, Clock, Hash, DoorOpen, UserCheck, GraduationCap,
+    Star
 } from 'lucide-react';
 import axios from 'axios';
 import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -35,7 +36,8 @@ const AdminDashboard = () => {
 
     const [newUserData, setNewUserData] = useState({
         fullName: '', email: '', password: '', role: '',
-        academicYear: '', code: '', department: '', phoneNumber: ''
+        academicYear: '', code: '', department: '', phoneNumber: '',
+        gpa: ''
     });
 
     const [newCourseData, setNewCourseData] = useState({
@@ -155,11 +157,27 @@ const AdminDashboard = () => {
 
     const handleAddUserSubmit = async (e) => {
         e.preventDefault();
-        const hasEmptyField = Object.values(newUserData).some(value => value.trim() === "");
-        if (hasEmptyField) {
-            alert("Please fill in all fields.");
+        
+        const requiredFields = ['fullName', 'email', 'password', 'role', 'phoneNumber'];
+        const hasEmptyRequired = requiredFields.some(field => !newUserData[field]?.trim());
+        
+        if (hasEmptyRequired) {
+            alert("Please fill in all required fields.");
             return;
         }
+
+        if (newUserData.role === 'student') {
+            if (!newUserData.gpa) {
+                alert("GPA is required for students");
+                return;
+            }
+            const gpa = parseFloat(newUserData.gpa);
+            if (gpa < 0 || gpa > 4) {
+                alert("GPA must be between 0 and 4");
+                return;
+            }
+        }
+
         try {
             const response = await axios.post('http://localhost:3001/admin/add-user', newUserData);
             if (response.data.success) {
@@ -167,7 +185,8 @@ const AdminDashboard = () => {
                 setIsAddUserModalOpen(false);
                 setNewUserData({
                     fullName: '', email: '', password: '', role: '',
-                    academicYear: '', department: '', phoneNumber: '', code: '' 
+                    academicYear: '', department: '', phoneNumber: '', code: '',
+                    gpa: ''
                 });
             }
         } catch (error) {
@@ -220,7 +239,9 @@ const AdminDashboard = () => {
 
     const handleSaveChanges = async (e) => {
         e.preventDefault();
-        const newValue = e.target.elements[1].value; 
+        const newValue = e.target.elements[1]?.value;
+        const gpaValue = e.target.elements[2]?.value;
+        
         try {
             const collectionName = selectedItem.courseName ? "courses" : "users";
             const itemRef = doc(db, collectionName, selectedItem.id);
@@ -244,8 +265,18 @@ const AdminDashboard = () => {
                     department: newValue || selectedItem.department,
                     code: selectedItem.code,
                     phoneNumber: selectedItem.phoneNumber,
-                    academicYear: selectedItem.academicYear
+                    academicYear: selectedItem.academicYear,
                 };
+                
+                if (selectedItem.role === 'student' && gpaValue) {
+                    if (gpaValue < 0 || gpaValue > 4) {
+                        alert("GPA must be between 0 and 4");
+                        return;
+                    }
+                    updatedData.gpa = gpaValue;
+                } else if (selectedItem.role === 'student' && selectedItem.gpa) {
+                    updatedData.gpa = selectedItem.gpa;
+                }
             }
             
             await updateDoc(itemRef, updatedData);
@@ -286,6 +317,15 @@ const AdminDashboard = () => {
             case 'student': return <GraduationCap size={18} />;
             default: return <Users size={18} />;
         }
+    };
+
+    const getGpaColor = (gpa) => {
+        if (!gpa) return '#a0aec0';
+        const numGpa = parseFloat(gpa);
+        if (numGpa >= 3.5) return '#48bb78';
+        if (numGpa >= 2.5) return '#ecc94b';
+        if (numGpa >= 2.0) return '#f56565';
+        return '#ef4444';
     };
 
     return (
@@ -454,11 +494,12 @@ const AdminDashboard = () => {
                                                     <th>ID</th>
                                                     <th>Full Name</th>
                                                     <th>Role</th>
+                                                    <th>GPA</th>
                                                     <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredUsers.slice(0, 4).length === 0 ? <tr><td colSpan="4" className="no-data-message">No data</td></tr> : filteredUsers.slice(0, 4).map(u => (
+                                                {filteredUsers.slice(0, 4).length === 0 ? <tr><td colSpan="5" className="no-data-message">No data</td></tr> : filteredUsers.slice(0, 4).map(u => (
                                                     <tr key={u.id}>
                                                         <td className="text-muted">{u.code || '---'}</td>
                                                         <td className="text-bold">{u.fullName}</td>
@@ -466,6 +507,19 @@ const AdminDashboard = () => {
                                                             <span className={`role-badge ${u.role === 'instructor' ? 'instructor-badge' : 'student-badge'}`}>
                                                                 {getRoleIcon(u.role)} {u.role || 'Student'}
                                                             </span>
+                                                        </td>
+                                                        <td>
+                                                            {u.role === 'student' ? (
+                                                                u.gpa ? (
+                                                                    <span className="gpa-badge" style={{ backgroundColor: getGpaColor(u.gpa) + '20', color: getGpaColor(u.gpa) }}>
+                                                                        <Star size={12} /> {u.gpa}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-muted">Not set</span>
+                                                                )
+                                                            ) : (
+                                                                <span className="text-muted">---</span>
+                                                            )}
                                                         </td>
                                                         <td className="action-buttons">
                                                             <button className="icon-button view-button" onClick={() => handleView(u)} title="View Details">
@@ -547,12 +601,13 @@ const AdminDashboard = () => {
                                             <th>Email</th>
                                             <th>Role</th>
                                             <th>Department</th>
+                                            <th>GPA</th>
                                             <th>Phone</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredUsers.length === 0 ? <tr><td colSpan="7" className="no-data-message">No data</td></tr> : filteredUsers.map(u => (
+                                        {filteredUsers.length === 0 ? <tr><td colSpan="8" className="no-data-message">No data</td></tr> : filteredUsers.map(u => (
                                             <tr key={u.id}>
                                                 <td className="text-muted">{u.code || '---'}</td>
                                                 <td className="text-bold">{u.fullName}</td>
@@ -563,6 +618,19 @@ const AdminDashboard = () => {
                                                     </span>
                                                 </td>
                                                 <td className="text-muted">{u.department || 'General'}</td>
+                                                <td>
+                                                    {u.role === 'student' ? (
+                                                        u.gpa ? (
+                                                            <span className="gpa-badge" style={{ backgroundColor: getGpaColor(u.gpa) + '20', color: getGpaColor(u.gpa) }}>
+                                                                <Star size={12} /> {u.gpa}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted">Not set</span>
+                                                        )
+                                                    ) : (
+                                                        <span className="text-muted">---</span>
+                                                    )}
+                                                </td>
                                                 <td>{u.phoneNumber}</td>
                                                 <td className="action-buttons">
                                                     <button className="icon-button view-button" onClick={() => handleView(u)} title="View Details">
@@ -645,6 +713,8 @@ const AdminDashboard = () => {
                     )}
                 </div>
             </main>
+
+            {/* Add Course Modal */}
             {isAddCourseModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container">
@@ -683,6 +753,8 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
+
+            {/* Add User Modal */}
             {isAddUserModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container">
@@ -700,12 +772,14 @@ const AdminDashboard = () => {
                                 <input type="text" name="fullName" className="form-input input-full-width" value={newUserData.fullName} onChange={handleUserInputChange} placeholder="Full Name" required />
                                 <input type="email" name="email" className="form-input" value={newUserData.email} onChange={handleUserInputChange} placeholder="Email" required />
                                 <input type="password" name="password" className="form-input" value={newUserData.password} onChange={handleUserInputChange} placeholder="Password" required />
+                                
                                 <select name="role" className="form-input select-input" value={newUserData.role} onChange={handleUserInputChange} required>
                                     <option value="" disabled hidden>Choose Role</option>
                                     <option value="student">Student</option>
                                     <option value="instructor">Instructor</option>
                                     <option value="admin">Admin</option>
                                 </select>
+                                
                                 <select name="department" className="form-input select-input" value={newUserData.department} onChange={handleUserInputChange}>
                                     <option value="" disabled hidden>Department</option>
                                     <option value="CS">CS</option>
@@ -714,10 +788,32 @@ const AdminDashboard = () => {
                                     <option value="AI">AI</option>
                                     <option value="General">General</option>
                                 </select>
+                                
                                 <input type="text" name="academicYear" className="form-input" value={newUserData.academicYear} onChange={handleUserInputChange} placeholder="Academic Year" />
                                 <input type="text" name="code" className="form-input" value={newUserData.code} onChange={handleUserInputChange} placeholder="Code" />
-                                <input type="tel" name="phoneNumber" className="form-input input-full-width" value={newUserData.phoneNumber} onChange={handleUserInputChange} placeholder="Phone Number" required />
+                                <input type="tel" name="phoneNumber" className="form-input" value={newUserData.phoneNumber} onChange={handleUserInputChange} placeholder="Phone Number" required />
+                                
+                                {newUserData.role === 'student' && (
+                                    <>
+                                        <input 
+                                            type="number" 
+                                            name="gpa" 
+                                            step="0.01" 
+                                            min="0" 
+                                            max="4" 
+                                            className="form-input" 
+                                            value={newUserData.gpa} 
+                                            onChange={handleUserInputChange} 
+                                            placeholder="GPA (0-4)"
+                                            required
+                                        />
+                                        <small style={{ color: '#718096', gridColumn: 'span 2' }}>
+                                            Note: GPA should be between 0 and 4
+                                        </small>
+                                    </>
+                                )}
                             </div>
+                            
                             <div className="modal-action-buttons">
                                 <button type="button" className="cancel-button" onClick={() => setIsAddUserModalOpen(false)}>Cancel</button>
                                 <button type="submit" className="submit-button">Add User</button>
@@ -726,6 +822,8 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
+
+            {/* View Modal */}
             {isViewModalOpen && selectedItem && (
                 <div className="modal-overlay">
                     <div className="modal-container view-modal-container">
@@ -836,6 +934,18 @@ const AdminDashboard = () => {
                                         </div>
                                         <div className="view-value">{selectedItem.academicYear || '2024'}</div>
                                     </div>
+                                    {selectedItem.role === 'student' && (
+                                        <div className="view-item">
+                                            <div className="view-label">
+                                                <Star size={16} /> GPA
+                                            </div>
+                                            <div className="view-value">
+                                                <span style={{ color: getGpaColor(selectedItem.gpa), fontWeight: 'bold' }}>
+                                                    {selectedItem.gpa || 'Not set'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -851,6 +961,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* Edit Modal */}
             {isEditModalOpen && selectedItem && (
                 <div className="modal-overlay">
                     <div className="modal-container modal-small">
@@ -880,6 +991,29 @@ const AdminDashboard = () => {
                                     required 
                                 />
                             </div>
+                            {!selectedItem.courseName && selectedItem.role === 'student' && (
+                                <div className="form-group-single">
+                                    <label className="view-label">
+                                        <Star size={16} /> GPA
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        min="0" 
+                                        max="4" 
+                                        className="form-input" 
+                                        defaultValue={selectedItem.gpa || ""} 
+                                        placeholder="GPA (0-4)"
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 4)) {
+                                                selectedItem.gpa = value;
+                                            }
+                                        }}
+                                    />
+                                    <small style={{ color: '#718096' }}>GPA must be between 0 and 4</small>
+                                </div>
+                            )}
                             <div className="modal-action-buttons">
                                 <button type="button" className="cancel-button" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
                                 <button type="submit" className="submit-button success-button">Update</button>
@@ -889,6 +1023,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* Password Modal */}
             {isPasswordModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container modal-small">

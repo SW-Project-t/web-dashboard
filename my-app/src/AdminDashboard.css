@@ -806,7 +806,7 @@ body {
 }
 
 .data-table td {
-    padding: 18px 25px;
+    padding: 10px;
     font-size: 15px;
     color: #2d3748;
     border-bottom: 1px solid #edf2f7;
@@ -1512,4 +1512,66 @@ body {
     .search-container {
         width: 250px;
     }
+}
+
+.gpa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    background-color: #e6f0fa;
+    color: #4a90e2;
+    transition: all 0.3s;
+}
+
+.gpa-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+.gpa-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.gpa-value {
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background-color: #f8fafd;
+    display: inline-block;
+}
+
+.gpa-excellent {
+    color: #48bb78;
+    background-color: #48bb7820;
+}
+
+.gpa-good {
+    color: #ecc94b;
+    background-color: #ecc94b20;
+}
+
+.gpa-average {
+    color: #f56565;
+    background-color: #f5656520;
+}
+
+.gpa-low {
+    color: #ef4444;
+    background-color: #ef444420;
+}
+
+input[type="number"].form-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+input[type="number"].form-input::-webkit-outer-spin-button,
+input[type="number"].form-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }

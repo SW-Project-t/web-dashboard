@@ -2,7 +2,6 @@ import React from 'react';
 import './Home.css';
 import { useNavigate } from 'react-router-dom';
 
-// Icons as SVG components
 const Icons = {
   MapPin: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -64,7 +63,7 @@ const Icons = {
     </svg>
   ),
   ChevronRight: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m9 18 6-6-6-6"/>
     </svg>
   ),
@@ -74,7 +73,7 @@ const Icons = {
     </svg>
   ),
   Sparkles: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
       <path d="M5 3v4"/>
       <path d="M19 17v4"/>
@@ -83,9 +82,15 @@ const Icons = {
     </svg>
   ),
   GraduationCap: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
       <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+    </svg>
+  ),
+  ArrowRight: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14"/>
+      <path d="m12 5 7 7-7 7"/>
     </svg>
   ),
 };
@@ -103,37 +108,31 @@ function Home() {
       icon: 'MapPin',
       title: 'GPS-Based Check-In',
       description: 'Students can only mark attendance when physically present in the classroom using precise location verification.',
-      gradient: 'yc-from-blue-500-to-cyan-500',
     },
     {
       icon: 'QrCode',
       title: 'Digital Student ID',
       description: 'Each student gets a unique QR code for quick identification and secure attendance marking.',
-      gradient: 'yc-from-cyan-500-to-teal-500',
     },
     {
       icon: 'Clock',
       title: 'Time Window Control',
       description: 'Professors activate a 10-minute attendance window, ensuring timely arrival and accurate records.',
-      gradient: 'yc-from-purple-500-to-blue-500',
     },
     {
       icon: 'BarChart3',
       title: 'Real-Time Analytics',
       description: 'Track attendance patterns, view statistics, and generate reports with beautiful visualizations.',
-      gradient: 'yc-from-pink-500-to-purple-500',
     },
     {
       icon: 'BookOpen',
       title: 'Course Management',
       description: 'Easy course registration and management with real-time student lists and attendance tracking.',
-      gradient: 'yc-from-orange-500-to-pink-500',
     },
     {
       icon: 'Smartphone',
       title: 'Mobile App',
       description: 'Access everything on-the-go with our mobile-friendly interface and dedicated apps.',
-      gradient: 'yc-from-teal-500-to-green-500',
     },
   ];
 
@@ -156,9 +155,9 @@ function Home() {
   ];
 
   const stats = [
-    { icon: 'Users', value: '10,000+', label: 'Active Students', color: 'yc-from-cyan-400-to-blue-400' },
-    { icon: 'Users', value: '500+', label: 'Professors', color: 'yc-from-blue-400-to-purple-400' },
-    { icon: 'University', value: '50+', label: 'Universities', color: 'yc-from-purple-400-to-pink-400' },
+    { icon: 'Users', value: '10,000+', label: 'Active Students' },
+    { icon: 'Users', value: '500+', label: 'Professors' },
+    { icon: 'University', value: '50+', label: 'Universities' },
   ];
 
   return (
@@ -166,67 +165,62 @@ function Home() {
       {/* Hero Section */}
       <section className="yc-hero">
         <div className="yc-hero-bg">
-          <div className="yc-gradient-orb yc-orb-1"></div>
-          <div className="yc-gradient-orb yc-orb-2"></div>
-          <div className="yc-gradient-orb yc-orb-3"></div>
-          <div className="yc-grid-pattern"></div>
+          <div className="yc-geometric-pattern"></div>
         </div>
 
         <div className="yc-hero-content">
-          <div className="yc-hero-badge yc-fade-in-up">
+          <div className="yc-hero-badge">
             <IconComponent name="Sparkles" className="yc-badge-icon" />
             <span>Revolutionizing University Attendance</span>
           </div>
 
-          <h1 className="yc-hero-title yc-fade-in-up yc-delay-1">
+          <h1 className="yc-hero-title">
             Smart Attendance
-            <br />
-            <span className="yc-gradient-text">Made Simple</span>
+            <span className="yc-title-highlight">Made Simple</span>
           </h1>
 
-          <p className="yc-hero-subtitle yc-fade-in-up yc-delay-2">
+          <p className="yc-hero-subtitle">
             GPS-powered check-ins, QR code student IDs, and real-time analytics.
             The modern attendance solution trusted by universities worldwide.
           </p>
 
-          <div className="yc-hero-buttons yc-fade-in-up yc-delay-3">
-            <button className="yc-btn-primary-hero" onClick={() => navigate('/Login')}>
+          <div className="yc-hero-buttons">
+            <button className="yc-btn-primary" onClick={() => navigate('/Login')}>
               <IconComponent name="GraduationCap" />
-              Student Portal
+              <span>Student Portal</span>
               <IconComponent name="ChevronRight" />
             </button>
-            <button className="yc-btn-secondary-hero" onClick={() => navigate('/Login')}>
+            <button className="yc-btn-secondary" onClick={() => navigate('/Login')}>
               <IconComponent name="Users" />
-              Professor Portal
+              <span>Professor Portal</span>
               <IconComponent name="ChevronRight" />
             </button>
           </div>
 
-          <div className="yc-hero-stats yc-fade-in-up yc-delay-4">
+          <div className="yc-hero-stats">
             {stats.map((stat, index) => (
-              <div key={index} className="yc-hero-stat-card">
-                <div className={`yc-hero-stat-icon yc-gradient-bg ${stat.color}`}>
+              <div key={index} className="yc-stat-card">
+                <div className="yc-stat-icon">
                   <IconComponent name={stat.icon} />
                 </div>
-                <div className="yc-hero-stat-value">{stat.value}</div>
-                <div className="yc-hero-stat-label">{stat.label}</div>
+                <div className="yc-stat-info">
+                  <div className="yc-stat-value">{stat.value}</div>
+                  <div className="yc-stat-label">{stat.label}</div>
+                </div>
               </div>
             ))}
           </div>
         </div>
-
-        <div className="yc-hero-fade"></div>
       </section>
 
       {/* Features Section */}
       <section id="yc-features" className="yc-features">
-        <div className="yc-section-container">
+        <div className="yc-container">
           <div className="yc-section-header">
-            <span className="yc-section-badge yc-blue">Features</span>
+            <span className="yc-section-badge">Features</span>
             <h2 className="yc-section-title">
               Everything You Need for
-              <br />
-              <span className="yc-gradient-text-blue">Modern Attendance</span>
+              <span className="yc-text-primary">Modern Attendance</span>
             </h2>
             <p className="yc-section-subtitle">
               A comprehensive suite of tools designed to streamline attendance management
@@ -237,12 +231,11 @@ function Home() {
           <div className="yc-features-grid">
             {features.map((feature, index) => (
               <div key={index} className="yc-feature-card">
-                <div className={`yc-feature-icon yc-gradient-bg ${feature.gradient}`}>
+                <div className="yc-feature-icon">
                   <IconComponent name={feature.icon} />
                 </div>
                 <h3 className="yc-feature-title">{feature.title}</h3>
                 <p className="yc-feature-description">{feature.description}</p>
-                <div className={`yc-feature-indicator yc-gradient-bg ${feature.gradient}`}></div>
               </div>
             ))}
           </div>
@@ -251,35 +244,29 @@ function Home() {
 
       {/* How It Works Section */}
       <section id="yc-how-it-works" className="yc-how-it-works">
-        <div className="yc-section-container">
+        <div className="yc-container">
           <div className="yc-section-header">
-            <span className="yc-section-badge yc-cyan">How It Works</span>
+            <span className="yc-section-badge">How It Works</span>
             <h2 className="yc-section-title">
               Three Simple Steps to
-              <br />
-              <span className="yc-gradient-text-cyan">Perfect Attendance</span>
+              <span className="yc-text-primary">Perfect Attendance</span>
             </h2>
             <p className="yc-section-subtitle">
               Our streamlined process makes attendance tracking effortless for everyone involved.
             </p>
           </div>
 
-          <div className="yc-steps-container">
-            <div className="yc-steps-line"></div>
-            <div className="yc-steps-grid">
-              {steps.map((step, index) => (
-                <div key={index} className="yc-step-card">
-                  <div className="yc-step-number yc-gradient-bg yc-from-blue-600-to-cyan-500">
-                    <span>{step.number}</span>
-                  </div>
-                  <div className="yc-step-icon-wrapper">
-                    <IconComponent name={index === 0 ? 'Users' : index === 1 ? 'MapPin' : 'Check'} />
-                  </div>
-                  <h3 className="yc-step-title">{step.title}</h3>
-                  <p className="yc-step-description">{step.description}</p>
+          <div className="yc-steps-grid">
+            {steps.map((step, index) => (
+              <div key={index} className="yc-step-card">
+                <div className="yc-step-number">{step.number}</div>
+                <div className="yc-step-icon">
+                  <IconComponent name={index === 0 ? 'Users' : index === 1 ? 'MapPin' : 'Check'} />
                 </div>
-              ))}
-            </div>
+                <h3 className="yc-step-title">{step.title}</h3>
+                <p className="yc-step-description">{step.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -287,46 +274,38 @@ function Home() {
       {/* CTA Section */}
       <section id="yc-about" className="yc-cta">
         <div className="yc-cta-bg">
-          <div className="yc-cta-circle yc-circle-1"></div>
-          <div className="yc-cta-circle yc-circle-2"></div>
-          <div className="yc-cta-circle yc-circle-3"></div>
-          <div className="yc-cta-glow yc-glow-1"></div>
-          <div className="yc-cta-glow yc-glow-2"></div>
+          <div className="yc-geometric-pattern"></div>
         </div>
-
-        <div className="yc-cta-content">
-          <div className="yc-cta-badge">
-            <IconComponent name="Sparkles" className="yc-badge-icon-cyan" />
-            <span>Join 50+ Universities Today</span>
-          </div>
-
-          <h2 className="yc-cta-title">
-            Ready to Transform Your
-            <br />
-            <span className="yc-cta-highlight">Attendance System?</span>
-          </h2>
-
-          <p className="yc-cta-subtitle">
-            Join thousands of universities already using YallaClass to modernize
-            their attendance tracking. Get started in minutes.
-          </p>
-
-          <div className="yc-cta-buttons">
-            <button className="yc-btn-cta-primary" onClick={() => navigate('/Login')}>
-              Get Started Free
-              <IconComponent name="ChevronRight" />
-            </button>
-            <button className="yc-btn-cta-secondary">
-              Schedule Demo
-            </button>
-          </div>
-
-          <div className="yc-trust-section">
-            <p className="yc-trust-text">Trusted by leading universities</p>
-            <div className="yc-trust-logos">
-              {['MIT', 'Stanford', 'Harvard', 'Berkeley', 'Oxford'].map((uni, index) => (
-                <span key={index} className="yc-trust-name">{uni}</span>
-              ))}
+        <div className="yc-container">
+          <div className="yc-cta-content">
+            <span className="yc-cta-badge">
+              <IconComponent name="Sparkles" />
+              <span>Join 50+ Universities Today</span>
+            </span>
+            <h2 className="yc-cta-title">
+              Ready to Transform Your
+              <span className="yc-text-white">Attendance System?</span>
+            </h2>
+            <p className="yc-cta-subtitle">
+              Join thousands of universities already using YallaClass to modernize
+              their attendance tracking. Get started in minutes.
+            </p>
+            <div className="yc-cta-buttons">
+              <button className="yc-btn-primary yc-btn-large" onClick={() => navigate('/Login')}>
+                <span>Get Started Free</span>
+                <IconComponent name="ArrowRight" />
+              </button>
+              <button className="yc-btn-secondary">
+                <span>Schedule Demo</span>
+              </button>
+            </div>
+            <div className="yc-trust-section">
+              <p className="yc-trust-text">Trusted by leading universities</p>
+              <div className="yc-trust-logos">
+                {['MIT', 'Stanford', 'Harvard', 'Berkeley', 'Oxford'].map((uni, index) => (
+                  <span key={index} className="yc-trust-name">{uni}</span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -334,11 +313,11 @@ function Home() {
 
       {/* Footer */}
       <footer className="yc-footer">
-        <div className="yc-footer-container">
+        <div className="yc-container">
           <div className="yc-footer-main">
             <div className="yc-footer-brand">
               <div className="yc-footer-logo">
-                <div className="yc-footer-logo-icon yc-gradient-bg yc-from-blue-600-to-cyan-500">
+                <div className="yc-logo-icon">
                   <IconComponent name="GraduationCap" />
                 </div>
                 <span className="yc-footer-logo-text">

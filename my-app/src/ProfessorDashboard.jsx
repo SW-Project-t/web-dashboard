@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc,collection,getDocs } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 const STORAGE_KEYS = {
@@ -27,13 +27,40 @@ export default function ProfessorDashboard() {
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // حالات النوافذ المنبثقة
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
     });
+
+    // abdo
+    const [adminCourses, setAdminCourses] = useState([]);
+    useEffect(() => {
+        const fetchAdminCourses = async () => {
+            const querySnapshot = await getDocs(collection(db, "courses"));
+            const coursesList = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setAdminCourses(coursesList);
+        };
+        fetchAdminCourses();
+    }, []);
+
+        const handleSelectCourseFromAdmin = (courseId) => {
+        const selected = adminCourses.find(c => c.courseId === courseId);
+        if (selected) {
+            setNewCourse({
+                id: selected.courseId,
+                name: selected.courseName,
+                schedule: `${selected.SelectDays} | ${selected.Time}`,
+                room: selected.RoomNumber,
+                students: selected.capacity,
+                instructor: selected.instructorName
+            });
+        }
+    };
 
     const fetchUserData = async (user) => {
         try {
@@ -232,32 +259,12 @@ export default function ProfessorDashboard() {
             showNotification(`Course ${id} deleted successfully`);
         }
     };
+ 
+    // abdo
+   const saveCourse = async () => {
+   
+};
 
-    const saveCourse = () => {
-        if (!newCourse.id || !newCourse.name) {
-            showNotification('Please fill all required fields', 'error');
-            return;
-        }
-
-        if (modalType === 'add') {
-            setCourses([...courses, {
-                ...newCourse,
-                students: Number(newCourse.students) || 0,
-                avgAttendance: 0,
-                todayPresent: 0,
-                todayLate: 0,
-                todayAbsent: 0
-            }]);
-            showNotification(`Course ${newCourse.id} added successfully`);
-        } else {
-            setCourses(courses.map(c => 
-                c.id === selectedCourse.id ? { ...c, ...newCourse } : c
-            ));
-            showNotification(`Course ${newCourse.id} updated successfully`);
-        }
-
-        setShowModal(false);
-    };
 
     const updateAttendance = (courseId, type) => {
         setCourses(courses.map(c => {
@@ -734,71 +741,97 @@ export default function ProfessorDashboard() {
                                 </div>
                                 
                                 <div className="modal-form grid">
-                                    <div className="form-group full-width">
-                                        <label>Course ID</label>
-                                        <input
-                                            className="modern-input"
-                                            placeholder="e.g., CS401"
-                                            value={newCourse.id}
-                                            onChange={(e) => setNewCourse({...newCourse, id: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div className="form-group full-width">
-                                        <label>Course Name</label>
-                                        <input
-                                            className="modern-input"
-                                            placeholder="e.g., Data Structures"
-                                            value={newCourse.name}
-                                            onChange={(e) => setNewCourse({...newCourse, name: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div className="form-group">
-                                        <label>Schedule</label>
-                                        <input
-                                            className="modern-input"
-                                            placeholder="Mon, Wed 10:00 AM"
-                                            value={newCourse.schedule}
-                                            onChange={(e) => setNewCourse({...newCourse, schedule: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div className="form-group">
-                                        <label>Room</label>
-                                        <input
-                                            className="modern-input"
-                                            placeholder="Room 201"
-                                            value={newCourse.room}
-                                            onChange={(e) => setNewCourse({...newCourse, room: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div className="form-group full-width">
-                                        <label>Number of Students</label>
-                                        <input
-                                            className="modern-input"
-                                            type="number"
-                                            placeholder="45"
-                                            value={newCourse.students}
-                                            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="modal-actions">
-                                    <button className="secondary-btn" onClick={() => setShowModal(false)}>
-                                        Cancel
-                                    </button>
-                                    <button className="primary-btn" onClick={saveCourse}>
-                                        {modalType === 'add' ? 'Create Course' : 'Save Changes'}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
+   
+    {modalType === 'add' && (
+        <div className="form-group full-width">
+            <label style={{ color: '#4f46e5', fontWeight: 'bold' }}>Select Course You Want To Teach</label>
+            <select 
+                className="modern-input"
+                value={newCourse.id}
+                onChange={(e) => handleSelectCourseFromAdmin(e.target.value)} 
+                style={{ border: '2px solid #4f46e5', cursor: 'pointer' }}
+            >
+                <option value="">-- Choose a Course --</option>
+                {adminCourses.map(course => (
+                    <option key={course.id} value={course.courseId}>
+                        {course.courseId} - {course.courseName}
+                    </option>
+                ))}
+            </select>
         </div>
+    )}
+
+   
+    <div className="form-group">
+        <label>Course ID</label>
+        <input
+            className="modern-input"
+            value={newCourse.id}
+            readOnly={modalType === 'add'} 
+            placeholder="Select from list..."
+        />
+    </div>
+
+    <div className="form-group">
+        <label>Course Name</label>
+        <input
+            className="modern-input"
+            value={newCourse.name}
+            readOnly={modalType === 'add'}
+            placeholder="Course name"
+        />
+    </div>
+
+    <div className="form-group">
+        <label>Schedule</label>
+        <input
+            className="modern-input"
+            value={newCourse.schedule}
+            readOnly={modalType === 'add'}
+            placeholder="Days | Time"
+        />
+    </div>
+
+    <div className="form-group">
+        <label>Room</label>
+        <input
+            className="modern-input"
+            value={newCourse.room}
+            readOnly={modalType === 'add'}
+            placeholder="Room number"
+        />
+    </div>
+
+    <div className="form-group full-width">
+        <label>Capacity</label>
+        <input
+            className="modern-input"
+            type="number"
+            value={newCourse.students}
+            readOnly={modalType === 'add'}
+            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
+        />
+    </div>
+</div>
+
+<div className="modal-actions">
+    <button className="secondary-btn" onClick={() => setShowModal(false)}>
+        Cancel
+    </button>
+    <button 
+        className="primary-btn" 
+        onClick={saveCourse}
+        disabled={modalType === 'add' && !newCourse.id}
+    >
+        {modalType === 'add' ? 'Confirm Addition' : 'Save Changes'}
+    </button>
+</div>
+        </>
+                )}
+             </div>
+            </div>
+                    )}
+        </div>
+
     );
 }

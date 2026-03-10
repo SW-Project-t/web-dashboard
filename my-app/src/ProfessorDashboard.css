@@ -748,7 +748,7 @@ body {
     height: 32px;
     border: none;
     border-radius: 8px;
-    display: flex;
+    display: grid;
     align-items: center;
     justify-content: center;
     cursor: pointer;

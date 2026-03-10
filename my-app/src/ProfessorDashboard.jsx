@@ -742,97 +742,95 @@ export default function ProfessorDashboard() {
                                     </button>
                                 </div>
     
- 
-                         <div className="modal-form grid">
-    {modalType === 'add' && (
-        <div className="form-group full-width">
-            <label style={{ color: '#4f46e5', fontWeight: 'bold' }}>Select Course You Want To Teach</label>
-            <select 
-                className="modern-input"
-                value={newCourse.id}
-                onChange={(e) => handleSelectCourseFromAdmin(e.target.value)} 
-                style={{ border: '2px solid #4f46e5', cursor: 'pointer' }}
-            >
-                <option value="">-- Choose a Course --</option>
-                {adminCourses.map(course => (
-                    <option key={course.id} value={course.courseId}>
-                        {course.courseId} - {course.courseName}
-                    </option>
-                ))}
-            </select>
-        </div>
-    )}
+                                <div className="professor-modal-form professor-form-grid">
+                                    {modalType === 'add' && (
+                                        <div className="professor-form-group full-width">
+                                            <label style={{ color: '#4a90e2', fontWeight: 'bold' }}>Select Course You Want To Teach</label>
+                                            <select 
+                                                className="professor-form-input"
+                                                value={newCourse.id}
+                                                onChange={(e) => handleSelectCourseFromAdmin(e.target.value)} 
+                                                style={{ border: '2px solid #4a90e2', cursor: 'pointer' }}
+                                            >
+                                                <option value="">-- Choose a Course --</option>
+                                                {adminCourses.map(course => (
+                                                    <option key={course.id} value={course.courseId}>
+                                                        {course.courseId} - {course.courseName}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
 
-    <div className="form-group">
-        <label>Course ID</label>
-        <input
-            className="modern-input"
-            value={newCourse.id}
-            readOnly={modalType === 'add'} 
-            placeholder="Select from list..."
-        />
-    </div>
+                                    <div className="professor-form-group">
+                                        <label>Course ID</label>
+                                        <input
+                                            className="professor-form-input"
+                                            value={newCourse.id}
+                                            readOnly={modalType === 'add'} 
+                                            placeholder="Select from list..."
+                                        />
+                                    </div>
 
-    <div className="form-group">
-        <label>Course Name</label>
-        <input
-            className="modern-input"
-            value={newCourse.name}
-            readOnly={modalType === 'add'}
-            placeholder="Course name"
-        />
-    </div>
+                                    <div className="professor-form-group">
+                                        <label>Course Name</label>
+                                        <input
+                                            className="professor-form-input"
+                                            value={newCourse.name}
+                                            readOnly={modalType === 'add'}
+                                            placeholder="Course name"
+                                        />
+                                    </div>
 
-    <div className="form-group">
-        <label>Schedule</label>
-        <input
-            className="modern-input"
-            value={newCourse.schedule}
-            readOnly={modalType === 'add'}
-            placeholder="Days | Time"
-        />
-    </div>
+                                    <div className="professor-form-group">
+                                        <label>Schedule</label>
+                                        <input
+                                            className="professor-form-input"
+                                            value={newCourse.schedule}
+                                            readOnly={modalType === 'add'}
+                                            placeholder="Days | Time"
+                                        />
+                                    </div>
 
-    <div className="form-group">
-        <label>Room</label>
-        <input
-            className="modern-input"
-            value={newCourse.room}
-            readOnly={modalType === 'add'}
-            placeholder="Room number"
-        />
-    </div>
+                                    <div className="professor-form-group">
+                                        <label>Room</label>
+                                        <input
+                                            className="professor-form-input"
+                                            value={newCourse.room}
+                                            readOnly={modalType === 'add'}
+                                            placeholder="Room number"
+                                        />
+                                    </div>
 
-    <div className="form-group full-width">
-        <label>Capacity</label>
-        <input
-            className="modern-input"
-            type="number"
-            value={newCourse.students}
-            readOnly={modalType === 'add'}
-            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
-        />
-    </div>
-</div>
+                                    <div className="professor-form-group full-width">
+                                        <label>Capacity</label>
+                                        <input
+                                            className="professor-form-input"
+                                            type="number"
+                                            value={newCourse.students}
+                                            readOnly={modalType === 'add'}
+                                            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
 
-<div className="modal-actions">
-    <button className="secondary-btn" onClick={() => setShowModal(false)}>
-        Cancel
-    </button>
-    <button 
-        className="primary-btn" 
-        onClick={saveCourse}
-        disabled={modalType === 'add' && !newCourse.id}
-    >
-        {modalType === 'add' ? 'Confirm Addition' : 'Save Changes'}
-    </button>
-</div>
+                                <div className="professor-modal-actions centered">
+                                    <button className="professor-cancel-button" onClick={() => setShowModal(false)}>
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        className="professor-update-button" 
+                                        onClick={saveCourse}
+                                        disabled={modalType === 'add' && !newCourse.id}
+                                    >
+                                        {modalType === 'add' ? 'Confirm Addition' : 'Save Changes'}
+                                    </button>
+                                </div>
                             </>
                         )}
                     </div>
                 </div>
             )}
         </div>
-
     );
 }

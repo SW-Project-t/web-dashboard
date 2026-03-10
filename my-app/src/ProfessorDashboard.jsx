@@ -6,11 +6,11 @@ import {
     LogOut, Key, Plus, Edit, Trash2, Bell, Download,
     TrendingUp, Clock, CheckCircle, XCircle, AlertCircle,
     Menu, Search, ChevronRight, BarChart3, UserPlus,
-    X  // تم إضافة X هنا
+    X
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
-import { doc, getDoc, updateDoc,collection,getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 const STORAGE_KEYS = {
@@ -27,6 +27,7 @@ export default function ProfessorDashboard() {
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [searchQuery, setSearchQuery] = useState('');
 
+    // حالات النوافذ المنبثقة
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '',
@@ -107,7 +108,7 @@ export default function ProfessorDashboard() {
         }, 1000);
     };
 
-    // دوال تغيير كلمة المرور
+    // Password functions
     const handlePasswordInputChange = (e) => {
         const { name, value } = e.target;
         setPasswordFields(prev => ({ ...prev, [name]: value }));
@@ -301,28 +302,28 @@ export default function ProfessorDashboard() {
     ];
 
     return (
-        <div className="professor-layout">
-            {/* نظام الإشعارات العلوي - من Admin */}
-            <div className="notifications-container">
+        <div className="professor-dashboard-container">
+            {/* Notifications System */}
+            <div className="professor-notifications-container">
                 {notifications.map(n => (
-                    <div key={n.id} className={`notification ${n.type}`}>
+                    <div key={n.id} className={`professor-notification-item ${n.type}`}>
                         {n.message}
                     </div>
                 ))}
             </div>
 
-            {/* الشريط الجانبي - مأخوذ من Admin مع تعديل */}
-            <aside className={`professor-sidebar ${sidebarOpen ? 'open' : ''}`}>
-                <div className="sidebar-profile-section">
-                    <div className="profile-img-container" onClick={() => document.getElementById('prof-profile-upload').click()}>
+            {/* Sidebar */}
+            <aside className={`professor-sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
+                <div className="professor-profile-section">
+                    <div className="professor-profile-image-wrapper" onClick={() => document.getElementById('prof-profile-upload').click()}>
                         {profileImage ? (
-                            <img src={profileImage} alt="Profile" className="profile-img" />
+                            <img src={profileImage} alt="Profile" className="professor-profile-image" />
                         ) : (
-                            <div className="profile-placeholder">
+                            <div className="professor-profile-placeholder">
                                 {profData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
                             </div>
                         )}
-                        <div className="profile-status"></div>
+                        <div className="professor-profile-status"></div>
                     </div>
                     <input 
                         type="file" 
@@ -331,53 +332,53 @@ export default function ProfessorDashboard() {
                         accept="image/*" 
                         onChange={handleImageUpload} 
                     />
-                    <h3 className="profile-name">{profData.name}</h3>
-                    <p className="profile-id">ID: {profData.code}</p>
+                    <h3 className="professor-profile-name">{profData.name}</h3>
+                    <p className="professor-profile-id">ID: {profData.code}</p>
                     {profileImage && (
-                        <button className="remove-photo-text" onClick={removeProfileImage}>
+                        <button className="professor-remove-photo-button" onClick={removeProfileImage}>
                             Remove Photo
                         </button>
                     )}
                 </div>
 
-                <nav className="sidebar-nav">
+                <nav className="professor-navigation-menu">
                     <button 
-                        className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`} 
+                        className={`professor-nav-button ${activeTab === 'Dashboard' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Dashboard')}
                     >
                         <LayoutDashboard size={20} />
                         <span>Dashboard</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'My Courses' ? 'active' : ''}`} 
+                        className={`professor-nav-button ${activeTab === 'My Courses' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('My Courses')}
                     >
                         <BookOpen size={20} />
                         <span>My Courses</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'Students' ? 'active' : ''}`} 
+                        className={`professor-nav-button ${activeTab === 'Students' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Students')}
                     >
                         <Users size={20} />
                         <span>Students</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'Schedule' ? 'active' : ''}`} 
+                        className={`professor-nav-button ${activeTab === 'Schedule' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Schedule')}
                     >
                         <Calendar size={20} />
                         <span>Schedule</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'Analytics' ? 'active' : ''}`} 
+                        className={`professor-nav-button ${activeTab === 'Analytics' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Analytics')}
                     >
                         <BarChart3 size={20} />
                         <span>Analytics</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`} 
+                        className={`professor-nav-button ${activeTab === 'Settings' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Settings')}
                     >
                         <Settings size={20} />
@@ -385,23 +386,23 @@ export default function ProfessorDashboard() {
                     </button>
                 </nav>
 
-                <div className="sidebar-footer">
-                    <button className="nav-item btn-password" onClick={() => setIsPasswordModalOpen(true)}>
+                <div className="professor-sidebar-footer">
+                    <button className="professor-nav-button professor-password-button" onClick={() => setIsPasswordModalOpen(true)}>
                         <Key size={18} />
                         <span>Change Password</span>
                     </button>
-                    <button className="nav-item btn-logout" onClick={handleLogout}>
+                    <button className="professor-nav-button professor-logout-button" onClick={handleLogout}>
                         <LogOut size={18} />
                         <span>Logout</span>
                     </button>
                 </div>
             </aside>
 
-            {/* المحتوى الرئيسي - مأخوذ من Admin مع تعديل */}
-            <main className="professor-main">
-                <header className="main-header">
-                    <div className="header-title">
-                        <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {/* Main Content */}
+            <main className="professor-main-content">
+                <header className="professor-content-header">
+                    <div className="professor-page-title">
+                        <button className="professor-mobile-menu-trigger" onClick={() => setSidebarOpen(!sidebarOpen)}>
                             <Menu size={24} />
                         </button>
                         <div>
@@ -409,127 +410,128 @@ export default function ProfessorDashboard() {
                             <p>Welcome to your teaching dashboard</p>
                         </div>
                     </div>
-                    <div className="header-actions">
-                        <div className="search-bar">
-                            <Search size={18} className="search-icon" />
+                    <div className="professor-header-controls">
+                        <div className="professor-search-container">
+                            <Search size={18} className="professor-search-icon" />
                             <input 
                                 type="text" 
                                 placeholder="Search courses..." 
+                                className="professor-search-input"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button className="bell-btn" onClick={() => showNotification('No new notifications', 'info')}>
+                        <button className="professor-notification-button" onClick={() => showNotification('No new notifications', 'info')}>
                             <Bell size={20} />
-                            <span className="bell-badge"></span>
+                            <span className="professor-notification-badge"></span>
                         </button>
-                        <button className="export-btn" onClick={exportData} title="Export Data">
+                        <button className="professor-export-button" onClick={exportData} title="Export Data">
                             <Download size={20} />
                         </button>
                     </div>
                 </header>
 
-                <div className="content-scroll">
+                <div className="professor-scrollable-content">
                     {activeTab === 'Dashboard' && (
-                        <div className="dashboard-view">
-                            {/* بطاقات الإجراءات السريعة - من Admin */}
-                            <div className="quick-actions-row">
-                                <div className="action-card blue" onClick={openAddModal}>
+                        <div className="professor-dashboard-view">
+                            {/* Quick Actions */}
+                            <div className="professor-quick-actions-grid">
+                                <div className="professor-action-card-item professor-card-blue" onClick={openAddModal}>
                                     <BookOpen size={28} />
                                     <span>New Course</span>
                                 </div>
-                                <div className="action-card green" onClick={() => {
+                                <div className="professor-action-card-item professor-card-green" onClick={() => {
                                     setActiveTab('Students');
                                     showNotification('Navigating to Students page', 'info');
                                 }}>
                                     <UserPlus size={28} />
                                     <span>Add Students</span>
                                 </div>
-                                <div className="action-card yellow" onClick={exportData}>
+                                <div className="professor-action-card-item professor-card-yellow" onClick={exportData}>
                                     <Download size={28} />
                                     <span>Export Data</span>
                                 </div>
-                                <div className="action-card red" onClick={resetAllAttendance}>
+                                <div className="professor-action-card-item professor-card-red" onClick={resetAllAttendance}>
                                     <Clock size={28} />
                                     <span>Reset Today</span>
                                 </div>
                             </div>
 
-                            {/* بطاقات الإحصائيات - محسنة */}
-                            <div className="stats-grid">
-                                <div className="stat-card">
-                                    <BookOpen className="stat-icon blue" />
-                                    <div className="stat-info">
-                                        <span className="stat-label">Total Courses</span>
-                                        <span className="stat-value">{courses.length}</span>
+                            {/* Stats Cards */}
+                            <div className="professor-stats-grid">
+                                <div className="professor-stat-card">
+                                    <BookOpen className="professor-stat-icon blue" />
+                                    <div className="professor-stat-info">
+                                        <span className="professor-stat-label">Total Courses</span>
+                                        <span className="professor-stat-value">{courses.length}</span>
                                     </div>
                                 </div>
-                                <div className="stat-card">
-                                    <Users className="stat-icon green" />
-                                    <div className="stat-info">
-                                        <span className="stat-label">Total Students</span>
-                                        <span className="stat-value">{totalStudents}</span>
+                                <div className="professor-stat-card">
+                                    <Users className="professor-stat-icon green" />
+                                    <div className="professor-stat-info">
+                                        <span className="professor-stat-label">Total Students</span>
+                                        <span className="professor-stat-value">{totalStudents}</span>
                                     </div>
                                 </div>
-                                <div className="stat-card">
-                                    <TrendingUp className="stat-icon purple" />
-                                    <div className="stat-info">
-                                        <span className="stat-label">Avg Attendance</span>
-                                        <span className="stat-value">{avgAttendance}%</span>
+                                <div className="professor-stat-card">
+                                    <TrendingUp className="professor-stat-icon purple" />
+                                    <div className="professor-stat-info">
+                                        <span className="professor-stat-label">Avg Attendance</span>
+                                        <span className="professor-stat-value">{avgAttendance}%</span>
                                     </div>
                                 </div>
-                                <div className="stat-card">
-                                    <CheckCircle className="stat-icon orange" />
-                                    <div className="stat-info">
-                                        <span className="stat-label">Today's Present</span>
-                                        <span className="stat-value">{totalPresent}</span>
+                                <div className="professor-stat-card">
+                                    <CheckCircle className="professor-stat-icon orange" />
+                                    <div className="professor-stat-info">
+                                        <span className="professor-stat-label">Today's Present</span>
+                                        <span className="professor-stat-value">{totalPresent}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* قسم الكورسات - محسن */}
-                            <div className="courses-section">
-                                <div className="section-header">
+                            {/* Courses Section */}
+                            <div className="professor-courses-section">
+                                <div className="professor-section-header">
                                     <h2>My Courses</h2>
-                                    <button className="view-all-btn" onClick={() => setActiveTab('My Courses')}>
+                                    <button className="professor-view-all-button" onClick={() => setActiveTab('My Courses')}>
                                         View All <ChevronRight size={16} />
                                     </button>
                                 </div>
 
-                                <div className="courses-grid">
+                                <div className="professor-courses-grid">
                                     {filteredCourses.slice(0, 3).map(course => (
-                                        <div key={course.id} className="course-card-modern">
-                                            <div className="course-header">
-                                                <span className="course-code">{course.id}</span>
-                                                <div className="course-actions">
-                                                    <button className="icon-btn" onClick={() => openEditModal(course)} title="Edit">
+                                        <div key={course.id} className="professor-course-card">
+                                            <div className="professor-course-header">
+                                                <span className="professor-course-code">{course.id}</span>
+                                                <div className="professor-course-actions">
+                                                    <button className="professor-icon-button" onClick={() => openEditModal(course)} title="Edit">
                                                         <Edit size={16} />
                                                     </button>
-                                                    <button className="icon-btn delete" onClick={() => deleteCourse(course.id)} title="Delete">
+                                                    <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>
                                             </div>
-                                            <h3 className="course-name">{course.name}</h3>
-                                            <div className="course-details">
+                                            <h3 className="professor-course-name">{course.name}</h3>
+                                            <div className="professor-course-details">
                                                 <p><Clock size={14} /> {course.schedule}</p>
                                                 <p><Calendar size={14} /> {course.room}</p>
                                             </div>
-                                            <div className="attendance-summary">
-                                                <div className="attendance-item present">
+                                            <div className="professor-attendance-summary">
+                                                <div className="professor-attendance-item present">
                                                     <CheckCircle size={14} />
                                                     <span>{course.todayPresent} Present</span>
                                                 </div>
-                                                <div className="attendance-item late">
+                                                <div className="professor-attendance-item late">
                                                     <AlertCircle size={14} />
                                                     <span>{course.todayLate} Late</span>
                                                 </div>
-                                                <div className="attendance-item absent">
+                                                <div className="professor-attendance-item absent">
                                                     <XCircle size={14} />
                                                     <span>{course.todayAbsent} Absent</span>
                                                 </div>
                                             </div>
-                                            <button className="start-attendance-btn" onClick={() => openAttendanceModal(course)}>
+                                            <button className="professor-start-attendance-button" onClick={() => openAttendanceModal(course)}>
                                                 Start Attendance
                                             </button>
                                         </div>
@@ -537,21 +539,21 @@ export default function ProfessorDashboard() {
                                 </div>
                             </div>
 
-                            {/* بطاقة الرسم البياني للأسبوع */}
-                            <div className="chart-card">
-                                <div className="chart-header">
+                            {/* Chart Card */}
+                            <div className="professor-chart-card">
+                                <div className="professor-chart-header">
                                     <h3>Weekly Attendance Overview</h3>
-                                    <span className="chart-badge">Last 5 days</span>
+                                    <span className="professor-chart-badge">Last 5 days</span>
                                 </div>
-                                <div className="chart-bars">
+                                <div className="professor-chart-bars">
                                     {weeklyData.map((item, i) => (
-                                        <div key={i} className="bar-item">
+                                        <div key={i} className="professor-bar-item">
                                             <div 
-                                                className="bar" 
+                                                className="professor-bar" 
                                                 style={{ height: `${item.value * 2}px` }}
                                             ></div>
-                                            <span className="bar-day">{item.day}</span>
-                                            <span className="bar-value">{item.value}%</span>
+                                            <span className="professor-bar-day">{item.day}</span>
+                                            <span className="professor-bar-value">{item.value}%</span>
                                         </div>
                                     ))}
                                 </div>
@@ -559,17 +561,17 @@ export default function ProfessorDashboard() {
                         </div>
                     )}
 
-                    {/* صفحة My Courses - محسنة */}
+                    {/* My Courses Page */}
                     {activeTab === 'My Courses' && (
-                        <div className="courses-full-view">
-                            <div className="page-header">
+                        <div className="professor-courses-full-view">
+                            <div className="professor-page-header">
                                 <h2>All Courses ({filteredCourses.length})</h2>
-                                <button className="primary-btn" onClick={openAddModal}>
+                                <button className="professor-primary-button" onClick={openAddModal}>
                                     <Plus size={18} /> Add Course
                                 </button>
                             </div>
-                            <div className="courses-table-container">
-                                <table className="modern-table">
+                            <div className="professor-table-responsive">
+                                <table className="professor-modern-table">
                                     <thead>
                                         <tr>
                                             <th>Code</th>
@@ -584,32 +586,32 @@ export default function ProfessorDashboard() {
                                     <tbody>
                                         {filteredCourses.length === 0 ? (
                                             <tr>
-                                                <td colSpan="7" className="no-data">No courses found</td>
+                                                <td colSpan="7" className="professor-no-data">No courses found</td>
                                             </tr>
                                         ) : (
                                             filteredCourses.map(course => (
                                                 <tr key={course.id}>
-                                                    <td className="code-cell">{course.id}</td>
-                                                    <td className="name-cell">{course.name}</td>
+                                                    <td className="professor-code-cell">{course.id}</td>
+                                                    <td className="professor-name-cell">{course.name}</td>
                                                     <td>{course.schedule}</td>
                                                     <td>{course.room}</td>
                                                     <td>{course.students}</td>
                                                     <td>
-                                                        <span className="attendance-badge">
+                                                        <span className="professor-attendance-badge">
                                                             {course.avgAttendance}%
                                                         </span>
                                                     </td>
-                                                    <td className="actions-cell">
-                                                        <button className="icon-btn primary" onClick={() => openAttendanceModal(course)} title="Start Attendance">
+                                                    <td className="professor-actions-cell">
+                                                        <button className="professor-icon-button" onClick={() => openAttendanceModal(course)} title="Start Attendance">
                                                             <CheckCircle size={18} />
                                                         </button>
-                                                        <button className="icon-btn" onClick={() => openEditModal(course)} title="Edit">
+                                                        <button className="professor-icon-button" onClick={() => openEditModal(course)} title="Edit">
                                                             <Edit size={18} />
                                                         </button>
-                                                        <button className="icon-btn" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
+                                                        <button className="professor-icon-button" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
                                                             <Clock size={18} />
                                                         </button>
-                                                        <button className="icon-btn delete" onClick={() => deleteCourse(course.id)} title="Delete">
+                                                        <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
                                                             <Trash2 size={18} />
                                                         </button>
                                                     </td>
@@ -622,10 +624,10 @@ export default function ProfessorDashboard() {
                         </div>
                     )}
 
-                    {/* صفحات أخرى تحت التطوير */}
+                    {/* Under Development Pages */}
                     {(activeTab === 'Students' || activeTab === 'Schedule' || activeTab === 'Analytics' || activeTab === 'Settings') && (
-                        <div className="under-development">
-                            <Settings size={60} className="spin-icon" />
+                        <div className="professor-under-development">
+                            <Settings size={60} />
                             <h2>This page is currently under development</h2>
                             <p>Check back soon for updates!</p>
                         </div>
@@ -633,19 +635,19 @@ export default function ProfessorDashboard() {
                 </div>
             </main>
 
-            {/* مودال تغيير كلمة المرور - محسن */}
+            {/* Password Modal */}
             {isPasswordModalOpen && (
-                <div className="modal-overlay" onClick={() => setIsPasswordModalOpen(false)}>
-                    <div className="modern-modal small" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
+                <div className="professor-modal-overlay" onClick={() => setIsPasswordModalOpen(false)}>
+                    <div className="professor-modal-container small" onClick={e => e.stopPropagation()}>
+                        <div className="professor-modal-header">
                             <h2>Change Password</h2>
-                            <button className="close-btn" onClick={() => setIsPasswordModalOpen(false)}>
-                                <X size={20} />  {/* الآن X معرف بشكل صحيح */}
+                            <button className="professor-close-modal-button" onClick={() => setIsPasswordModalOpen(false)}>
+                                <X size={20} />
                             </button>
                         </div>
                         
-                        <form onSubmit={handlePasswordUpdate} className="modal-form vertical">
-                            <div className="form-group">
+                        <form onSubmit={handlePasswordUpdate} className="professor-modal-form">
+                            <div className="professor-form-group">
                                 <label>Current Password</label>
                                 <input
                                     type="password"
@@ -654,11 +656,11 @@ export default function ProfessorDashboard() {
                                     onChange={handlePasswordInputChange}
                                     placeholder="Enter current password"
                                     required
-                                    className="modern-input"
+                                    className="professor-form-input"
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className="professor-form-group">
                                 <label>New Password</label>
                                 <input
                                     type="password"
@@ -668,11 +670,11 @@ export default function ProfessorDashboard() {
                                     placeholder="Enter new password"
                                     required
                                     minLength="6"
-                                    className="modern-input"
+                                    className="professor-form-input"
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className="professor-form-group">
                                 <label>Confirm Password</label>
                                 <input
                                     type="password"
@@ -681,19 +683,19 @@ export default function ProfessorDashboard() {
                                     onChange={handlePasswordInputChange}
                                     placeholder="Confirm new password"
                                     required
-                                    className="modern-input"
+                                    className="professor-form-input"
                                 />
                             </div>
 
-                            <div className="password-requirements">
+                            <div className="professor-password-requirements">
                                 <p>Password must be at least 6 characters long</p>
                             </div>
 
-                            <div className="modal-actions">
-                                <button type="button" className="cancel-btn" onClick={() => setIsPasswordModalOpen(false)}>
+                            <div className="professor-modal-actions">
+                                <button type="button" className="professor-cancel-button" onClick={() => setIsPasswordModalOpen(false)}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="update-btn">
+                                <button type="submit" className="professor-update-button">
                                     Update Password
                                 </button>
                             </div>
@@ -702,135 +704,110 @@ export default function ProfessorDashboard() {
                 </div>
             )}
 
-            {/* مودال إضافة/تعديل الكورس - محسن */}
+            {/* Course Modal */}
             {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modern-modal" onClick={e => e.stopPropagation()}>
+                <div className="professor-modal-overlay" onClick={() => setShowModal(false)}>
+                    <div className="professor-modal-container" onClick={e => e.stopPropagation()}>
                         {modalType === 'attendance' ? (
                             <>
-                                <div className="modal-header">
+                                <div className="professor-modal-header">
                                     <h3>Start Attendance Session</h3>
-                                    <button className="close-btn" onClick={() => setShowModal(false)}>
-                                        <X size={20} />  {/* الآن X معرف بشكل صحيح */}
+                                    <button className="professor-close-modal-button" onClick={() => setShowModal(false)}>
+                                        <X size={20} />
                                     </button>
                                 </div>
-                                <p className="modal-subtitle">Course: {selectedCourse?.name}</p>
+                                <p className="professor-modal-subtitle">Course: {selectedCourse?.name}</p>
                                 
-                                <div className="attendance-code-display">2478</div>
-                                <p className="modal-instruction">Share this 4-digit code with your students</p>
+                                <div className="professor-attendance-code">2478</div>
+                                <p className="professor-modal-instruction">Share this 4-digit code with your students</p>
 
-                                <div className="modal-actions centered">
-                                    <button className="primary-btn large" onClick={() => {
+                                <div className="professor-modal-actions centered">
+                                    <button className="professor-primary-button large" onClick={() => {
                                         showNotification('Attendance session started successfully!');
                                         setShowModal(false);
                                     }}>
                                         Start Session
                                     </button>
-                                    <button className="secondary-btn" onClick={() => setShowModal(false)}>
+                                    <button className="professor-secondary-button" onClick={() => setShowModal(false)}>
                                         Cancel
                                     </button>
                                 </div>
                             </>
                         ) : (
                             <>
-                                <div className="modal-header">
+                                <div className="professor-modal-header">
                                     <h3>{modalType === 'add' ? 'Add New Course' : 'Edit Course'}</h3>
-                                    <button className="close-btn" onClick={() => setShowModal(false)}>
-                                        <X size={20} />  {/* الآن X معرف بشكل صحيح */}
+                                    <button className="professor-close-modal-button" onClick={() => setShowModal(false)}>
+                                        <X size={20} />
                                     </button>
                                 </div>
                                 
                                 <div className="modal-form grid">
-   
-    {modalType === 'add' && (
-        <div className="form-group full-width">
-            <label style={{ color: '#4f46e5', fontWeight: 'bold' }}>Select Course You Want To Teach</label>
-            <select 
-                className="modern-input"
-                value={newCourse.id}
-                onChange={(e) => handleSelectCourseFromAdmin(e.target.value)} 
-                style={{ border: '2px solid #4f46e5', cursor: 'pointer' }}
-            >
-                <option value="">-- Choose a Course --</option>
-                {adminCourses.map(course => (
-                    <option key={course.id} value={course.courseId}>
-                        {course.courseId} - {course.courseName}
-                    </option>
-                ))}
-            </select>
-        </div>
-    )}
+                                    <div className="form-group full-width">
+                                        <label>Course ID</label>
+                                        <input
+                                            className="modern-input"
+                                            placeholder="e.g., CS401"
+                                            value={newCourse.id}
+                                            onChange={(e) => setNewCourse({...newCourse, id: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group full-width">
+                                        <label>Course Name</label>
+                                        <input
+                                            className="modern-input"
+                                            placeholder="e.g., Data Structures"
+                                            value={newCourse.name}
+                                            onChange={(e) => setNewCourse({...newCourse, name: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Schedule</label>
+                                        <input
+                                            className="modern-input"
+                                            placeholder="Mon, Wed 10:00 AM"
+                                            value={newCourse.schedule}
+                                            onChange={(e) => setNewCourse({...newCourse, schedule: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Room</label>
+                                        <input
+                                            className="modern-input"
+                                            placeholder="Room 201"
+                                            value={newCourse.room}
+                                            onChange={(e) => setNewCourse({...newCourse, room: e.target.value})}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group full-width">
+                                        <label>Number of Students</label>
+                                        <input
+                                            className="modern-input"
+                                            type="number"
+                                            placeholder="45"
+                                            value={newCourse.students}
+                                            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
 
-   
-    <div className="form-group">
-        <label>Course ID</label>
-        <input
-            className="modern-input"
-            value={newCourse.id}
-            readOnly={modalType === 'add'} 
-            placeholder="Select from list..."
-        />
-    </div>
-
-    <div className="form-group">
-        <label>Course Name</label>
-        <input
-            className="modern-input"
-            value={newCourse.name}
-            readOnly={modalType === 'add'}
-            placeholder="Course name"
-        />
-    </div>
-
-    <div className="form-group">
-        <label>Schedule</label>
-        <input
-            className="modern-input"
-            value={newCourse.schedule}
-            readOnly={modalType === 'add'}
-            placeholder="Days | Time"
-        />
-    </div>
-
-    <div className="form-group">
-        <label>Room</label>
-        <input
-            className="modern-input"
-            value={newCourse.room}
-            readOnly={modalType === 'add'}
-            placeholder="Room number"
-        />
-    </div>
-
-    <div className="form-group full-width">
-        <label>Capacity</label>
-        <input
-            className="modern-input"
-            type="number"
-            value={newCourse.students}
-            readOnly={modalType === 'add'}
-            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
-        />
-    </div>
-</div>
-
-<div className="modal-actions">
-    <button className="secondary-btn" onClick={() => setShowModal(false)}>
-        Cancel
-    </button>
-    <button 
-        className="primary-btn" 
-        onClick={saveCourse}
-        disabled={modalType === 'add' && !newCourse.id}
-    >
-        {modalType === 'add' ? 'Confirm Addition' : 'Save Changes'}
-    </button>
-</div>
-        </>
-                )}
-             </div>
-            </div>
-                    )}
+                                <div className="modal-actions">
+                                    <button className="secondary-btn" onClick={() => setShowModal(false)}>
+                                        Cancel
+                                    </button>
+                                    <button className="primary-btn" onClick={saveCourse}>
+                                        {modalType === 'add' ? 'Create Course' : 'Save Changes'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
 
     );

@@ -22,6 +22,7 @@ const STORAGE_KEYS = {
 
 export default function StudentDashboard() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [searchQuery, setSearchQuery] = useState('');
     const [studentData, setStudentData] = useState({
@@ -270,25 +271,27 @@ export default function StudentDashboard() {
     );
 
     return (
-        <div className="admin-layout student-layout">
+        <div className="student-dashboard-container">
             {toast.show && (
-                <div className={`notification ${toast.type}`}>
-                    {toast.message}
+                <div className="student-notifications-container">
+                    <div className={`student-notification-item ${toast.type}`}>
+                        {toast.message}
+                    </div>
                 </div>
             )}
 
-            {/* Sidebar - Admin style */}
-            <aside className={`admin-sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
-                <div className="sidebar-profile-section">
-                    <div className="profile-img-container" onClick={() => document.getElementById('student-profile-upload').click()}>
+            {/* Sidebar */}
+            <aside className={`student-sidebar-wrapper ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
+                <div className="student-profile-section">
+                    <div className="student-profile-image-wrapper" onClick={() => document.getElementById('student-profile-upload').click()}>
                         {studentData.profileImage ? (
-                            <img src={studentData.profileImage} alt="Student" className="profile-img" />
+                            <img src={studentData.profileImage} alt="Student" className="student-profile-image" />
                         ) : (
-                            <div className="profile-placeholder">
+                            <div className="student-profile-placeholder">
                                 {studentData.name.charAt(0).toUpperCase()}
                             </div>
                         )}
-                        <div className="profile-status"></div>
+                        <div className="student-profile-status"></div>
                     </div>
                     <input 
                         type="file" 
@@ -297,47 +300,47 @@ export default function StudentDashboard() {
                         accept="image/*" 
                         onChange={handleImageUpload} 
                     />
-                    <h3 className="profile-name">{studentData.name}</h3>
-                    <p className="profile-id">ID: {studentData.id}</p>
-                    <p className="profile-dept">{studentData.department}</p>
+                    <h3 className="student-profile-name">{studentData.name}</h3>
+                    <p className="student-profile-id">ID: {studentData.id}</p>
+                    <p className="student-profile-dept">{studentData.department}</p>
                     {studentData.profileImage && (
-                        <button className="remove-photo-text" onClick={removeProfileImage}>
+                        <button className="student-remove-photo-button" onClick={removeProfileImage}>
                             Remove Photo
                         </button>
                     )}
                 </div>
 
-                <nav className="sidebar-nav">
+                <nav className="student-navigation-menu">
                     <button 
-                        className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`} 
+                        className={`student-nav-button ${activeTab === 'Dashboard' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Dashboard')}
                     >
                         <LayoutDashboard size={20} />
                         <span>Dashboard</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'My Courses' ? 'active' : ''}`} 
+                        className={`student-nav-button ${activeTab === 'My Courses' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('My Courses')}
                     >
                         <BookOpen size={20} />
                         <span>My Courses</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'Attendance' ? 'active' : ''}`} 
+                        className={`student-nav-button ${activeTab === 'Attendance' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Attendance')}
                     >
                         <TrendingUp size={20} />
                         <span>Attendance</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'Schedule' ? 'active' : ''}`} 
+                        className={`student-nav-button ${activeTab === 'Schedule' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Schedule')}
                     >
                         <Calendar size={20} />
                         <span>Schedule</span>
                     </button>
                     <button 
-                        className={`nav-item ${activeTab === 'Profile' ? 'active' : ''}`} 
+                        className={`student-nav-button ${activeTab === 'Profile' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Profile')}
                     >
                         <User size={20} />
@@ -345,117 +348,118 @@ export default function StudentDashboard() {
                     </button>
                 </nav>
 
-                <div className="sidebar-footer">
-                    <button className="nav-item btn-password" onClick={() => setIsPasswordModalOpen(true)}>
+                <div className="student-sidebar-footer">
+                    <button className="student-nav-button student-password-button" onClick={() => setIsPasswordModalOpen(true)}>
                         <Key size={18} />
                         <span>Change Password</span>
                     </button>
-                    <button className="nav-item btn-logout" onClick={handleLogout}>
+                    <button className="student-nav-button student-logout-button" onClick={handleLogout}>
                         <LogOut size={18} />
                         <span>Logout</span>
                     </button>
                 </div>
             </aside>
 
-            {/* Main Content - Admin style */}
-            <main className="admin-main">
-                <header className="main-header">
-                    <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                        <Menu size={24} />
-                    </button>
-                    <div className="header-title">
+            {/* Main Content */}
+            <main className="student-main-content">
+                <header className="student-content-header">
+                    <div className="student-page-title">
+                        <button className="student-mobile-menu-trigger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                            <Menu size={24} />
+                        </button>
                         <div>
                             <h1>{activeTab}</h1>
                             <p>Welcome to your Student Dashboard</p>
                         </div>
                     </div>
-                    <div className="header-actions">
-                        <div className="search-bar">
-                            <Search size={18} className="search-icon" />
+                    <div className="student-header-controls">
+                        <div className="student-search-container">
+                            <Search size={18} className="student-search-icon" />
                             <input 
                                 type="text" 
                                 placeholder="Search courses..." 
+                                className="student-search-input"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button className="bell-btn">
+                        <button className="student-notification-button">
                             <Bell size={20} />
-                            <span className="bell-badge">3</span>
+                            <span className="student-notification-badge">3</span>
                         </button>
                     </div>
                 </header>
 
-                <div className="content-scroll">
+                <div className="student-scrollable-content">
                     {/* Dashboard View */}
                     {activeTab === 'Dashboard' && (
-                        <div className="dashboard-view">
-                            {/* بطاقات الإحصائيات */}
-                            <div className="stats-grid">
-                                <div className="stat-card blue" onClick={() => showNotification(`Overall Attendance: ${studentData.overallAttendance}%`)}>
-                                    <div className="stat-icon blue">
+                        <div className="student-dashboard-view">
+                            {/* Stats Cards */}
+                            <div className="student-stats-grid">
+                                <div className="student-stat-card blue" onClick={() => showNotification(`Overall Attendance: ${studentData.overallAttendance}%`)}>
+                                    <div className="student-stat-icon blue">
                                         <TrendingUp size={24} />
                                     </div>
-                                    <div className="stat-info">
-                                        <span className="stat-label">Attendance</span>
-                                        <span className="stat-value">{studentData.overallAttendance}%</span>
+                                    <div className="student-stat-info">
+                                        <span className="student-stat-label">Attendance</span>
+                                        <span className="student-stat-value">{studentData.overallAttendance}%</span>
                                     </div>
                                 </div>
                                 
-                                <div className="stat-card green" onClick={() => setActiveTab('My Courses')}>
-                                    <div className="stat-icon green">
+                                <div className="student-stat-card green" onClick={() => setActiveTab('My Courses')}>
+                                    <div className="student-stat-icon green">
                                         <BookOpen size={24} />
                                     </div>
-                                    <div className="stat-info">
-                                        <span className="stat-label">Courses</span>
-                                        <span className="stat-value">{courses.length}</span>
+                                    <div className="student-stat-info">
+                                        <span className="student-stat-label">Courses</span>
+                                        <span className="student-stat-value">{courses.length}</span>
                                     </div>
                                 </div>
                                 
-                                <div className="stat-card purple" onClick={viewAttendanceHistory}>
-                                    <div className="stat-icon purple">
+                                <div className="student-stat-card purple" onClick={viewAttendanceHistory}>
+                                    <div className="student-stat-icon purple">
                                         <Calendar size={24} />
                                     </div>
-                                    <div className="stat-info">
-                                        <span className="stat-label">This Week</span>
-                                        <span className="stat-value">{attendance.reduce((sum, a) => sum + a.onTime, 0)}</span>
+                                    <div className="student-stat-info">
+                                        <span className="student-stat-label">This Week</span>
+                                        <span className="student-stat-value">{attendance.reduce((sum, a) => sum + a.onTime, 0)}</span>
                                     </div>
                                 </div>
                                 
-                                <div className="stat-card orange" onClick={toggleGPS}>
-                                    <div className="stat-icon orange">
+                                <div className="student-stat-card orange" onClick={toggleGPS}>
+                                    <div className="student-stat-icon orange">
                                         <MapPin size={24} />
                                     </div>
-                                    <div className="stat-info">
-                                        <span className="stat-label">GPS</span>
-                                        <span className="stat-value">Active</span>
+                                    <div className="student-stat-info">
+                                        <span className="student-stat-label">GPS</span>
+                                        <span className="student-stat-value">Active</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Today's Schedule */}
-                            <div className="middle-row">
-                                <div className="chart-card schedule-card">
-                                    <div className="card-heading">
+                            <div className="student-middle-row">
+                                <div className="student-chart-card">
+                                    <div className="student-card-header">
                                         <Calendar size={20} />
                                         <h3>Today's Schedule</h3>
                                     </div>
-                                    <div className="schedule-list">
+                                    <div className="student-schedule-list">
                                         {upcoming.filter(u => u.date === "Today").length === 0 ? (
-                                            <p className="no-data">No classes today</p>
+                                            <p className="student-no-data">No classes today</p>
                                         ) : (
                                             upcoming.filter(u => u.date === "Today").map((cls, idx) => (
-                                                <div className="schedule-item" key={idx}>
-                                                    <div className="schedule-time">
+                                                <div className="student-schedule-item" key={idx}>
+                                                    <div className="student-schedule-time">
                                                         <Clock size={16} />
                                                         <span>{cls.time}</span>
                                                     </div>
-                                                    <div className="schedule-details">
+                                                    <div className="student-schedule-details">
                                                         <h4>{cls.name}</h4>
                                                         <p>Room {cls.room}</p>
                                                     </div>
                                                     <button 
-                                                        className="check-in-mini"
+                                                        className="student-check-in-mini"
                                                         onClick={() => {
                                                             const course = courses.find(c => c.id === cls.courseId);
                                                             if (course && !course.checkedIn) {
@@ -472,53 +476,53 @@ export default function StudentDashboard() {
                                     </div>
                                 </div>
 
-                                <div className="chart-card activity-card">
-                                    <div className="card-heading">
+                                <div className="student-chart-card">
+                                    <div className="student-card-header">
                                         <Bell size={20} />
                                         <h3>Recent Activity</h3>
                                     </div>
-                                    <div className="activity-list">
+                                    <div className="student-activity-list">
                                         {courses.filter(c => c.checkedIn).slice(0, 3).map((course, i) => (
-                                            <div className="activity-item" key={i}>
-                                                <div className="activity-icon success">
+                                            <div className="student-activity-item" key={i}>
+                                                <div className="student-activity-icon success">
                                                     <CheckCircle size={16}/>
                                                 </div>
-                                                <div className="activity-text">
+                                                <div className="student-activity-text">
                                                     <h4>Checked in to {course.name}</h4>
                                                     <p>Today at {course.time}</p>
                                                 </div>
                                             </div>
                                         ))}
                                         {courses.filter(c => !c.checkedIn).length === courses.length && (
-                                            <p className="no-data">No recent activity</p>
+                                            <p className="student-no-data">No recent activity</p>
                                         )}
                                     </div>
                                 </div>
                             </div>
 
                             {/* My Courses Preview */}
-                            <div className="tables-row">
-                                <div className="table-card">
-                                    <div className="table-header">
+                            <div className="student-tables-row">
+                                <div className="student-table-card">
+                                    <div className="student-table-header">
                                         <h3>My Courses</h3>
-                                        <span className="view-all" onClick={() => setActiveTab('My Courses')}>
+                                        <span className="student-view-all-link" onClick={() => setActiveTab('My Courses')}>
                                             View All
                                         </span>
                                     </div>
-                                    <div className="courses-grid-mini">
+                                    <div className="student-courses-grid-mini">
                                         {courses.slice(0, 3).map(course => (
-                                            <div className="course-mini-card" key={course.id} onClick={() => viewCourseDetails(course)}>
-                                                <div className="course-mini-header">
-                                                    <span className="course-code">{course.id}</span>
-                                                    <span className={`status-badge ${course.checkedIn ? 'checked' : 'pending'}`}>
+                                            <div className="student-course-mini-card" key={course.id} onClick={() => viewCourseDetails(course)}>
+                                                <div className="student-course-mini-header">
+                                                    <span className="student-course-code">{course.id}</span>
+                                                    <span className={`student-status-badge ${course.checkedIn ? 'checked' : 'pending'}`}>
                                                         {course.checkedIn ? 'Checked' : 'Pending'}
                                                     </span>
                                                 </div>
                                                 <h4>{course.name}</h4>
                                                 <p>{course.instructor}</p>
-                                                <div className="course-mini-footer">
+                                                <div className="student-course-mini-footer">
                                                     <span>{course.schedule}</span>
-                                                    <span className="attendance-small">{course.attendanceRate}%</span>
+                                                    <span className="student-attendance-small">{course.attendanceRate}%</span>
                                                 </div>
                                             </div>
                                         ))}
@@ -526,23 +530,23 @@ export default function StudentDashboard() {
                                 </div>
 
                                 {/* Attendance Trend Preview */}
-                                <div className="table-card">
-                                    <div className="table-header">
+                                <div className="student-table-card">
+                                    <div className="student-table-header">
                                         <h3>Attendance Trend</h3>
-                                        <span className="view-all" onClick={viewAttendanceHistory}>
+                                        <span className="student-view-all-link" onClick={viewAttendanceHistory}>
                                             View Details
                                         </span>
                                     </div>
-                                    <div className="trend-mini">
-                                        <div className="chart-bars">
+                                    <div className="student-trend-mini">
+                                        <div className="student-chart-bars">
                                             {trend.slice(-4).map((week, index) => (
-                                                <div key={index} className="bar-wrapper">
-                                                    <div className="bar" style={{ height: `${week.rate}px` }}></div>
-                                                    <span className="bar-label">{week.rate}%</span>
+                                                <div key={index} className="student-bar-wrapper">
+                                                    <div className="student-bar" style={{ height: `${week.rate}px` }}></div>
+                                                    <span className="student-bar-label">{week.rate}%</span>
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="axis-labels">
+                                        <div className="student-axis-labels">
                                             {trend.slice(-4).map((week, idx) => (
                                                 <span key={idx}>{week.week}</span>
                                             ))}
@@ -555,50 +559,50 @@ export default function StudentDashboard() {
 
                     {/* My Courses View */}
                     {activeTab === 'My Courses' && (
-                        <div className="table-card full-page">
-                            <div className="table-header">
-                                <div className="flex-align">
-                                    <BookOpen size={24} className="text-primary mr-2" />
+                        <div className="student-table-card full-page">
+                            <div className="student-table-header">
+                                <div className="student-flex-align">
+                                    <BookOpen size={24} className="student-text-primary student-margin-right-2" />
                                     <h3>My Courses ({filteredCourses.length})</h3>
                                 </div>
                             </div>
-                            <div className="courses-grid">
+                            <div className="student-courses-grid">
                                 {filteredCourses.length === 0 ? (
-                                    <p className="no-data">No courses found</p>
+                                    <p className="student-no-data">No courses found</p>
                                 ) : (
                                     filteredCourses.map(course => (
-                                        <div className="course-card" key={course.id}>
-                                            <div className="course-card-header">
-                                                <span className="course-code-large">{course.id}</span>
-                                                <span className={`status-large ${course.checkedIn ? 'checked' : 'pending'}`}>
+                                        <div className="student-course-card" key={course.id}>
+                                            <div className="student-course-card-header">
+                                                <span className="student-course-code-large">{course.id}</span>
+                                                <span className={`student-status-large ${course.checkedIn ? 'checked' : 'pending'}`}>
                                                     {course.checkedIn ? 'Checked In' : 'Not Checked In'}
                                                 </span>
                                             </div>
                                             <h3>{course.name}</h3>
-                                            <p className="instructor">{course.instructor}</p>
-                                            <div className="course-details">
-                                                <div className="detail-item">
+                                            <p className="student-instructor">{course.instructor}</p>
+                                            <div className="student-course-details">
+                                                <div className="student-detail-item">
                                                     <Calendar size={16} />
                                                     <span>{course.schedule}</span>
                                                 </div>
-                                                <div className="detail-item">
+                                                <div className="student-detail-item">
                                                     <MapPin size={16} />
                                                     <span>Room {course.room}</span>
                                                 </div>
-                                                <div className="detail-item">
+                                                <div className="student-detail-item">
                                                     <Users size={16} />
                                                     <span>{course.students} Students</span>
                                                 </div>
                                             </div>
-                                            <div className="course-card-footer">
-                                                <div className="attendance-progress">
-                                                    <div className="progress-bar">
-                                                        <div className="progress-fill" style={{ width: `${course.attendanceRate}%` }}></div>
+                                            <div className="student-course-card-footer">
+                                                <div className="student-attendance-progress">
+                                                    <div className="student-progress-bar">
+                                                        <div className="student-progress-fill" style={{ width: `${course.attendanceRate}%` }}></div>
                                                     </div>
-                                                    <span className="attendance-percent">{course.attendanceRate}%</span>
+                                                    <span className="student-attendance-percent">{course.attendanceRate}%</span>
                                                 </div>
                                                 <button 
-                                                    className="check-in-btn"
+                                                    className="student-check-in-button"
                                                     onClick={() => handleCheckIn(course.id)}
                                                     disabled={course.checkedIn}
                                                 >
@@ -614,44 +618,44 @@ export default function StudentDashboard() {
 
                     {/* Attendance View */}
                     {activeTab === 'Attendance' && (
-                        <div className="table-card full-page">
-                            <div className="table-header">
-                                <div className="flex-align">
-                                    <TrendingUp size={24} className="text-primary mr-2" />
+                        <div className="student-table-card full-page">
+                            <div className="student-table-header">
+                                <div className="student-flex-align">
+                                    <TrendingUp size={24} className="student-text-primary student-margin-right-2" />
                                     <h3>Attendance Records</h3>
                                 </div>
-                                <button className="primary-btn" onClick={() => showNotification('Downloading report...')}>
+                                <button className="student-nav-button" onClick={() => showNotification('Downloading report...')}>
                                     <Download size={18} /> Export
                                 </button>
                             </div>
                             
                             {/* Summary Cards */}
-                            <div className="attendance-summary">
-                                <div className="summary-item">
-                                    <span className="summary-label">Overall Attendance</span>
-                                    <span className="summary-value">{studentData.overallAttendance}%</span>
+                            <div className="student-attendance-summary">
+                                <div className="student-summary-item">
+                                    <span className="student-summary-label">Overall Attendance</span>
+                                    <span className="student-summary-value">{studentData.overallAttendance}%</span>
                                 </div>
-                                <div className="summary-item">
-                                    <span className="summary-label">Total Classes</span>
-                                    <span className="summary-value">{attendance.reduce((sum, a) => sum + a.total, 0)}</span>
+                                <div className="student-summary-item">
+                                    <span className="student-summary-label">Total Classes</span>
+                                    <span className="student-summary-value">{attendance.reduce((sum, a) => sum + a.total, 0)}</span>
                                 </div>
-                                <div className="summary-item">
-                                    <span className="summary-label">On Time</span>
-                                    <span className="summary-value success">{attendance.reduce((sum, a) => sum + a.onTime, 0)}</span>
+                                <div className="student-summary-item">
+                                    <span className="student-summary-label">On Time</span>
+                                    <span className="student-summary-value success">{attendance.reduce((sum, a) => sum + a.onTime, 0)}</span>
                                 </div>
-                                <div className="summary-item">
-                                    <span className="summary-label">Late</span>
-                                    <span className="summary-value warning">{attendance.reduce((sum, a) => sum + a.late, 0)}</span>
+                                <div className="student-summary-item">
+                                    <span className="student-summary-label">Late</span>
+                                    <span className="student-summary-value warning">{attendance.reduce((sum, a) => sum + a.late, 0)}</span>
                                 </div>
-                                <div className="summary-item">
-                                    <span className="summary-label">Absences</span>
-                                    <span className="summary-value danger">{attendance.reduce((sum, a) => sum + a.absences, 0)}</span>
+                                <div className="student-summary-item">
+                                    <span className="student-summary-label">Absences</span>
+                                    <span className="student-summary-value danger">{attendance.reduce((sum, a) => sum + a.absences, 0)}</span>
                                 </div>
                             </div>
 
                             {/* Attendance Table */}
-                            <div className="table-wrapper">
-                                <table>
+                            <div className="student-table-responsive">
+                                <table className="student-data-table">
                                     <thead>
                                         <tr>
                                             <th>Course Code</th>
@@ -665,20 +669,20 @@ export default function StudentDashboard() {
                                     </thead>
                                     <tbody>
                                         {attendance.length === 0 ? (
-                                            <tr><td colSpan="7" className="no-data">No attendance records</td></tr>
+                                            <tr><td colSpan="7" className="student-no-data">No attendance records</td></tr>
                                         ) : (
                                             attendance.map((item, idx) => {
                                                 const rate = Math.round((item.onTime / item.total) * 100);
                                                 return (
                                                     <tr key={idx}>
-                                                        <td className="text-muted">{item.class}</td>
-                                                        <td className="fw-bold">{item.name}</td>
-                                                        <td className="success-text">{item.onTime}</td>
-                                                        <td className="warning-text">{item.late}</td>
-                                                        <td className="danger-text">{item.absences}</td>
+                                                        <td className="student-text-muted">{item.class}</td>
+                                                        <td className="student-text-bold">{item.name}</td>
+                                                        <td className="student-success-text">{item.onTime}</td>
+                                                        <td className="student-warning-text">{item.late}</td>
+                                                        <td className="student-danger-text">{item.absences}</td>
                                                         <td>{item.total}</td>
                                                         <td>
-                                                            <span className={`rate-badge ${rate >= 90 ? 'excellent' : rate >= 75 ? 'good' : 'poor'}`}>
+                                                            <span className={`student-rate-badge ${rate >= 90 ? 'excellent' : rate >= 75 ? 'good' : 'poor'}`}>
                                                                 {rate}%
                                                             </span>
                                                         </td>
@@ -691,18 +695,18 @@ export default function StudentDashboard() {
                             </div>
 
                             {/* Trend Chart */}
-                            <div className="trend-card">
+                            <div className="student-trend-card">
                                 <h4>6-Week Attendance Trend</h4>
-                                <div className="chart-container">
-                                    <div className="chart-bars">
+                                <div className="student-chart-container">
+                                    <div className="student-chart-bars">
                                         {trend.map((week, index) => (
-                                            <div key={index} className="bar-wrapper">
-                                                <div className="bar" style={{ height: `${week.rate * 1.5}px` }}></div>
-                                                <span className="bar-label">{week.rate}%</span>
+                                            <div key={index} className="student-bar-wrapper">
+                                                <div className="student-bar" style={{ height: `${week.rate * 1.5}px` }}></div>
+                                                <span className="student-bar-label">{week.rate}%</span>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="axis-labels">
+                                    <div className="student-axis-labels">
                                         {trend.map((week, idx) => (
                                             <span key={idx}>{week.week}</span>
                                         ))}
@@ -714,15 +718,15 @@ export default function StudentDashboard() {
 
                     {/* Schedule View */}
                     {activeTab === 'Schedule' && (
-                        <div className="table-card full-page">
-                            <div className="table-header">
-                                <div className="flex-align">
-                                    <Calendar size={24} className="text-primary mr-2" />
+                        <div className="student-table-card full-page">
+                            <div className="student-table-header">
+                                <div className="student-flex-align">
+                                    <Calendar size={24} className="student-text-primary student-margin-right-2" />
                                     <h3>Weekly Schedule</h3>
                                 </div>
                             </div>
                             
-                            <div className="schedule-grid">
+                            <div className="student-schedule-grid">
                                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => {
                                     const dayClasses = upcoming.filter(u => {
                                         const course = courses.find(c => c.id === u.courseId);
@@ -730,16 +734,16 @@ export default function StudentDashboard() {
                                     });
                                     
                                     return (
-                                        <div className="schedule-day-card" key={day}>
+                                        <div className="student-schedule-day-card" key={day}>
                                             <h4>{day}</h4>
                                             {dayClasses.length === 0 ? (
-                                                <p className="no-classes">No classes</p>
+                                                <p className="student-no-classes">No classes</p>
                                             ) : (
                                                 dayClasses.map((cls, idx) => (
-                                                    <div className="day-class" key={idx}>
-                                                        <span className="class-time">{cls.time}</span>
-                                                        <span className="class-name">{cls.name}</span>
-                                                        <span className="class-room">Room {cls.room}</span>
+                                                    <div className="student-day-class" key={idx}>
+                                                        <span className="student-class-time">{cls.time}</span>
+                                                        <span className="student-class-name">{cls.name}</span>
+                                                        <span className="student-class-room">Room {cls.room}</span>
                                                     </div>
                                                 ))
                                             )}
@@ -752,69 +756,69 @@ export default function StudentDashboard() {
 
                     {/* Profile View */}
                     {activeTab === 'Profile' && (
-                        <div className="profile-view">
-                            <div className="profile-card">
-                                <div className="profile-header">
-                                    <div className="profile-avatar-large">
+                        <div className="student-profile-view">
+                            <div className="student-profile-card">
+                                <div className="student-profile-header">
+                                    <div className="student-profile-avatar-large">
                                         {studentData.profileImage ? (
                                             <img src={studentData.profileImage} alt="Profile" />
                                         ) : (
-                                            <div className="avatar-placeholder">
+                                            <div className="student-avatar-placeholder">
                                                 {studentData.name.charAt(0).toUpperCase()}
                                             </div>
                                         )}
                                     </div>
-                                    <div className="profile-title">
+                                    <div className="student-profile-title">
                                         <h2>{studentData.name}</h2>
                                         <p>{studentData.email}</p>
-                                        <p className="student-id">Student ID: {studentData.id}</p>
+                                        <p className="student-student-id">Student ID: {studentData.id}</p>
                                     </div>
-                                    <button className="edit-profile-btn" onClick={() => setIsProfileModalOpen(true)}>
+                                    <button className="student-edit-profile-button" onClick={() => setIsProfileModalOpen(true)}>
                                         <Edit size={16} /> Edit Profile
                                     </button>
                                 </div>
                                 
-                                <div className="profile-details">
-                                    <div className="detail-section">
+                                <div className="student-profile-details">
+                                    <div className="student-detail-section">
                                         <h3>Academic Information</h3>
-                                        <div className="detail-grid">
-                                            <div className="detail-row">
-                                                <span className="detail-label">Department:</span>
-                                                <span className="detail-value">{studentData.department}</span>
+                                        <div className="student-detail-grid">
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Department:</span>
+                                                <span className="student-detail-value">{studentData.department}</span>
                                             </div>
-                                            <div className="detail-row">
-                                                <span className="detail-label">Academic Year:</span>
-                                                <span className="detail-value">{studentData.academicYear}</span>
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Academic Year:</span>
+                                                <span className="student-detail-value">{studentData.academicYear}</span>
                                             </div>
-                                            <div className="detail-row">
-                                                <span className="detail-label">Enrolled Courses:</span>
-                                                <span className="detail-value">{courses.length}</span>
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Enrolled Courses:</span>
+                                                <span className="student-detail-value">{courses.length}</span>
                                             </div>
-                                            <div className="detail-row">
-                                                <span className="detail-label">Overall Attendance:</span>
-                                                <span className="detail-value">{studentData.overallAttendance}%</span>
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Overall Attendance:</span>
+                                                <span className="student-detail-value">{studentData.overallAttendance}%</span>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <div className="detail-section">
+                                    <div className="student-detail-section">
                                         <h3>Contact Information</h3>
-                                        <div className="detail-grid">
-                                            <div className="detail-row">
-                                                <span className="detail-label">Email:</span>
-                                                <span className="detail-value">{studentData.email}</span>
+                                        <div className="student-detail-grid">
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Email:</span>
+                                                <span className="student-detail-value">{studentData.email}</span>
                                             </div>
-                                            <div className="detail-row">
-                                                <span className="detail-label">Phone:</span>
-                                                <span className="detail-value">{editProfileData.phoneNumber || 'Not provided'}</span>
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Phone:</span>
+                                                <span className="student-detail-value">{editProfileData.phoneNumber || 'Not provided'}</span>
                                             </div>
-                                            <div className="detail-row">
-                                                <span className="detail-label">Address:</span>
-                                                <span className="detail-value">{editProfileData.address || 'Not provided'}</span>
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Address:</span>
+                                                <span className="student-detail-value">{editProfileData.address || 'Not provided'}</span>
                                             </div>
-                                            <div className="detail-row">
-                                                <span className="detail-label">Emergency Contact:</span>
-                                                <span className="detail-value">{editProfileData.emergencyContact || 'Not provided'}</span>
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Emergency Contact:</span>
+                                                <span className="student-detail-value">{editProfileData.emergencyContact || 'Not provided'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -827,45 +831,57 @@ export default function StudentDashboard() {
 
             {/* Change Password Modal */}
             {isPasswordModalOpen && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal small-modal">
-                        <div className="modal-head">
-                            <div className="flex-align">
-                                <h2>Change Password</h2>
-                                <Key size={24} className="text-primary ml-2" />
-                            </div>
+                <div className="student-modal-overlay" onClick={() => setIsPasswordModalOpen(false)}>
+                    <div className="student-modal-container small" onClick={e => e.stopPropagation()}>
+                        <div className="student-modal-header">
+                            <h2>Change Password</h2>
+                            <button className="student-close-modal-button" onClick={() => setIsPasswordModalOpen(false)}>
+                                <X size={20} />
+                            </button>
                         </div>
-                        <form onSubmit={handlePasswordUpdate} className="modal-form vertical-form">
-                            <input 
-                                type="password" 
-                                name="currentPassword" 
-                                required 
-                                className="input-field full-width" 
-                                value={passwordFields.currentPassword} 
-                                onChange={handlePasswordInputChange} 
-                                placeholder="Current Password" 
-                            />
-                            <input 
-                                type="password" 
-                                name="newPassword" 
-                                required 
-                                className="input-field full-width" 
-                                value={passwordFields.newPassword} 
-                                onChange={handlePasswordInputChange} 
-                                placeholder="New Password" 
-                            />
-                            <input 
-                                type="password" 
-                                name="confirmPassword" 
-                                required 
-                                className="input-field full-width" 
-                                value={passwordFields.confirmPassword} 
-                                onChange={handlePasswordInputChange} 
-                                placeholder="Confirm Password" 
-                            />
-                            <div className="modal-actions">
-                                <button type="button" className="btn-cancel" onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="btn-submit">Update</button>
+                        <form onSubmit={handlePasswordUpdate} className="student-modal-form">
+                            <div className="student-form-group">
+                                <label className="student-form-label">Current Password</label>
+                                <input 
+                                    type="password" 
+                                    name="currentPassword" 
+                                    required 
+                                    className="student-form-input" 
+                                    value={passwordFields.currentPassword} 
+                                    onChange={handlePasswordInputChange} 
+                                    placeholder="Enter current password" 
+                                />
+                            </div>
+                            <div className="student-form-group">
+                                <label className="student-form-label">New Password</label>
+                                <input 
+                                    type="password" 
+                                    name="newPassword" 
+                                    required 
+                                    className="student-form-input" 
+                                    value={passwordFields.newPassword} 
+                                    onChange={handlePasswordInputChange} 
+                                    placeholder="Enter new password" 
+                                />
+                            </div>
+                            <div className="student-form-group">
+                                <label className="student-form-label">Confirm Password</label>
+                                <input 
+                                    type="password" 
+                                    name="confirmPassword" 
+                                    required 
+                                    className="student-form-input" 
+                                    value={passwordFields.confirmPassword} 
+                                    onChange={handlePasswordInputChange} 
+                                    placeholder="Confirm new password" 
+                                />
+                            </div>
+                            <div className="student-password-requirements">
+                                <p>Password must be at least 6 characters long</p>
+                            </div>
+                            <div className="student-modal-actions">
+                                <button type="button" className="student-cancel-button" onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="student-submit-button">Update</button>
                             </div>
                         </form>
                     </div>
@@ -874,44 +890,44 @@ export default function StudentDashboard() {
 
             {/* View Course Modal */}
             {isViewCourseModalOpen && selectedCourse && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal">
-                        <div className="modal-head">
+                <div className="student-modal-overlay" onClick={() => setIsViewCourseModalOpen(false)}>
+                    <div className="student-modal-container" onClick={e => e.stopPropagation()}>
+                        <div className="student-modal-header">
                             <h2>Course Details</h2>
-                            <button className="close-btn" onClick={() => setIsViewCourseModalOpen(false)}>
+                            <button className="student-close-modal-button" onClick={() => setIsViewCourseModalOpen(false)}>
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="course-detail-modal">
-                            <div className="detail-header">
-                                <span className="course-code-big">{selectedCourse.id}</span>
+                        <div className="student-course-detail-modal">
+                            <div className="student-detail-header">
+                                <span className="student-course-code-big">{selectedCourse.id}</span>
                                 <h3>{selectedCourse.name}</h3>
-                                <p className="instructor-name">{selectedCourse.instructor}</p>
+                                <p className="student-instructor-name">{selectedCourse.instructor}</p>
                             </div>
                             
-                            <div className="detail-info-grid">
-                                <div className="info-item">
+                            <div className="student-detail-info-grid">
+                                <div className="student-info-item">
                                     <Calendar size={18} />
                                     <div>
                                         <label>Schedule</label>
                                         <span>{selectedCourse.schedule}</span>
                                     </div>
                                 </div>
-                                <div className="info-item">
+                                <div className="student-info-item">
                                     <MapPin size={18} />
                                     <div>
                                         <label>Room</label>
                                         <span>{selectedCourse.room}</span>
                                     </div>
                                 </div>
-                                <div className="info-item">
+                                <div className="student-info-item">
                                     <Users size={18} />
                                     <div>
                                         <label>Class Size</label>
                                         <span>{selectedCourse.students} students</span>
                                     </div>
                                 </div>
-                                <div className="info-item">
+                                <div className="student-info-item">
                                     <TrendingUp size={18} />
                                     <div>
                                         <label>Your Attendance</label>
@@ -920,21 +936,21 @@ export default function StudentDashboard() {
                                 </div>
                             </div>
                             
-                            <div className="attendance-history">
+                            <div className="student-attendance-history">
                                 <h4>Recent Attendance</h4>
-                                <div className="history-list">
+                                <div className="student-history-list">
                                     {[1, 2, 3, 4].map(i => (
-                                        <div className="history-item" key={i}>
-                                            <span className="history-date">Week {i}</span>
-                                            <span className="history-status present">Present</span>
+                                        <div className="student-history-item" key={i}>
+                                            <span className="student-history-date">Week {i}</span>
+                                            <span className="student-history-status present">Present</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                             
-                            <div className="modal-actions">
+                            <div className="student-modal-actions">
                                 <button 
-                                    className="btn-submit full-width"
+                                    className="student-submit-button full-width"
                                     onClick={() => {
                                         handleCheckIn(selectedCourse.id);
                                         setIsViewCourseModalOpen(false);
@@ -951,43 +967,55 @@ export default function StudentDashboard() {
 
             {/* Edit Profile Modal */}
             {isProfileModalOpen && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal">
-                        <div className="modal-head">
+                <div className="student-modal-overlay" onClick={() => setIsProfileModalOpen(false)}>
+                    <div className="student-modal-container" onClick={e => e.stopPropagation()}>
+                        <div className="student-modal-header">
                             <h2>Edit Profile</h2>
+                            <button className="student-close-modal-button" onClick={() => setIsProfileModalOpen(false)}>
+                                <X size={20} />
+                            </button>
                         </div>
-                        <form className="modal-form">
-                            <div className="form-grid">
-                                <input 
-                                    type="text" 
-                                    name="phoneNumber"
-                                    className="input-field full-width"
-                                    value={editProfileData.phoneNumber}
-                                    onChange={handleEditProfileChange}
-                                    placeholder="Phone Number"
-                                />
-                                <input 
-                                    type="text" 
-                                    name="address"
-                                    className="input-field full-width"
-                                    value={editProfileData.address}
-                                    onChange={handleEditProfileChange}
-                                    placeholder="Address"
-                                />
-                                <input 
-                                    type="text" 
-                                    name="emergencyContact"
-                                    className="input-field full-width"
-                                    value={editProfileData.emergencyContact}
-                                    onChange={handleEditProfileChange}
-                                    placeholder="Emergency Contact"
-                                />
+                        <form className="student-modal-form">
+                            <div className="student-form-grid">
+                                <div className="student-form-group full-width">
+                                    <label className="student-form-label">Phone Number</label>
+                                    <input 
+                                        type="text" 
+                                        name="phoneNumber"
+                                        className="student-form-input"
+                                        value={editProfileData.phoneNumber}
+                                        onChange={handleEditProfileChange}
+                                        placeholder="Enter phone number"
+                                    />
+                                </div>
+                                <div className="student-form-group full-width">
+                                    <label className="student-form-label">Address</label>
+                                    <input 
+                                        type="text" 
+                                        name="address"
+                                        className="student-form-input"
+                                        value={editProfileData.address}
+                                        onChange={handleEditProfileChange}
+                                        placeholder="Enter address"
+                                    />
+                                </div>
+                                <div className="student-form-group full-width">
+                                    <label className="student-form-label">Emergency Contact</label>
+                                    <input 
+                                        type="text" 
+                                        name="emergencyContact"
+                                        className="student-form-input"
+                                        value={editProfileData.emergencyContact}
+                                        onChange={handleEditProfileChange}
+                                        placeholder="Enter emergency contact"
+                                    />
+                                </div>
                             </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-cancel" onClick={() => setIsProfileModalOpen(false)}>Cancel</button>
+                            <div className="student-modal-actions">
+                                <button type="button" className="student-cancel-button" onClick={() => setIsProfileModalOpen(false)}>Cancel</button>
                                 <button 
                                     type="button" 
-                                    className="btn-submit"
+                                    className="student-submit-button"
                                     onClick={() => {
                                         showNotification('Profile updated successfully!');
                                         setIsProfileModalOpen(false);

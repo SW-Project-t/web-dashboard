@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc,getDocs,collection } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 const STORAGE_KEYS = {
@@ -742,67 +742,91 @@ export default function ProfessorDashboard() {
                                     </button>
                                 </div>
                                 
-                                <div className="modal-form grid">
-                                    <div className="form-group full-width">
-                                        <label>Course ID</label>
-                                        <input
-                                            className="modern-input"
-                                            placeholder="e.g., CS401"
-                                            value={newCourse.id}
-                                            onChange={(e) => setNewCourse({...newCourse, id: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div className="form-group full-width">
-                                        <label>Course Name</label>
-                                        <input
-                                            className="modern-input"
-                                            placeholder="e.g., Data Structures"
-                                            value={newCourse.name}
-                                            onChange={(e) => setNewCourse({...newCourse, name: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div className="form-group">
-                                        <label>Schedule</label>
-                                        <input
-                                            className="modern-input"
-                                            placeholder="Mon, Wed 10:00 AM"
-                                            value={newCourse.schedule}
-                                            onChange={(e) => setNewCourse({...newCourse, schedule: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div className="form-group">
-                                        <label>Room</label>
-                                        <input
-                                            className="modern-input"
-                                            placeholder="Room 201"
-                                            value={newCourse.room}
-                                            onChange={(e) => setNewCourse({...newCourse, room: e.target.value})}
-                                        />
-                                    </div>
-                                    
-                                    <div className="form-group full-width">
-                                        <label>Number of Students</label>
-                                        <input
-                                            className="modern-input"
-                                            type="number"
-                                            placeholder="45"
-                                            value={newCourse.students}
-                                            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
-                                        />
-                                    </div>
-                                </div>
+                               <div className="modal-form grid">
+    {modalType === 'add' && (
+        <div className="form-group full-width">
+            <label style={{ color: '#4f46e5', fontWeight: 'bold' }}>Select Course from Admin List</label>
+            <select 
+                className="modern-input"
+                value={newCourse.id}
+                onChange={(e) => handleSelectCourseFromAdmin(e.target.value)} 
+                style={{ border: '2px solid #4f46e5', cursor: 'pointer' }}
+            >
+                <option value="">-- Choose a Course --</option>
+                {adminCourses.map(course => (
+                    <option key={course.id} value={course.courseId}>
+                        {course.courseId} - {course.courseName}
+                    </option>
+                ))}
+            </select>
+            <small style={{ color: '#666' }}>This list is managed by the Admin</small>
+        </div>
+    )}
 
-                                <div className="modal-actions">
-                                    <button className="secondary-btn" onClick={() => setShowModal(false)}>
-                                        Cancel
-                                    </button>
-                                    <button className="primary-btn" onClick={saveCourse}>
-                                        {modalType === 'add' ? 'Create Course' : 'Save Changes'}
-                                    </button>
-                                </div>
+    <div className="form-group">
+        <label>Course ID</label>
+        <input
+            className="modern-input"
+            value={newCourse.id}
+            readOnly={modalType === 'add'} 
+            placeholder="Select from list..."
+        />
+    </div>
+
+    <div className="form-group">
+        <label>Course Name</label>
+        <input
+            className="modern-input"
+            value={newCourse.name}
+            readOnly={modalType === 'add'}
+            placeholder="Course name"
+        />
+    </div>
+
+    <div className="form-group">
+        <label>Schedule</label>
+        <input
+            className="modern-input"
+            value={newCourse.schedule}
+            readOnly={modalType === 'add'}
+            placeholder="Days | Time"
+        />
+    </div>
+
+    <div className="form-group">
+        <label>Room</label>
+        <input
+            className="modern-input"
+            value={newCourse.room}
+            readOnly={modalType === 'add'}
+            placeholder="Room number"
+        />
+    </div>
+
+    <div className="form-group full-width">
+        <label>Capacity</label>
+        <input
+            className="modern-input"
+            type="number"
+            value={newCourse.students}
+            readOnly={modalType === 'add'}
+            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
+        />
+    </div>
+</div>
+
+<div className="modal-actions">
+    <button className="secondary-btn" onClick={() => setShowModal(false)}>
+        Cancel
+    </button>
+    <button 
+        className="primary-btn" 
+        onClick={saveCourse}
+        disabled={modalType === 'add' && !newCourse.id}
+    >
+        {modalType === 'add' ? 'Confirm Addition' : 'Save Changes'}
+    </button>
+</div>
                             </>
                         )}
                     </div>

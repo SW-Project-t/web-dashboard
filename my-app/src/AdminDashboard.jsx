@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
     LayoutDashboard, Users, BookOpen, TrendingUp, Settings, 
     Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
-    Download, Shield, Building, X, Menu 
+    Download, Shield, Building, X, Menu, Mail, Phone, Calendar,
+    BookMarked, Clock, Hash, DoorOpen, UserCheck, GraduationCap
 } from 'lucide-react';
 import axios from 'axios';
 import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -197,9 +198,10 @@ const AdminDashboard = () => {
     };
 
     const handleDelete = async (collectionName, id) => {
-        if (window.confirm("Are you sure?")) {
+        if (window.confirm("Are you sure you want to delete this item?")) {
             try {
                 await deleteDoc(doc(db, collectionName, id));
+                alert("Deleted successfully!");
             } catch (error) {
                 alert("Failed to delete from Database");
             }
@@ -211,18 +213,41 @@ const AdminDashboard = () => {
         setIsViewModalOpen(true);
     };
 
-    const handleChange = (item) => {
+    const handleEdit = (item) => {
         setSelectedItem(item);
         setIsEditModalOpen(true);
     };
 
     const handleSaveChanges = async (e) => {
         e.preventDefault();
-        const deptInput = e.target.elements[1].value; 
+        const newValue = e.target.elements[1].value; 
         try {
             const collectionName = selectedItem.courseName ? "courses" : "users";
             const itemRef = doc(db, collectionName, selectedItem.id);
-            const updatedData = selectedItem.courseName ? { RoomNumber: deptInput } : { department: deptInput };
+            
+            let updatedData = {};
+            if (selectedItem.courseName) {
+                updatedData = { 
+                    courseName: selectedItem.courseName,
+                    courseId: selectedItem.courseId,
+                    instructorName: selectedItem.instructorName,
+                    SelectDays: selectedItem.SelectDays,
+                    Time: selectedItem.Time,
+                    RoomNumber: newValue || selectedItem.RoomNumber,
+                    capacity: selectedItem.capacity
+                };
+            } else {
+                updatedData = { 
+                    fullName: selectedItem.fullName,
+                    email: selectedItem.email,
+                    role: selectedItem.role,
+                    department: newValue || selectedItem.department,
+                    code: selectedItem.code,
+                    phoneNumber: selectedItem.phoneNumber,
+                    academicYear: selectedItem.academicYear
+                };
+            }
+            
             await updateDoc(itemRef, updatedData);
             alert("Updated successfully!");
             setIsEditModalOpen(false);
@@ -255,10 +280,18 @@ const AdminDashboard = () => {
         setTimeout(() => { navigate('/'); }, 1000);
     };
 
+    const getRoleIcon = (role) => {
+        switch(role) {
+            case 'instructor': return <UserCheck size={18} />;
+            case 'student': return <GraduationCap size={18} />;
+            default: return <Users size={18} />;
+        }
+    };
+
     return (
         <div className="admin-layout">
             
-            <aside className="admin-sidebar">
+            <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-profile-section">
                     <div className="profile-img-container" onClick={() => document.getElementById('admin-profile-upload').click()}>
                         {adminProfileImage ? (
@@ -316,7 +349,9 @@ const AdminDashboard = () => {
             <main className="admin-main">
                 <header className="main-header">
                     <div className="header-title">
-                       
+                        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                            <Menu size={24} />
+                        </button>
                         <div>
                             <h1>{activeTab}</h1>
                             <p>Welcome to YallaClass Management System</p>
@@ -426,10 +461,21 @@ const AdminDashboard = () => {
                                                     <tr key={u.id}>
                                                         <td className="text-muted">{u.code || '---'}</td>
                                                         <td className="fw-bold">{u.fullName}</td>
-                                                        <td><span className="role-badge">{u.role || 'Student'}</span></td>
+                                                        <td>
+                                                            <span className={`role-badge ${u.role === 'instructor' ? 'instructor-badge' : 'student-badge'}`}>
+                                                                {getRoleIcon(u.role)} {u.role || 'Student'}
+                                                            </span>
+                                                        </td>
                                                         <td className="actions-cell">
-                                                            <button className="icon-btn edit-btn" onClick={() => {setSelectedItem(u); setIsEditModalOpen(true);}}><Edit size={16}/></button>
-                                                            <button className="icon-btn delete-btn" onClick={() => handleDelete('users', u.id)}><Trash2 size={16}/></button>
+                                                            <button className="icon-btn view-btn" onClick={() => handleView(u)} title="View Details">
+                                                                <Eye size={16}/>
+                                                            </button>
+                                                            <button className="icon-btn edit-btn" onClick={() => handleEdit(u)} title="Edit">
+                                                                <Edit size={16}/>
+                                                            </button>
+                                                            <button className="icon-btn delete-btn" onClick={() => handleDelete('users', u.id)} title="Delete">
+                                                                <Trash2 size={16}/>
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -460,8 +506,15 @@ const AdminDashboard = () => {
                                                         <td className="text-primary fw-bold">{c.courseName}</td>
                                                         <td>{c.instructorName}</td>
                                                         <td className="actions-cell">
-                                                            <button className="icon-btn edit-btn" onClick={() => {setSelectedItem(c); setIsEditModalOpen(true);}}><Edit size={16}/></button>
-                                                            <button className="icon-btn delete-btn" onClick={() => handleDelete('courses', c.id)}><Trash2 size={16}/></button>
+                                                            <button className="icon-btn view-btn" onClick={() => handleView(c)} title="View Details">
+                                                                <Eye size={16}/>
+                                                            </button>
+                                                            <button className="icon-btn edit-btn" onClick={() => handleEdit(c)} title="Edit">
+                                                                <Edit size={16}/>
+                                                            </button>
+                                                            <button className="icon-btn delete-btn" onClick={() => handleDelete('courses', c.id)} title="Delete">
+                                                                <Trash2 size={16}/>
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -490,21 +543,36 @@ const AdminDashboard = () => {
                                         <tr>
                                             <th>ID</th>
                                             <th>Full Name</th>
+                                            <th>Email</th>
                                             <th>Role</th>
                                             <th>Department</th>
+                                            <th>Phone</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredUsers.length === 0 ? <tr><td colSpan="5" className="no-data">No data</td></tr> : filteredUsers.map(u => (
+                                        {filteredUsers.length === 0 ? <tr><td colSpan="7" className="no-data">No data</td></tr> : filteredUsers.map(u => (
                                             <tr key={u.id}>
                                                 <td className="text-muted">{u.code || '---'}</td>
                                                 <td className="fw-bold">{u.fullName}</td>
-                                                <td><span className="role-badge">{u.role || 'Student'}</span></td>
+                                                <td>{u.email}</td>
+                                                <td>
+                                                    <span className={`role-badge ${u.role === 'instructor' ? 'instructor-badge' : 'student-badge'}`}>
+                                                        {getRoleIcon(u.role)} {u.role || 'Student'}
+                                                    </span>
+                                                </td>
                                                 <td className="text-muted">{u.department || 'General'}</td>
+                                                <td>{u.phoneNumber}</td>
                                                 <td className="actions-cell">
-                                                    <button className="icon-btn edit-btn" onClick={() => {setSelectedItem(u); setIsEditModalOpen(true);}}><Edit size={16}/></button>
-                                                    <button className="icon-btn delete-btn" onClick={() => handleDelete('users', u.id)}><Trash2 size={16}/></button>
+                                                    <button className="icon-btn view-btn" onClick={() => handleView(u)} title="View Details">
+                                                        <Eye size={16}/>
+                                                    </button>
+                                                    <button className="icon-btn edit-btn" onClick={() => handleEdit(u)} title="Edit">
+                                                        <Edit size={16}/>
+                                                    </button>
+                                                    <button className="icon-btn delete-btn" onClick={() => handleDelete('users', u.id)} title="Delete">
+                                                        <Trash2 size={16}/>
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -533,19 +601,32 @@ const AdminDashboard = () => {
                                             <th>Course Name</th>
                                             <th>Instructor</th>
                                             <th>Days</th>
+                                            <th>Time</th>
+                                            <th>Room</th>
+                                            <th>Capacity</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredCourses.length === 0 ? <tr><td colSpan="5" className="no-data">No data</td></tr> : filteredCourses.map(c => (
+                                        {filteredCourses.length === 0 ? <tr><td colSpan="8" className="no-data">No data</td></tr> : filteredCourses.map(c => (
                                             <tr key={c.id}>
                                                 <td className="text-muted">{c.courseId}</td>
                                                 <td className="text-primary fw-bold">{c.courseName}</td>
                                                 <td>{c.instructorName}</td>
                                                 <td><span className="day-badge">{c.SelectDays}</span></td>
+                                                <td>{c.Time}</td>
+                                                <td>{c.RoomNumber}</td>
+                                                <td>{c.capacity}</td>
                                                 <td className="actions-cell">
-                                                    <button className="icon-btn edit-btn" onClick={() => {setSelectedItem(c); setIsEditModalOpen(true);}}><Edit size={16}/></button>
-                                                    <button className="icon-btn delete-btn" onClick={() => handleDelete('courses', c.id)}><Trash2 size={16}/></button>
+                                                    <button className="icon-btn view-btn" onClick={() => handleView(c)} title="View Details">
+                                                        <Eye size={16}/>
+                                                    </button>
+                                                    <button className="icon-btn edit-btn" onClick={() => handleEdit(c)} title="Edit">
+                                                        <Edit size={16}/>
+                                                    </button>
+                                                    <button className="icon-btn delete-btn" onClick={() => handleDelete('courses', c.id)} title="Delete">
+                                                        <Trash2 size={16}/>
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -564,6 +645,7 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
+            {/* Add Course Modal */}
             {isAddCourseModalOpen && (
                 <div className="custom-modal-overlay">
                     <div className="custom-modal">
@@ -572,6 +654,9 @@ const AdminDashboard = () => {
                                 <h2>Add Course</h2>
                                 <BookOpen size={24} className="text-primary ml-2" />
                             </div>
+                            <button className="close-modal" onClick={() => setIsAddCourseModalOpen(false)}>
+                                <X size={24} />
+                            </button>
                         </div>
                         <form onSubmit={handleAddCourseSubmit} className="modal-form">
                             <div className="form-grid">
@@ -600,6 +685,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* Add User Modal */}
             {isAddUserModalOpen && (
                 <div className="custom-modal-overlay">
                     <div className="custom-modal">
@@ -608,6 +694,9 @@ const AdminDashboard = () => {
                                 <h2>Add User</h2>
                                 <Users size={24} className="text-primary ml-2" />
                             </div>
+                            <button className="close-modal" onClick={() => setIsAddUserModalOpen(false)}>
+                                <X size={24} />
+                            </button>
                         </div>
                         <form onSubmit={handleAddUserSubmit} className="modal-form">
                             <div className="form-grid">
@@ -616,16 +705,17 @@ const AdminDashboard = () => {
                                 <input type="password" name="password" className="input-field" value={newUserData.password} onChange={handleUserInputChange} placeholder="Password" required />
                                 <select name="role" className="input-field select-field" value={newUserData.role} onChange={handleUserInputChange} required>
                                     <option value="" disabled hidden>Choose Role</option>
-                                    <option value="Student">Student</option>
-                                    <option value="Instructor">Instructor</option>
-                                    <option value="Admin">Admin</option>
+                                    <option value="student">Student</option>
+                                    <option value="instructor">Instructor</option>
+                                    <option value="admin">Admin</option>
                                 </select>
                                 <select name="department" className="input-field select-field" value={newUserData.department} onChange={handleUserInputChange}>
                                     <option value="" disabled hidden>Department</option>
-                                    <option value="General">General</option>
                                     <option value="CS">CS</option>
                                     <option value="IT">IT</option>
                                     <option value="IS">IS</option>
+                                    <option value="AI">AI</option>
+                                    <option value="General">General</option>
                                 </select>
                                 <input type="text" name="academicYear" className="input-field" value={newUserData.academicYear} onChange={handleUserInputChange} placeholder="Academic Year" />
                                 <input type="text" name="code" className="input-field" value={newUserData.code} onChange={handleUserInputChange} placeholder="Code" />
@@ -640,18 +730,163 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* View Modal */}
+            {isViewModalOpen && selectedItem && (
+                <div className="custom-modal-overlay">
+                    <div className="custom-modal view-modal">
+                        <div className="view-header">
+                            {selectedItem.courseName ? (
+                                <BookOpen size={32} />
+                            ) : selectedItem.role === 'instructor' ? (
+                                <UserCheck size={32} />
+                            ) : (
+                                <GraduationCap size={32} />
+                            )}
+                            <h2>
+                                {selectedItem.courseName ? 'Course Details' : 
+                                 selectedItem.role === 'instructor' ? 'Instructor Details' : 'Student Details'}
+                            </h2>
+                            <button className="close-modal" onClick={() => setIsViewModalOpen(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {selectedItem.courseName ? (
+                            /* Course Details View */
+                            <div className="view-content">
+                                <div className="view-badge course">Course</div>
+                                <div className="view-grid">
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <BookMarked size={16} /> Course Name
+                                        </div>
+                                        <div className="view-value">{selectedItem.courseName}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <Hash size={16} /> Course Code
+                                        </div>
+                                        <div className="view-value id-value">{selectedItem.courseId}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <UserCheck size={16} /> Instructor
+                                        </div>
+                                        <div className="view-value">{selectedItem.instructorName}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <Calendar size={16} /> Day
+                                        </div>
+                                        <div className="view-value">{selectedItem.SelectDays}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <Clock size={16} /> Time
+                                        </div>
+                                        <div className="view-value">{selectedItem.Time}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <DoorOpen size={16} /> Room
+                                        </div>
+                                        <div className="view-value">{selectedItem.RoomNumber}</div>
+                                    </div>
+                                    <div className="view-item full-width">
+                                        <div className="view-label">
+                                            <Users size={16} /> Capacity
+                                        </div>
+                                        <div className="view-value">{selectedItem.capacity} Students</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            /* User Details View (Student/Instructor) */
+                            <div className="view-content">
+                                <div className={`view-badge ${selectedItem.role === 'instructor' ? 'instructor' : 'student'}`}>
+                                    {selectedItem.role === 'instructor' ? '👨‍🏫 Instructor' : '👨‍🎓 Student'}
+                                </div>
+                                <div className="view-grid">
+                                    <div className="view-item full-width">
+                                        <div className="view-label">
+                                            <Users size={16} /> Full Name
+                                        </div>
+                                        <div className="view-value">{selectedItem.fullName}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <Mail size={16} /> Email
+                                        </div>
+                                        <div className="view-value">{selectedItem.email}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <Hash size={16} /> ID
+                                        </div>
+                                        <div className="view-value id-value">{selectedItem.code}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <Building size={16} /> Department
+                                        </div>
+                                        <div className="view-value">{selectedItem.department || 'General'}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <Phone size={16} /> Phone
+                                        </div>
+                                        <div className="view-value">{selectedItem.phoneNumber}</div>
+                                    </div>
+                                    <div className="view-item">
+                                        <div className="view-label">
+                                            <Calendar size={16} /> Academic Year
+                                        </div>
+                                        <div className="view-value">{selectedItem.academicYear || '2024'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="modal-actions">
+                            <button type="button" className="btn-cancel" onClick={() => setIsViewModalOpen(false)}>Close</button>
+                            <button type="button" className="btn-submit" onClick={() => {
+                                setIsViewModalOpen(false);
+                                handleEdit(selectedItem);
+                            }}>Edit</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
             {isEditModalOpen && selectedItem && (
                 <div className="custom-modal-overlay">
                     <div className="custom-modal small-modal">
-                        <h2 className="modal-title-simple">Update Details</h2>
+                        <div className="modal-head">
+                            <div className="flex-align">
+                                <h2>Update Details</h2>
+                                <Edit size={24} className="text-primary ml-2" />
+                            </div>
+                            <button className="close-modal" onClick={() => setIsEditModalOpen(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
                         <form className="modal-form" onSubmit={handleSaveChanges}>
                             <div className="form-group">
-                                <label>Name (Read Only)</label>
+                                <label className="view-label">Name (Read Only)</label>
                                 <input type="text" className="input-field disabled-input" value={selectedItem.fullName || selectedItem.courseName} disabled />
                             </div>
-                            <div className="form-group">
-                                <label>New {selectedItem.courseName ? 'Room Number' : 'Department'}</label>
-                                <input type="text" className="input-field" defaultValue={selectedItem.department || selectedItem.RoomNumber || ""} placeholder="Enter new value" required />
+                            <div className="form-group-single">
+                                <label className="view-label">
+                                    New {selectedItem.courseName ? 'Room Number' : 'Department'}
+                                </label>
+                                <input 
+                                    type="text" 
+                                    className="input-field" 
+                                    defaultValue={selectedItem.department || selectedItem.RoomNumber || ""} 
+                                    placeholder={`Enter new ${selectedItem.courseName ? 'room number' : 'department'}`}
+                                    required 
+                                />
                             </div>
                             <div className="modal-actions">
                                 <button type="button" className="btn-cancel" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
@@ -662,6 +897,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* Password Modal */}
             {isPasswordModalOpen && (
                 <div className="custom-modal-overlay">
                     <div className="custom-modal small-modal">
@@ -670,11 +906,38 @@ const AdminDashboard = () => {
                                 <h2>Change Password</h2>
                                 <Key size={24} className="text-primary ml-2" />
                             </div>
+                            <button className="close-modal" onClick={() => setIsPasswordModalOpen(false)}>
+                                <X size={24} />
+                            </button>
                         </div>
                         <form onSubmit={handlePasswordUpdate} className="modal-form vertical-form">
-                            <input type="password" name="currentPassword" required className="input-field full-width" value={passwordFields.currentPassword} onChange={handlePasswordInputChange} placeholder="Current Password" />
-                            <input type="password" name="newPassword" required className="input-field full-width" value={passwordFields.newPassword} onChange={handlePasswordInputChange} placeholder="New Password" />
-                            <input type="password" name="confirmPassword" required className="input-field full-width" value={passwordFields.confirmPassword} onChange={handlePasswordInputChange} placeholder="Confirm Password" />
+                            <input 
+                                type="password" 
+                                name="currentPassword" 
+                                required 
+                                className="input-field full-width" 
+                                value={passwordFields.currentPassword} 
+                                onChange={handlePasswordInputChange} 
+                                placeholder="Current Password" 
+                            />
+                            <input 
+                                type="password" 
+                                name="newPassword" 
+                                required 
+                                className="input-field full-width" 
+                                value={passwordFields.newPassword} 
+                                onChange={handlePasswordInputChange} 
+                                placeholder="New Password" 
+                            />
+                            <input 
+                                type="password" 
+                                name="confirmPassword" 
+                                required 
+                                className="input-field full-width" 
+                                value={passwordFields.confirmPassword} 
+                                onChange={handlePasswordInputChange} 
+                                placeholder="Confirm Password" 
+                            />
                             <div className="modal-actions">
                                 <button type="button" className="btn-cancel" onClick={() => setIsPasswordModalOpen(false)}>Cancel</button>
                                 <button type="submit" className="btn-submit">Update</button>
@@ -686,4 +949,5 @@ const AdminDashboard = () => {
         </div>
     );
 };
+
 export default AdminDashboard;

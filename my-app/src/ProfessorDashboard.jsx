@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
-import { doc, getDoc, updateDoc,getDocs,collection } from 'firebase/firestore';
+import { doc, getDoc, updateDoc,getDocs,collection,setDoc,addDoc,where,query,deleteDoc} from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 const STORAGE_KEYS = {
@@ -49,19 +49,6 @@ export default function ProfessorDashboard() {
         fetchAdminCourses();
     }, []);
 
-        const handleSelectCourseFromAdmin = (courseId) => {
-        const selected = adminCourses.find(c => c.courseId === courseId);
-        if (selected) {
-            setNewCourse({
-                id: selected.courseId,
-                name: selected.courseName,
-                schedule: `${selected.SelectDays} | ${selected.Time}`,
-                room: selected.RoomNumber,
-                students: selected.capacity,
-                instructor: selected.instructorName
-            });
-        }
-    };
 
     const fetchUserData = async (user) => {
         try {
@@ -145,41 +132,7 @@ export default function ProfessorDashboard() {
         }
     };
    
-    const [courses, setCourses] = useState([
-        {
-            id: 'CS401',
-            name: 'Data Structures',
-            schedule: 'Mon, Wed 10:00 AM',
-            room: 'Room 201',
-            students: 45,
-            avgAttendance: 95,
-            todayPresent: 40,
-            todayLate: 3,
-            todayAbsent: 2
-        },
-        {
-            id: 'CS301',
-            name: 'Operating Systems',
-            schedule: 'Tue, Thu 2:00 PM',
-            room: 'Room 305',
-            students: 38,
-            avgAttendance: 88,
-            todayPresent: 32,
-            todayLate: 4,
-            todayAbsent: 2
-        },
-        {
-            id: 'CS501',
-            name: 'Machine Learning',
-            schedule: 'Wed, Fri 11:00 AM',
-            room: 'Room 102',
-            students: 32,
-            avgAttendance: 92,
-            todayPresent: 28,
-            todayLate: 2,
-            todayAbsent: 2
-        }
-    ]);
+    const [courses, setCourses] = useState([]);
 
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('');
@@ -231,8 +184,8 @@ export default function ProfessorDashboard() {
     };
 
     const filteredCourses = courses.filter(course =>
-        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.id.toLowerCase().includes(searchQuery.toLowerCase())
+        course.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.id?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const openAddModal = () => {
@@ -253,18 +206,143 @@ export default function ProfessorDashboard() {
         setSelectedCourse(course);
         setShowModal(true);
     };
+//abdo
+    const deleteCourse = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this course?')) return;
 
-    const deleteCourse = (id) => {
-        if (window.confirm('Are you sure you want to delete this course?')) {
-            setCourses(courses.filter(c => c.id !== id));
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
+        setCourses(courses.filter(c => c.id !== id));
+        try {
+            const q = query(
+                collection(db, "professorCourses"), 
+                where("professorId", "==", user.uid),
+                where("courseId", "==", id)
+            );
+            const querySnapshot = await getDocs(q);
+            
+            querySnapshot.forEach(async (document) => {
+                await deleteDoc(doc(db, "professorCourses", document.id));
+            });
+            
             showNotification(`Course ${id} deleted successfully`);
+        } catch (firestoreError) {
+            console.error("Firestore delete error:", firestoreError);
+            showNotification('Course deleted locally but failed to delete from database', 'warning');
+        }
+    } catch (error) {
+        console.error("Error deleting course:", error);
+        showNotification('Error deleting course', 'error');
+    }
+};
+ 
+const handleSelectCourseFromAdmin = (courseId) => {
+        const selected = adminCourses.find(c => c.courseId === courseId);
+        if (selected) {
+            setNewCourse({
+                id: selected.courseId,
+                name: selected.courseName,
+                schedule: `${selected.SelectDays} | ${selected.Time}`,
+                room: selected.RoomNumber,
+                students: selected.capacity,
+                instructor: selected.instructorName
+            });
+            showNotification(`Course ${selected.courseName} selected`, 'success');
         }
     };
- 
+
     // abdo
    const saveCourse = async () => {
-   
+    if (!newCourse.id || !newCourse.name) {
+        showNotification('Please select a valid course', 'error');
+        return;
+    }
+    const courseExists = courses.some(c => c.id === newCourse.id);
+    if (courseExists) {
+        showNotification('This course is already in your list', 'error');
+        return;
+    }
+
+    try {
+        const user = auth.currentUser;
+        if (!user) {
+            showNotification('You must be logged in', 'error');
+            return;
+        }
+        const courseToAdd = {
+            courseId: newCourse.id,
+            courseName: newCourse.name,
+            schedule: newCourse.schedule,
+            room: newCourse.room,
+            students: parseInt(newCourse.students) || 0,
+            avgAttendance: 0,
+            todayPresent: 0,
+            todayLate: 0,
+            todayAbsent: 0,
+            professorId: user.uid,
+            professorName: profData.name,
+            professorCode: profData.code,
+            assignedAt: new Date().toISOString()
+        };
+
+        setCourses(prev => [...prev, courseToAdd]);
+        try {
+            await addDoc(collection(db, "professorCourses"), {
+                ...courseToAdd,
+                userId: user.uid
+            });    
+            showNotification(`Course ${newCourse.id} added successfully`);
+        } catch (firestoreError) {
+            console.error("Firestore error:", firestoreError);
+            showNotification('Course added locally but failed to save to database', 'warning');
+        }
+
+        setShowModal(false);
+        setNewCourse({ id: '', name: '', schedule: '', room: '', students: '' });
+
+    } catch (error) {
+        console.error("Error saving course:", error);
+        showNotification('Error saving course. Please try again.', 'error');
+    }
 };
+//abdo
+// Fetch professor's assigned courses
+useEffect(() => {
+    const fetchProfessorCourses = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        try {
+            const q = query(collection(db, "professorCourses"), where("professorId", "==", user.uid));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                const professorCoursesList = querySnapshot.docs.map(doc => ({
+                    id: doc.data().courseId,
+                    name: doc.data().courseName,
+                    schedule: doc.data().schedule,
+                    room: doc.data().room,
+                    students: doc.data().students || 0,
+                    avgAttendance: doc.data().avgAttendance || 0,
+                    todayPresent: doc.data().todayPresent || 0,
+                    todayLate: doc.data().todayLate || 0,
+                    todayAbsent: doc.data().todayAbsent || 0
+                }));
+                
+                setCourses(prev => {
+                    const existingIds = new Set(prev.map(c => c.id));
+                    const newCourses = professorCoursesList.filter(c => !existingIds.has(c.id));
+                    return [...prev, ...newCourses];
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching professor courses:", error);
+        }
+    };
+
+    fetchProfessorCourses();
+}, [auth.currentUser]);
 
 
     const updateAttendance = (courseId, type) => {

@@ -891,7 +891,7 @@ useEffect(() => {
                                             type="number"
                                             value={newCourse.capacity}
                                             readOnly={modalType === 'add'}
-                                            onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
+                                            onChange={(e) => setNewCourse({...newCourse, capacity: e.target.value})}
                                         />
                                     </div>
                                 </div>

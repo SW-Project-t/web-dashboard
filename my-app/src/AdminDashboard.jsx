@@ -42,7 +42,7 @@ const AdminDashboard = () => {
 
     const [newCourseData, setNewCourseData] = useState({
         courseId: '', courseName: '', instructorName: '',
-        SelectDays: '', Time: '', RoomNumber: '', capacity: ''
+        SelectDays: '', Time: '', RoomNumber: '', capacity: '' ,totalStudents :0
     });
 
     const [passwordFields, setPasswordFields] = useState({
@@ -194,6 +194,7 @@ const AdminDashboard = () => {
         }
     };
 
+    //abdo
     const handleAddCourseSubmit = async (e) => {
         e.preventDefault();
         const isFormValid = Object.values(newCourseData).every(value => value.trim() !== "");
@@ -209,7 +210,7 @@ const AdminDashboard = () => {
             if (response.data.success) {
                 alert("Course added successfully!");
                 setIsAddCourseModalOpen(false);
-                setNewCourseData({ courseId: '', courseName: '', instructorName: '', SelectDays: '', Time: '', RoomNumber: '', capacity: '' });
+                setNewCourseData({ courseId: '', courseName: '', instructorName: '', SelectDays: '', Time: '', RoomNumber: '', capacity: '',totalStudents:0 });
             }
         } catch (error) {
             alert(error.response?.data?.error || "Failed to add course.");

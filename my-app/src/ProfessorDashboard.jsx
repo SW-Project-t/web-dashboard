@@ -139,7 +139,7 @@ export default function ProfessorDashboard() {
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [notifications, setNotifications] = useState([]);
     const [newCourse, setNewCourse] = useState({
-        id: '', name: '', schedule: '', room: '', students: ''
+        id: '', name: '', schedule: '', room: '', students: '',capacity:''
     });
 
     const showNotification = (message, type = 'success') => {
@@ -245,8 +245,10 @@ const handleSelectCourseFromAdmin = (courseId) => {
                 name: selected.courseName,
                 schedule: `${selected.SelectDays} | ${selected.Time}`,
                 room: selected.RoomNumber,
-                students: selected.capacity,
-                instructor: selected.instructorName
+                //
+                students: selected.totalStudents,
+                instructor: selected.instructorName,
+                capacity: selected.capacity
             });
             showNotification(`Course ${selected.courseName} selected`, 'success');
         }
@@ -275,6 +277,7 @@ const handleSelectCourseFromAdmin = (courseId) => {
             courseName: newCourse.name,
             schedule: newCourse.schedule,
             room: newCourse.room,
+            capacity:parseInt(newCourse.capacity)||0,
             students: parseInt(newCourse.students) || 0,
             avgAttendance: 0,
             todayPresent: 0,
@@ -323,6 +326,7 @@ useEffect(() => {
                     name: doc.data().courseName,
                     schedule: doc.data().schedule,
                     room: doc.data().room,
+                    capacity:doc.data.capacity,
                     students: doc.data().students || 0,
                     avgAttendance: doc.data().avgAttendance || 0,
                     todayPresent: doc.data().todayPresent || 0,
@@ -885,7 +889,7 @@ useEffect(() => {
                                         <input
                                             className="professor-form-input"
                                             type="number"
-                                            value={newCourse.students}
+                                            value={newCourse.capacity}
                                             readOnly={modalType === 'add'}
                                             onChange={(e) => setNewCourse({...newCourse, students: e.target.value})}
                                         />

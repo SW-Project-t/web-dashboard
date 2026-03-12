@@ -194,12 +194,12 @@ export default function ProfessorDashboard() {
         setShowModal(true);
     };
 
-    const openEditModal = (course) => {
-        setModalType('edit');
-        setSelectedCourse(course);
-        setNewCourse(course);
-        setShowModal(true);
-    };
+    // const openEditModal = (course) => {
+    //     setModalType('edit');
+    //     setSelectedCourse(course);
+    //     setNewCourse(course);
+    //     setShowModal(true);
+    // };
 
     const openAttendanceModal = (course) => {
         setModalType('attendance');
@@ -586,9 +586,9 @@ useEffect(() => {
                                             <div className="professor-course-header">
                                                 <span className="professor-course-code">{course.id}</span>
                                                 <div className="professor-course-actions">
-                                                    <button className="professor-icon-button" onClick={() => openEditModal(course)} title="Edit">
-                                                        <Edit size={16} />
-                                                    </button>
+                                                    {/* <button className="professor-icon-button" onClick={() => openEditModal(course)} title="Edit">
+                                                      <Edit size={16} />
+                                                    </button> */}
                                                     <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
                                                         <Trash2 size={16} />
                                                     </button>
@@ -687,9 +687,9 @@ useEffect(() => {
                                                         <button className="professor-icon-button" onClick={() => openAttendanceModal(course)} title="Start Attendance">
                                                             <CheckCircle size={18} />
                                                         </button>
-                                                        <button className="professor-icon-button" onClick={() => openEditModal(course)} title="Edit">
+                                                        {/* <button className="professor-icon-button" onClick={() => openEditModal(course)} title="Edit">
                                                             <Edit size={18} />
-                                                        </button>
+                                                        </button> */}
                                                         <button className="professor-icon-button" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
                                                             <Clock size={18} />
                                                         </button>

@@ -326,7 +326,7 @@ body {
 .content-header {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
-    padding: 80px 10px 20px 10px;
+    padding: 50px 10px 20px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -349,6 +349,7 @@ body {
 
 .page-title p {
     font-size: 14px;
+    padding: 5px 10px 0px 15px;
     color: #718096;
     font-weight: 500;
     display: flex;

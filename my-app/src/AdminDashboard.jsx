@@ -395,7 +395,7 @@ const AdminDashboard = () => {
                         </button>
                         <div>
                             <h1>{activeTab}</h1>
-                            <p>Welcome to YallaClass Management System</p>
+                            <p>Welcome to Your Management System</p>
                         </div>
                     </div>
                     <div className="header-controls">

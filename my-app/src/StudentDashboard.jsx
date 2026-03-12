@@ -118,6 +118,14 @@ export default function StudentDashboard() {
                         
                         await loadStudentCourses(user.uid);
                         await loadAvailableCourses();
+
+                        const currentRisk = userData.riskLevel || "Low Risk"; 
+                        if (currentRisk === "High Risk" || currentRisk === "Medium Risk") {
+                        console.log("Student is at risk, notifying server...");
+                        updateRiskOnServer(user.uid, currentRisk);} 
+                        else {
+                        console.log("Student is safe, no server update needed.");
+                        }
                     }
                 } catch (error) {
                     console.error("Error fetching student data:", error);
@@ -364,20 +372,34 @@ export default function StudentDashboard() {
         }
     };
 
-    const handleCheckIn = (courseId) => {
-        setCourses(prev => prev.map(c => {
+    //abdo
+    const handleCheckIn = async (courseId) => {
+    setCourses(prev => {
+        const updatedCourses = prev.map(c => {
             if (c.id === courseId && !c.checkedIn) {
                 showNotification(`Checked in to ${c.name}`);
-                return { ...c, checkedIn: true, attendanceRate: Math.min(100, c.attendanceRate + 1) };
+                return { 
+                    ...c, 
+                    checkedIn: true, 
+                    attendanceRate: Math.min(100, c.attendanceRate + 1) 
+                };
             }
             return c;
-        }));
-        
-        setStudentData(prev => ({
-            ...prev,
-            overallAttendance: Math.min(100, prev.overallAttendance + 0.5)
-        }));
-    };
+        });
+        const totalScore = updatedCourses.reduce((sum, c) => sum + (c.riskScore || 0), 0);
+        const averageScore = updatedCourses.length > 0 ? Math.round(totalScore / updatedCourses.length) : 0;
+        const newRisk = getRiskLevel(averageScore);
+        if (auth.currentUser) {
+            updateRiskOnServer(auth.currentUser.uid, newRisk.level);
+        }
+
+        return updatedCourses;
+    });
+    setStudentData(prev => ({
+        ...prev,
+        overallAttendance: Math.min(100, prev.overallAttendance + 0.5)
+    }));
+};
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -416,7 +438,35 @@ export default function StudentDashboard() {
         ? Math.round(courses.reduce((sum, c) => sum + (c.riskScore || 0), 0) / courses.length)
         : 0;
     const overallRiskLevel = getRiskLevel(overallRiskScore);
+    
+    //abdo
+    const updateRiskOnServer = async (uid, riskLevel) => {
+    try {
+        const token = localStorage.getItem('token'); 
+        
+        const response = await fetch('http://localhost:3001/api/attendance/update-risk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({
+                uid: uid,
+                riskLevel: riskLevel
+            })
+        });
 
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log("Server updated: ", data.message);
+        } else {
+            console.error("Server update failed: ", data.error);
+        }
+    } catch (error) {
+        console.error("Error connecting to backend:", error);
+    }
+};
     return (
         <div className="student-dashboard-container">
             {toast.show && (

@@ -460,6 +460,13 @@ export default function StudentDashboard() {
         
         if (data.success) {
             console.log("Server updated: ", data.message);
+            if (riskLevel === "High Risk") {
+                showNotification("Alert: High risk level detected due to low attendance!", "error");
+            } else if (riskLevel === "Medium Risk") {
+                showNotification("Warning: Your risk level is now Medium. Stay consistent!", "warning");
+            } else {
+                showNotification("Status Check: Risk level updated successfully.", "success");
+            }
         } else {
             console.error("Server update failed: ", data.error);
         }

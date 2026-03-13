@@ -75,6 +75,7 @@ export default function StudentDashboard() {
     const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
     const [isRiskDetailsModalOpen, setIsRiskDetailsModalOpen] = useState(false);
     const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
+    const [isDigitalIdModalOpen, setIsDigitalIdModalOpen] = useState(false);
     const [selectedRiskCourse, setSelectedRiskCourse] = useState(null);
     const [loading, setLoading] = useState(false);
     
@@ -92,6 +93,20 @@ export default function StudentDashboard() {
     });
 
     const navigate = useNavigate();
+    useEffect(() => {
+        const event = isDigitalIdModalOpen ? 'openDigitalID' : 'closeDigitalID';
+        window.dispatchEvent(new Event(event));
+        
+        if (isDigitalIdModalOpen) {
+            document.body.classList.add('digital-id-open');
+        } else {
+            document.body.classList.remove('digital-id-open');
+        }
+        
+        return () => {
+            document.body.classList.remove('digital-id-open');
+        };
+    }, [isDigitalIdModalOpen]);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -372,7 +387,6 @@ export default function StudentDashboard() {
         }
     };
 
-    //abdo
     const handleCheckIn = async (courseId) => {
     setCourses(prev => {
         const updatedCourses = prev.map(c => {
@@ -439,7 +453,6 @@ export default function StudentDashboard() {
         : 0;
     const overallRiskLevel = getRiskLevel(overallRiskScore);
     
-    //abdo
     const updateRiskOnServer = async (uid, riskLevel) => {
     try {
         const token = localStorage.getItem('token'); 
@@ -474,6 +487,22 @@ export default function StudentDashboard() {
         console.error("Error connecting to backend:", error);
     }
 };
+    const openDigitalID = () => {
+        setIsDigitalIdModalOpen(true);
+        const navbar = document.querySelector('.navbar-container');
+        if (navbar) {
+            navbar.style.display = 'none';
+        }
+    };
+
+    const closeDigitalID = () => {
+        setIsDigitalIdModalOpen(false);
+        const navbar = document.querySelector('.navbar-container');
+        if (navbar) {
+            navbar.style.display = 'flex';
+        }
+    };
+
     return (
         <div className="student-dashboard-container">
             {toast.show && (
@@ -505,6 +534,15 @@ export default function StudentDashboard() {
                     <h3 className="student-profile-name">{studentData.name}</h3>
                     <p className="student-profile-id">ID: {studentData.id}</p>
                     <p className="student-profile-dept">{studentData.department}</p>
+                    
+                    <button 
+                        className="student-digital-id-button"
+                        onClick={openDigitalID}
+                    >
+                        <Shield size={16} />
+                        <span>Digital ID</span>
+                    </button>
+
                     {studentData.profileImage && (
                         <button className="student-remove-photo-button" onClick={removeProfileImage}>
                             Remove Photo
@@ -1061,7 +1099,6 @@ export default function StudentDashboard() {
                     </div>
                 </div>
             )}
-
             {isPasswordModalOpen && (
                 <div className="student-modal-overlay" onClick={() => setIsPasswordModalOpen(false)}>
                     <div className="student-modal-container small" onClick={e => e.stopPropagation()}>
@@ -1178,6 +1215,92 @@ export default function StudentDashboard() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {isDigitalIdModalOpen && (
+                <div className="student-modal-overlay" onClick={closeDigitalID}>
+                    <div className="student-modal-container digital-id-modal" onClick={e => e.stopPropagation()}>
+                        <div className="student-modal-header">
+                            <h2>Digital ID Card</h2>
+                            <button className="student-close-modal-button" onClick={closeDigitalID}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="student-digital-id-full">
+                            <div className="student-id-card-header">
+                                <div className="student-id-school">
+                                    <Building size={24} />
+                                    <div>
+                                        <h3> Cairo University</h3>
+                                        <p>Student Identification Card</p>
+                                    </div>
+                                </div>
+                                <Shield size={32} className="student-id-shield" />
+                            </div>
+                            <div className="student-id-card-body">
+                                <div className="student-id-photo-section">
+                                    {studentData.profileImage ? (
+                                        <img src={studentData.profileImage} alt="Student" className="student-id-photo" />
+                                    ) : (
+                                        <div className="student-id-photo-placeholder">
+                                            {studentData.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="student-id-info-section">
+                                    <div className="student-id-field">
+                                        <span className="student-id-field-label">Student Name</span>
+                                        <span className="student-id-field-value">{studentData.name}</span>
+                                    </div>
+                                    <div className="student-id-field">
+                                        <span className="student-id-field-label">Student ID</span>
+                                        <span className="student-id-field-value">{studentData.id}</span>
+                                    </div>
+                                    <div className="student-id-field">
+                                        <span className="student-id-field-label">Department</span>
+                                        <span className="student-id-field-value">{studentData.department}</span>
+                                    </div>
+                                    <div className="student-id-field">
+                                        <span className="student-id-field-label">Academic Year</span>
+                                        <span className="student-id-field-value">{studentData.academicYear}</span>
+                                    </div>
+                                    <div className="student-id-field">
+                                        <span className="student-id-field-label">Email</span>
+                                        <span className="student-id-field-value">{studentData.email}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="student-id-card-footer">
+                                <div className="student-id-qr-large">
+                                    <img 
+                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                                            JSON.stringify({
+                                                id: studentData.id,
+                                                name: studentData.name,
+                                                email: studentData.email,
+                                                dept: studentData.department,
+                                                year: studentData.academicYear,
+                                                type: 'student',
+                                                university: 'Cairo '
+                                            })
+                                        )}`}
+                                        alt="Student QR Code"
+                                        className="student-qr-image-large"
+                                    />
+                                </div>
+                                <div className="student-id-validity">
+                                    <div className="student-id-validity-badge">
+                                        <CheckCircle size={16} />
+                                        <span>VALID ID 2026</span>
+                                    </div>
+                                    <p className="student-id-scan-text">Scan QR code to verify identity</p>
+                                    <p className="student-id-issue-date">Issued: March 2026</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

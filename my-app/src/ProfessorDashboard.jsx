@@ -6,7 +6,7 @@ import {
     LogOut, Key, Plus, Edit, Trash2, Bell, Download,
     TrendingUp, Clock, CheckCircle, XCircle, AlertCircle,
     Menu, Search, ChevronRight, BarChart3, UserPlus,
-    X
+    X, Shield, Building, Eye
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
@@ -29,11 +29,50 @@ export default function ProfessorDashboard() {
 
     // حالات النوافذ المنبثقة
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isDigitalIdModalOpen, setIsDigitalIdModalOpen] = useState(false);
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
     });
+
+    // Add this useEffect to control navbar visibility
+    useEffect(() => {
+        // When digital ID modal opens or closes, dispatch custom events for navbar
+        const event = isDigitalIdModalOpen ? 'openDigitalID' : 'closeDigitalID';
+        window.dispatchEvent(new Event(event));
+        
+        // Also add/remove class to body for CSS control
+        if (isDigitalIdModalOpen) {
+            document.body.classList.add('digital-id-open');
+        } else {
+            document.body.classList.remove('digital-id-open');
+        }
+        
+        return () => {
+            // Cleanup
+            document.body.classList.remove('digital-id-open');
+        };
+    }, [isDigitalIdModalOpen]);
+
+    // Functions to manually control modal and navbar
+    const openDigitalID = () => {
+        setIsDigitalIdModalOpen(true);
+        // Directly hide navbar as backup
+        const navbar = document.querySelector('.navbar-container');
+        if (navbar) {
+            navbar.style.display = 'none';
+        }
+    };
+
+    const closeDigitalID = () => {
+        setIsDigitalIdModalOpen(false);
+        // Show navbar again
+        const navbar = document.querySelector('.navbar-container');
+        if (navbar) {
+            navbar.style.display = 'flex';
+        }
+    };
 
     // abdo
     const [adminCourses, setAdminCourses] = useState([]);
@@ -194,19 +233,12 @@ export default function ProfessorDashboard() {
         setShowModal(true);
     };
 
-    // const openEditModal = (course) => {
-    //     setModalType('edit');
-    //     setSelectedCourse(course);
-    //     setNewCourse(course);
-    //     setShowModal(true);
-    // };
-
     const openAttendanceModal = (course) => {
         setModalType('attendance');
         setSelectedCourse(course);
         setShowModal(true);
     };
-//abdo
+
     const deleteCourse = async (id) => {
     if (!window.confirm('Are you sure you want to delete this course?')) return;
 
@@ -245,7 +277,6 @@ const handleSelectCourseFromAdmin = (courseId) => {
                 name: selected.courseName,
                 schedule: `${selected.SelectDays} | ${selected.Time}`,
                 room: selected.RoomNumber,
-                //
                 students: selected.totalStudents,
                 instructor: selected.instructorName,
                 capacity: selected.capacity
@@ -254,7 +285,6 @@ const handleSelectCourseFromAdmin = (courseId) => {
         }
     };
 
-    // abdo
    const saveCourse = async () => {
     if (!newCourse.id || !newCourse.name) {
         showNotification('Please select a valid course', 'error');
@@ -309,8 +339,6 @@ const handleSelectCourseFromAdmin = (courseId) => {
         showNotification('Error saving course. Please try again.', 'error');
     }
 };
-//abdo
-// Fetch professor's assigned courses
 useEffect(() => {
     const fetchProfessorCourses = async () => {
         const user = auth.currentUser;
@@ -416,6 +444,16 @@ useEffect(() => {
                     />
                     <h3 className="professor-profile-name">{profData.name}</h3>
                     <p className="professor-profile-id">ID: {profData.code}</p>
+                    
+                    {/* Digital ID Button - Updated to use openDigitalID */}
+                    <button 
+                        className="professor-digital-id-button"
+                        onClick={openDigitalID}
+                    >
+                        <Shield size={16} />
+                        <span>Digital ID</span>
+                    </button>
+
                     {profileImage && (
                         <button className="professor-remove-photo-button" onClick={removeProfileImage}>
                             Remove Photo
@@ -586,9 +624,6 @@ useEffect(() => {
                                             <div className="professor-course-header">
                                                 <span className="professor-course-code">{course.id}</span>
                                                 <div className="professor-course-actions">
-                                                    {/* <button className="professor-icon-button" onClick={() => openEditModal(course)} title="Edit">
-                                                      <Edit size={16} />
-                                                    </button> */}
                                                     <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
                                                         <Trash2 size={16} />
                                                     </button>
@@ -687,9 +722,6 @@ useEffect(() => {
                                                         <button className="professor-icon-button" onClick={() => openAttendanceModal(course)} title="Start Attendance">
                                                             <CheckCircle size={18} />
                                                         </button>
-                                                        {/* <button className="professor-icon-button" onClick={() => openEditModal(course)} title="Edit">
-                                                            <Edit size={18} />
-                                                        </button> */}
                                                         <button className="professor-icon-button" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
                                                             <Clock size={18} />
                                                         </button>
@@ -782,6 +814,99 @@ useEffect(() => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Digital ID Modal - Updated to use closeDigitalID */}
+            {isDigitalIdModalOpen && (
+                <div className="professor-modal-overlay" onClick={closeDigitalID}>
+                    <div className="professor-modal-container digital-id-modal" onClick={e => e.stopPropagation()}>
+                        <div className="professor-modal-header">
+                            <h2>Professor Digital ID Card</h2>
+                            <button className="professor-close-modal-button" onClick={closeDigitalID}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="professor-digital-id-full">
+                            {/* Card Header */}
+                            <div className="professor-id-card-header">
+                                <div className="professor-id-school">
+                                    <Building size={24} />
+                                    <div>
+                                        <h3>Cairo University</h3>
+                                        <p>Professor Identification Card</p>
+                                    </div>
+                                </div>
+                                <Shield size={32} className="professor-id-shield" />
+                            </div>
+
+                            {/* Card Body */}
+                            <div className="professor-id-card-body">
+                                <div className="professor-id-photo-section">
+                                    {profileImage ? (
+                                        <img src={profileImage} alt="Professor" className="professor-id-photo" />
+                                    ) : (
+                                        <div className="professor-id-photo-placeholder">
+                                            {profData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="professor-id-info-section">
+                                    <div className="professor-id-field">
+                                        <span className="professor-id-field-label">Professor Name</span>
+                                        <span className="professor-id-field-value">{profData.name}</span>
+                                    </div>
+                                    <div className="professor-id-field">
+                                        <span className="professor-id-field-label">Professor ID</span>
+                                        <span className="professor-id-field-value">{profData.code}</span>
+                                    </div>
+                                    <div className="professor-id-field">
+                                        <span className="professor-id-field-label">Department</span>
+                                        <span className="professor-id-field-value">Computer Science</span>
+                                    </div>
+                                    <div className="professor-id-field">
+                                        <span className="professor-id-field-label">Email</span>
+                                        <span className="professor-id-field-value">{auth.currentUser?.email || 'professor@yallaclass.com'}</span>
+                                    </div>
+                                    <div className="professor-id-field">
+                                        <span className="professor-id-field-label">Courses</span>
+                                        <span className="professor-id-field-value">{courses.length} Active Courses</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card Footer with QR */}
+                            <div className="professor-id-card-footer">
+                                <div className="professor-id-qr-large">
+                                    <img 
+                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                                            JSON.stringify({
+                                                id: profData.code,
+                                                name: profData.name,
+                                                email: auth.currentUser?.email,
+                                                department: 'Computer Science',
+                                                type: 'professor',
+                                                university: 'cairo',
+                                                courses: courses.length
+                                            })
+                                        )}`}
+                                        alt="Professor QR Code"
+                                        className="professor-qr-image-large"
+                                    />
+                                </div>
+                                <div className="professor-id-validity">
+                                    <div className="professor-id-validity-badge">
+                                        <CheckCircle size={16} />
+                                        <span>FACULTY ID 2026</span>
+                                    </div>
+                                    <p className="professor-id-scan-text">Scan QR code to verify faculty identity</p>
+                                    <p className="professor-id-issue-date">Issued: March 2026 | Valid through: 2028</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

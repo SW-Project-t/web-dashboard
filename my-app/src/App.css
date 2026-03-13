@@ -208,3 +208,9 @@ body {
   color: #08509e;
   text-decoration: underline;
 }
+body.digital-id-open .navbar-container {
+    display: none !important;
+}
+body:has(.student-modal-overlay .digital-id-modal) .navbar-container {
+    display: none !important;
+}

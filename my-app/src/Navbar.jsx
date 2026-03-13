@@ -5,6 +5,7 @@ import './Navbar.css';
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDigitalIDOpen, setIsDigitalIDOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -15,13 +16,27 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Listen for digital ID events
+  useEffect(() => {
+    const handleOpenDigitalID = () => setIsDigitalIDOpen(true);
+    const handleCloseDigitalID = () => setIsDigitalIDOpen(false);
+
+    window.addEventListener('openDigitalID', handleOpenDigitalID);
+    window.addEventListener('closeDigitalID', handleCloseDigitalID);
+
+    return () => {
+      window.removeEventListener('openDigitalID', handleOpenDigitalID);
+      window.removeEventListener('closeDigitalID', handleCloseDigitalID);
+    };
+  }, []);
+
   const isDashboard = location.pathname.startsWith('/AdminDashboard') || 
                       location.pathname.startsWith('/ProfessorDashboard') || 
                       location.pathname.startsWith('/StudentDashboard') ||
                       location.pathname.startsWith('/login');
 
   return (
-    <nav className={`navbar-container ${isScrolled ? 'scrolled' : ''}`}>
+    <nav className={`navbar-container ${isScrolled ? 'scrolled' : ''} ${isDigitalIDOpen ? 'hidden' : ''}`}>
       {/* 1. اللوجو على اليسار */}
       <div className="logo-section">
         <Link to="/" className="logo-link">

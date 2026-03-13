@@ -2,7 +2,7 @@
     position: fixed;
     top: 0; left: 0; width: 100%;
     display: flex;
-    justify-content: space-between; /* توزيع العناصر بالتساوي */
+    justify-content: space-between; 
     align-items: center;
     padding: 20px 60px;
     background-color: transparent;
@@ -10,16 +10,12 @@
     box-sizing: border-box;
     transition: all 0.4s ease;
 }
-
-/* عند التمرير */
 .navbar-container.scrolled {
     padding: 12px 60px;
     background-color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
-
-/* اللوجو */
 .logo-section { flex: 1; }
 .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .logo-icon {
@@ -31,8 +27,6 @@
 .logo-text { font-size: 22px; font-weight: 800; }
 .text-yalla { color: #111827; }
 .text-class { color: #3B82F6; }
-
-/* الروابط في النص */
 .nav-links {
     display: flex;
     gap: 30px;
@@ -48,7 +42,6 @@
 }
 .nav-links a:hover, .nav-links a.active { color: #0070F3; }
 
-/* الأزرار على اليمين */
 .nav-actions {
     display: flex;
     align-items: center;
@@ -67,12 +60,10 @@
     transition: 0.3s;
 }
 .btn-signin:hover { background: #0070F3; transform: translateY(-2px); }
-
-/* الهامبرجر (يظهر في الموبايل فقط) */
 .hamburger { display: none; cursor: pointer; flex-direction: column; gap: 5px; }
 .hamburger span { width: 25px; height: 2px; background: #111827; transition: 0.3s; }
 
-/* --- التجاوب مع الموبايل --- */
+
 @media (max-width: 768px) {
     .navbar-container { padding: 15px 20px; background: white; }
     .nav-links {
@@ -94,4 +85,26 @@
         text-decoration: none;
         border-radius: 10px;
     }
+}
+.navbar-container.hidden {
+    display: none !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.navbar-container.hidden {
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+body.digital-id-open .navbar-container {
+    display: none !important;
+}
+
+.navbar-container.hidden {
+    display: none !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }

@@ -1366,3 +1366,303 @@ body {
         padding: 20px;
     }
 }
+.professor-digital-id-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #4a90e2, #2b6cb0);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 40px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 90%;
+    margin: 15px auto 10px;
+    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.professor-digital-id-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(74, 144, 226, 0.4);
+    background: linear-gradient(135deg, #2b6cb0, #4a90e2);
+}
+
+.professor-digital-id-button svg {
+    animation: professorPulse 2s infinite;
+}
+
+.professor-modal-container.digital-id-modal {
+    max-width: 600px;
+    padding: 25px;
+    background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+}
+
+.professor-digital-id-full {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(74, 144, 226, 0.2);
+}
+
+.professor-id-card-header {
+    background: linear-gradient(135deg, #4a90e2, #2b6cb0);
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.professor-id-card-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: professorRotate 20s linear infinite;
+}
+
+@keyframes professorRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.professor-id-school {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+    z-index: 1;
+}
+
+.professor-id-school h3 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.professor-id-school p {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.professor-id-shield {
+    opacity: 0.8;
+    animation: professorFloat 3s ease-in-out infinite;
+}
+
+@keyframes professorFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.professor-id-card-body {
+    padding: 30px;
+    display: flex;
+    gap: 30px;
+    background: white;
+}
+
+@media (max-width: 480px) {
+    .professor-id-card-body {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+}
+
+.professor-id-photo-section {
+    flex-shrink: 0;
+}
+
+.professor-id-photo {
+    width: 140px;
+    height: 140px;
+    border-radius: 15px;
+    object-fit: cover;
+    border: 4px solid white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.professor-id-photo-placeholder {
+    width: 140px;
+    height: 140px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #4a90e2, #2b6cb0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    font-weight: 800;
+    color: white;
+    border: 4px solid white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.professor-id-info-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.professor-id-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.professor-id-field-label {
+    font-size: 11px;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.professor-id-field-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.professor-id-card-footer {
+    background: #f8fafd;
+    padding: 25px 30px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    border-top: 2px dashed rgba(74, 144, 226, 0.2);
+    border-bottom: 2px dashed rgba(74, 144, 226, 0.2);
+}
+
+@media (max-width: 480px) {
+    .professor-id-card-footer {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+.professor-id-qr-large {
+    background: white;
+    padding: 12px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.15);
+    border: 2px solid rgba(74, 144, 226, 0.2);
+}
+
+.professor-qr-image-large {
+    width: 130px;
+    height: 130px;
+    display: block;
+}
+
+.professor-id-validity {
+    flex: 1;
+}
+
+.professor-id-validity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 6px 15px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.professor-id-scan-text {
+    font-size: 13px;
+    color: #718096;
+    margin-bottom: 5px;
+}
+
+.professor-id-issue-date {
+    font-size: 11px;
+    color: #a0aec0;
+}
+
+.professor-id-actions {
+    display: flex;
+    gap: 15px;
+    padding: 25px 30px;
+}
+
+@media (max-width: 480px) {
+    .professor-id-actions {
+        flex-direction: column;
+    }
+}
+
+.professor-id-download-btn,
+.professor-id-print-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.professor-id-download-btn {
+    background: linear-gradient(135deg, #4a90e2, #2b6cb0);
+    color: white;
+    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+}
+
+.professor-id-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(74, 144, 226, 0.4);
+}
+
+.professor-id-print-btn {
+    background: #f0f7ff;
+    color: #4a90e2;
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.professor-id-print-btn:hover {
+    background: #e6f0fa;
+    transform: translateY(-2px);
+}
+@media print {
+    .professor-sidebar-wrapper,
+    .professor-content-header,
+    .professor-modal-overlay > *:not(.professor-modal-container.digital-id-modal),
+    .professor-id-actions {
+        display: none !important;
+    }
+    
+    .professor-modal-container.digital-id-modal {
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+    }
+    
+    .professor-digital-id-full {
+        box-shadow: none;
+        border: 2px solid #4a90e2;
+    }
+}
+body.digital-id-open .navbar-container {
+    display: none !important;
+}

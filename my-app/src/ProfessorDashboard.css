@@ -115,7 +115,7 @@ body {
 
 /* Profile Section - مطابق لتصميم Admin */
 .professor-profile-section {
-    padding: 80px 10px 0px 10px;
+    padding: 50px 10px 0px 10px;
     text-align: center;
     border-bottom: 1px solid rgba(123, 168, 224, 0.2);
     position: relative;
@@ -207,7 +207,7 @@ body {
 }
 
 .professor-profile-name {
-    font-size: 20px;
+    font-size: 15px;
     font-weight: 800;
     background: linear-gradient(135deg, #2d3748, #1a202c);
     background-clip: text;
@@ -316,7 +316,7 @@ body {
 
 /* Sidebar Footer */
 .professor-sidebar-footer {
-    padding: 5px 20px;
+    padding: 0px 20px;
     border-top: 1px solid rgba(123, 168, 224, 0.2);
 }
 
@@ -1373,7 +1373,7 @@ body {
     gap: 8px;
     background: linear-gradient(135deg, #4a90e2, #2b6cb0);
     border: none;
-    padding: 10px 20px;
+    padding: 8px 11px;
     border-radius: 40px;
     color: white;
     font-weight: 600;

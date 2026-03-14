@@ -177,6 +177,18 @@ export default function StudentDashboard() {
                 
                 courseSnap.forEach((doc) => {
                     const courseData = doc.data();
+                    
+                    // Calculate risk score for each course based on mock data
+                    const attendanceRate = Math.floor(Math.random() * 40) + 60; // Random between 60-100
+                    const grades = Math.floor(Math.random() * 30) + 70; // Random between 70-100
+                    const timeliness = Math.floor(Math.random() * 50) + 50; // Random between 50-100
+                    const riskScore = calculateRiskScore(
+                        attendanceRate, 
+                        grades, 
+                        userData.gpa || 3.0, 
+                        timeliness
+                    );
+                    
                     enrolledCourses.push({
                         id: courseData.courseId,
                         name: courseData.courseName,
@@ -186,13 +198,13 @@ export default function StudentDashboard() {
                         time: courseData.Time || 'TBA',
                         room: courseData.RoomNumber || 'TBA',
                         students: parseInt(courseData.capacity) || 0,
-                        attendanceRate: 0,
+                        attendanceRate: attendanceRate,
                         checkedIn: false,
                         timeRemaining: 0,
-                        grades: 0,
-                        timeliness: 0,
-                        riskScore: 0,
-                        riskLevel: getRiskLevel(0)
+                        grades: grades,
+                        timeliness: timeliness,
+                        riskScore: riskScore,
+                        riskLevel: getRiskLevel(riskScore)
                     });
                 });
             }
@@ -211,6 +223,13 @@ export default function StudentDashboard() {
                 courseId: c.id
             }));
             setUpcoming(upcomingClasses);
+            
+            // Calculate trend data based on risk scores
+            const trendData = enrolledCourses.map((c, idx) => ({
+                week: `W${idx + 1}`,
+                rate: c.riskScore
+            }));
+            setTrend(trendData);
             
         } catch (error) {
             console.error("Error loading courses:", error);
@@ -264,16 +283,28 @@ export default function StudentDashboard() {
             await updateDoc(userDocRef, {
                 enrolledCourses: arrayUnion(course.id)
             });
+            
+            // Calculate risk score for new course
+            const attendanceRate = Math.floor(Math.random() * 40) + 60;
+            const grades = Math.floor(Math.random() * 30) + 70;
+            const timeliness = Math.floor(Math.random() * 50) + 50;
+            const riskScore = calculateRiskScore(
+                attendanceRate, 
+                grades, 
+                studentData.gpa, 
+                timeliness
+            );
+            
             const newCourse = {
                 ...course,
                 students: course.capacity,
-                attendanceRate: 0,
+                attendanceRate: attendanceRate,
                 checkedIn: false,
                 timeRemaining: 0,
-                grades: 0,
-                timeliness: 0,
-                riskScore: 0,
-                riskLevel: getRiskLevel(0)
+                grades: grades,
+                timeliness: timeliness,
+                riskScore: riskScore,
+                riskLevel: getRiskLevel(riskScore)
             };
 
             setCourses(prev => [...prev, newCourse]);
@@ -391,18 +422,32 @@ export default function StudentDashboard() {
     setCourses(prev => {
         const updatedCourses = prev.map(c => {
             if (c.id === courseId && !c.checkedIn) {
-                showNotification(`Checked in to ${c.name}`);
+                // Update risk score when checking in
+                const newAttendanceRate = Math.min(100, c.attendanceRate + 5);
+                const newRiskScore = calculateRiskScore(
+                    newAttendanceRate,
+                    c.grades,
+                    studentData.gpa,
+                    c.timeliness
+                );
+                
+                showNotification(`Checked in to ${c.name}. Risk score updated to ${newRiskScore}`);
+                
                 return { 
                     ...c, 
                     checkedIn: true, 
-                    attendanceRate: Math.min(100, c.attendanceRate + 1) 
+                    attendanceRate: newAttendanceRate,
+                    riskScore: newRiskScore,
+                    riskLevel: getRiskLevel(newRiskScore)
                 };
             }
             return c;
         });
+        
         const totalScore = updatedCourses.reduce((sum, c) => sum + (c.riskScore || 0), 0);
         const averageScore = updatedCourses.length > 0 ? Math.round(totalScore / updatedCourses.length) : 0;
         const newRisk = getRiskLevel(averageScore);
+        
         if (auth.currentUser) {
             updateRiskOnServer(auth.currentUser.uid, newRisk.level);
         }
@@ -757,7 +802,9 @@ export default function StudentDashboard() {
                                                 <p>{course.instructor}</p>
                                                 <div className="student-course-mini-footer">
                                                     <span>{course.schedule}</span>
-                                                    <span className="student-attendance-small">{course.attendanceRate}%</span>
+                                                    <div className="student-risk-mini-badge" style={{ backgroundColor: `${course.riskLevel.color}20`, color: course.riskLevel.color }}>
+                                                        {course.riskLevel.icon} {course.riskScore}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -765,7 +812,7 @@ export default function StudentDashboard() {
                                 </div>
                                 <div className="student-table-card">
                                     <div className="student-table-header">
-                                        <h3>Attendance Trend</h3>
+                                        <h3>Risk Score Trend</h3>
                                         <span className="student-view-all-link" onClick={viewAttendanceHistory}>
                                             View Details
                                         </span>
@@ -774,8 +821,8 @@ export default function StudentDashboard() {
                                         <div className="student-chart-bars">
                                             {trend.slice(-4).map((week, index) => (
                                                 <div key={index} className="student-bar-wrapper">
-                                                    <div className="student-bar" style={{ height: `${week.rate}px` }}></div>
-                                                    <span className="student-bar-label">{week.rate}%</span>
+                                                    <div className="student-bar" style={{ height: `${week.rate}px`, backgroundColor: week.rate < 40 ? '#ef4444' : week.rate < 60 ? '#f59e0b' : week.rate < 80 ? '#10b981' : '#3b82f6' }}></div>
+                                                    <span className="student-bar-label">{week.rate}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -826,6 +873,15 @@ export default function StudentDashboard() {
                                                 <span className="student-course-code-large">{course.id}</span>
                                                 <div className="student-course-actions">
                                                     <button 
+                                                        className="student-view-risk-button"
+                                                        onClick={() => viewRiskDetails(course)}
+                                                        title="View Risk Details"
+                                                        style={{ backgroundColor: `${course.riskLevel.color}20`, color: course.riskLevel.color }}
+                                                    >
+                                                        <AlertTriangle size={16} />
+                                                        <span>{course.riskScore}</span>
+                                                    </button>
+                                                    <button 
                                                         className="student-delete-course-button"
                                                         onClick={() => handleDeleteCourse(course.id)}
                                                         title="Drop Course"
@@ -847,6 +903,12 @@ export default function StudentDashboard() {
                                                     <span>Room {course.room}</span>
                                                 </div>
                                             </div>
+                                            
+                                            <div className="student-risk-indicator" style={{ borderLeft: `4px solid ${course.riskLevel.color}`, backgroundColor: `${course.riskLevel.color}10` }}>
+                                                <span style={{ color: course.riskLevel.color }}>{course.riskLevel.icon} Risk Level: {course.riskLevel.level}</span>
+                                                <span style={{ color: course.riskLevel.color, fontWeight: 'bold' }}>{course.riskScore}</span>
+                                            </div>
+                                            
                                             <div className="student-course-card-footer">
                                                 <div className="student-attendance-progress">
                                                     <div className="student-progress-bar">
@@ -873,7 +935,7 @@ export default function StudentDashboard() {
                             <div className="student-table-header">
                                 <div className="student-flex-align">
                                     <TrendingUp size={24} className="student-text-primary student-margin-right-2" />
-                                    <h3>Attendance Records</h3>
+                                    <h3>Attendance & Risk Records</h3>
                                 </div>
                                 <button className="student-nav-button" onClick={() => showNotification('Downloading report...')}>
                                     <Download size={18} /> Export
@@ -889,16 +951,12 @@ export default function StudentDashboard() {
                                     <span className="student-summary-value">{courses.length}</span>
                                 </div>
                                 <div className="student-summary-item">
-                                    <span className="student-summary-label">On Time</span>
-                                    <span className="student-summary-value success">0</span>
+                                    <span className="student-summary-label">Overall Risk Score</span>
+                                    <span className="student-summary-value" style={{ color: overallRiskLevel.color }}>{overallRiskScore}</span>
                                 </div>
                                 <div className="student-summary-item">
-                                    <span className="student-summary-label">Late</span>
-                                    <span className="student-summary-value warning">0</span>
-                                </div>
-                                <div className="student-summary-item">
-                                    <span className="student-summary-label">Absences</span>
-                                    <span className="student-summary-value danger">0</span>
+                                    <span className="student-summary-label">Overall Risk Level</span>
+                                    <span className="student-summary-value" style={{ color: overallRiskLevel.color }}>{overallRiskLevel.icon} {overallRiskLevel.level}</span>
                                 </div>
                             </div>
                             <div className="student-table-responsive">
@@ -908,18 +966,26 @@ export default function StudentDashboard() {
                                             <th>Course Code</th>
                                             <th>Course Name</th>
                                             <th>Attendance Rate</th>
+                                            <th>Risk Score</th>
+                                            <th>Risk Level</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {courses.length === 0 ? (
-                                            <tr><td colSpan="4" className="student-no-data">No attendance records</td></tr>
+                                            <tr><td colSpan="6" className="student-no-data">No attendance records</td></tr>
                                         ) : (
                                             courses.map((course, idx) => (
                                                 <tr key={idx}>
                                                     <td className="student-text-muted">{course.id}</td>
                                                     <td className="student-text-bold">{course.name}</td>
                                                     <td>{course.attendanceRate}%</td>
+                                                    <td style={{ color: course.riskLevel.color, fontWeight: 'bold' }}>{course.riskScore}</td>
+                                                    <td>
+                                                        <span style={{ color: course.riskLevel.color }}>
+                                                            {course.riskLevel.icon} {course.riskLevel.level}
+                                                        </span>
+                                                    </td>
                                                     <td>
                                                         <span className={`student-status-badge ${course.checkedIn ? 'checked' : 'pending'}`}>
                                                             {course.checkedIn ? 'Present Today' : 'Not Checked In'}
@@ -956,11 +1022,17 @@ export default function StudentDashboard() {
                                                 <p className="student-no-classes">No classes</p>
                                             ) : (
                                                 dayClasses.map((cls, idx) => {
+                                                    const course = courses.find(c => c.id === cls.courseId);
                                                     return (
                                                         <div className="student-day-class" key={idx}>
                                                             <span className="student-class-time">{cls.time}</span>
                                                             <span className="student-class-name">{cls.name}</span>
                                                             <span className="student-class-room">Room {cls.room}</span>
+                                                            {course && (
+                                                                <span className="student-class-risk" style={{ color: course.riskLevel.color }}>
+                                                                    Risk: {course.riskScore}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     );
                                                 })
@@ -1018,6 +1090,14 @@ export default function StudentDashboard() {
                                                 <span className="student-detail-label">GPA:</span>
                                                 <span className="student-detail-value" style={{ color: '#4a90e2' }}>{studentData.gpa}</span>
                                             </div>
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Overall Risk Score:</span>
+                                                <span className="student-detail-value" style={{ color: overallRiskLevel.color, fontWeight: 'bold' }}>{overallRiskScore}</span>
+                                            </div>
+                                            <div className="student-detail-row">
+                                                <span className="student-detail-label">Overall Risk Level:</span>
+                                                <span className="student-detail-value" style={{ color: overallRiskLevel.color }}>{overallRiskLevel.icon} {overallRiskLevel.level}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     
@@ -1048,6 +1128,77 @@ export default function StudentDashboard() {
                     )}
                 </div>
             </main>
+
+            {/* Risk Details Modal */}
+            {isRiskDetailsModalOpen && selectedRiskCourse && (
+                <div className="student-modal-overlay" onClick={() => setIsRiskDetailsModalOpen(false)}>
+                    <div className="student-modal-container" onClick={e => e.stopPropagation()}>
+                        <div className="student-modal-header">
+                            <h2>Risk Details - {selectedRiskCourse.name}</h2>
+                            <button className="student-close-modal-button" onClick={() => setIsRiskDetailsModalOpen(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="student-risk-details">
+                            <div className="student-risk-score-large" style={{ backgroundColor: `${selectedRiskCourse.riskLevel.color}20`, color: selectedRiskCourse.riskLevel.color }}>
+                                <span className="student-risk-number">{selectedRiskCourse.riskScore}</span>
+                                <span className="student-risk-label">{selectedRiskCourse.riskLevel.level}</span>
+                            </div>
+                            
+                            <div className="student-risk-factors">
+                                <h3>Risk Factors</h3>
+                                <div className="student-risk-factor-item">
+                                    <span>Attendance Rate:</span>
+                                    <div className="student-risk-factor-bar">
+                                        <div className="student-risk-factor-fill" style={{ width: `${selectedRiskCourse.attendanceRate}%`, backgroundColor: selectedRiskCourse.attendanceRate < 60 ? '#ef4444' : selectedRiskCourse.attendanceRate < 80 ? '#f59e0b' : '#10b981' }}></div>
+                                        <span>{selectedRiskCourse.attendanceRate}%</span>
+                                    </div>
+                                </div>
+                                <div className="student-risk-factor-item">
+                                    <span>Grades:</span>
+                                    <div className="student-risk-factor-bar">
+                                        <div className="student-risk-factor-fill" style={{ width: `${selectedRiskCourse.grades}%`, backgroundColor: selectedRiskCourse.grades < 60 ? '#ef4444' : selectedRiskCourse.grades < 75 ? '#f59e0b' : '#10b981' }}></div>
+                                        <span>{selectedRiskCourse.grades}%</span>
+                                    </div>
+                                </div>
+                                <div className="student-risk-factor-item">
+                                    <span>Timeliness:</span>
+                                    <div className="student-risk-factor-bar">
+                                        <div className="student-risk-factor-fill" style={{ width: `${selectedRiskCourse.timeliness}%`, backgroundColor: selectedRiskCourse.timeliness < 60 ? '#ef4444' : selectedRiskCourse.timeliness < 80 ? '#f59e0b' : '#10b981' }}></div>
+                                        <span>{selectedRiskCourse.timeliness}%</span>
+                                    </div>
+                                </div>
+                                <div className="student-risk-factor-item">
+                                    <span>GPA Impact:</span>
+                                    <div className="student-risk-factor-bar">
+                                        <div className="student-risk-factor-fill" style={{ width: `${studentData.gpa * 25}%`, backgroundColor: studentData.gpa < 2.0 ? '#ef4444' : studentData.gpa < 2.5 ? '#f59e0b' : studentData.gpa < 3.0 ? '#10b981' : '#3b82f6' }}></div>
+                                        <span>{studentData.gpa}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="student-risk-recommendations">
+                                <h3>Recommendations</h3>
+                                {selectedRiskCourse.riskScore < 40 ? (
+                                    <p className="student-risk-recommendation urgent">🔴 Urgent: Please contact your academic advisor immediately. Your attendance and performance need immediate attention.</p>
+                                ) : selectedRiskCourse.riskScore < 60 ? (
+                                    <p className="student-risk-recommendation warning">🟡 Warning: Consider improving your attendance and completing pending assignments.</p>
+                                ) : selectedRiskCourse.riskScore < 80 ? (
+                                    <p className="student-risk-recommendation good">🟢 Good: You're doing well, but stay consistent to maintain your performance.</p>
+                                ) : (
+                                    <p className="student-risk-recommendation excellent">🔵 Excellent: Outstanding performance! Keep up the great work!</p>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="student-modal-actions">
+                            <button className="student-cancel-button" onClick={() => setIsRiskDetailsModalOpen(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isAddCourseModalOpen && (
                 <div className="student-modal-overlay" onClick={() => setIsAddCourseModalOpen(false)}>
                     <div className="student-modal-container large" onClick={e => e.stopPropagation()}>
@@ -1233,7 +1384,7 @@ export default function StudentDashboard() {
                                 <div className="student-id-school">
                                     <Building size={24} />
                                     <div>
-                                        <h3> Cairo University</h3>
+                                        <h3>Cairo University</h3>
                                         <p>Student Identification Card</p>
                                     </div>
                                 </div>
@@ -1284,7 +1435,7 @@ export default function StudentDashboard() {
                                                 dept: studentData.department,
                                                 year: studentData.academicYear,
                                                 type: 'student',
-                                                university: 'Cairo '
+                                                university: 'Cairo'
                                             })
                                         )}`}
                                         alt="Student QR Code"

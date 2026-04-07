@@ -23,11 +23,11 @@ function Login() {
       alert("Please enter both email and password");
       return;
     }
-    console.log("Checking API URL:", 'https://yallaclass-backend-production.up.railway.app/verify-login');
+    console.log("Checking API URL:", 'http://localhost:3001/verify-login');
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
-      const response = await axios.post('https://yallaclass-backend-production.up.railway.app/verify-login?v=2', {
+      const response = await axios.post('http://localhost:3001/verify-login?v=2', {
         idToken: idToken 
       });
       if (response.data.success) {

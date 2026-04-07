@@ -27,7 +27,7 @@ function Admin() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('https://yallaclass-backend-production.up.railway.app/admin/add-user', {
+      const response = await axios.post('http://localhost:3001/admin/add-user', {
         email,
         password,
         fullName,

@@ -6,11 +6,11 @@ import {
     Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
     Download, Shield, Building, X, Menu, User, Calendar,
     Clock, MapPin, CheckCircle, AlertCircle, AlertTriangle,
-    BookPlus
+    BookPlus, Inbox, MessageSquare
 } from 'lucide-react';
 
 import { auth, db } from './firebase';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 const STORAGE_KEYS = {
@@ -78,6 +78,10 @@ export default function StudentDashboard() {
     const [isDigitalIdModalOpen, setIsDigitalIdModalOpen] = useState(false);
     const [selectedRiskCourse, setSelectedRiskCourse] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [studentMessages, setStudentMessages] = useState([]);
+    const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+    const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
+    const [selectedMessage, setSelectedMessage] = useState(null);
     
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '',
@@ -107,6 +111,32 @@ export default function StudentDashboard() {
             document.body.classList.remove('digital-id-open');
         };
     }, [isDigitalIdModalOpen]);
+    useEffect(() => {
+        if (!auth.currentUser) return;
+        
+        const messagesRef = collection(db, "messages");
+        const q = query(
+            messagesRef, 
+            where("toId", "==", auth.currentUser.uid),
+            orderBy("createdAt", "desc")
+        );
+        
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const messagesArray = [];
+            let unread = 0;
+            querySnapshot.forEach((doc) => {
+                const messageData = { id: doc.id, ...doc.data() };
+                messagesArray.push(messageData);
+                if (!messageData.read) {
+                    unread++;
+                }
+            });
+            setStudentMessages(messagesArray);
+            setUnreadMessageCount(unread);
+        });
+        
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -136,10 +166,10 @@ export default function StudentDashboard() {
 
                         const currentRisk = userData.riskLevel || "Low Risk"; 
                         if (currentRisk === "High Risk" || currentRisk === "Medium Risk") {
-                        console.log("Student is at risk, notifying server...");
-                        updateRiskOnServer(user.uid, currentRisk);} 
-                        else {
-                        console.log("Student is safe, no server update needed.");
+                            console.log("Student is at risk, notifying server...");
+                            updateRiskOnServer(user.uid, currentRisk);
+                        } else {
+                            console.log("Student is safe, no server update needed.");
                         }
                     }
                 } catch (error) {
@@ -178,10 +208,9 @@ export default function StudentDashboard() {
                 courseSnap.forEach((doc) => {
                     const courseData = doc.data();
                     
-                    // Calculate risk score for each course based on mock data
-                    const attendanceRate = Math.floor(Math.random() * 40) + 60; // Random between 60-100
-                    const grades = Math.floor(Math.random() * 30) + 70; // Random between 70-100
-                    const timeliness = Math.floor(Math.random() * 50) + 50; // Random between 50-100
+                    const attendanceRate = Math.floor(Math.random() * 40) + 60;
+                    const grades = Math.floor(Math.random() * 30) + 70;
+                    const timeliness = Math.floor(Math.random() * 50) + 50;
                     const riskScore = calculateRiskScore(
                         attendanceRate, 
                         grades, 
@@ -224,7 +253,6 @@ export default function StudentDashboard() {
             }));
             setUpcoming(upcomingClasses);
             
-            // Calculate trend data based on risk scores
             const trendData = enrolledCourses.map((c, idx) => ({
                 week: `W${idx + 1}`,
                 rate: c.riskScore
@@ -284,7 +312,6 @@ export default function StudentDashboard() {
                 enrolledCourses: arrayUnion(course.id)
             });
             
-            // Calculate risk score for new course
             const attendanceRate = Math.floor(Math.random() * 40) + 60;
             const grades = Math.floor(Math.random() * 30) + 70;
             const timeliness = Math.floor(Math.random() * 50) + 50;
@@ -419,46 +446,45 @@ export default function StudentDashboard() {
     };
 
     const handleCheckIn = async (courseId) => {
-    setCourses(prev => {
-        const updatedCourses = prev.map(c => {
-            if (c.id === courseId && !c.checkedIn) {
-                // Update risk score when checking in
-                const newAttendanceRate = Math.min(100, c.attendanceRate + 5);
-                const newRiskScore = calculateRiskScore(
-                    newAttendanceRate,
-                    c.grades,
-                    studentData.gpa,
-                    c.timeliness
-                );
-                
-                showNotification(`Checked in to ${c.name}. Risk score updated to ${newRiskScore}`);
-                
-                return { 
-                    ...c, 
-                    checkedIn: true, 
-                    attendanceRate: newAttendanceRate,
-                    riskScore: newRiskScore,
-                    riskLevel: getRiskLevel(newRiskScore)
-                };
+        setCourses(prev => {
+            const updatedCourses = prev.map(c => {
+                if (c.id === courseId && !c.checkedIn) {
+                    const newAttendanceRate = Math.min(100, c.attendanceRate + 5);
+                    const newRiskScore = calculateRiskScore(
+                        newAttendanceRate,
+                        c.grades,
+                        studentData.gpa,
+                        c.timeliness
+                    );
+                    
+                    showNotification(`Checked in to ${c.name}. Risk score updated to ${newRiskScore}`);
+                    
+                    return { 
+                        ...c, 
+                        checkedIn: true, 
+                        attendanceRate: newAttendanceRate,
+                        riskScore: newRiskScore,
+                        riskLevel: getRiskLevel(newRiskScore)
+                    };
+                }
+                return c;
+            });
+            
+            const totalScore = updatedCourses.reduce((sum, c) => sum + (c.riskScore || 0), 0);
+            const averageScore = updatedCourses.length > 0 ? Math.round(totalScore / updatedCourses.length) : 0;
+            const newRisk = getRiskLevel(averageScore);
+            
+            if (auth.currentUser) {
+                updateRiskOnServer(auth.currentUser.uid, newRisk.level);
             }
-            return c;
-        });
-        
-        const totalScore = updatedCourses.reduce((sum, c) => sum + (c.riskScore || 0), 0);
-        const averageScore = updatedCourses.length > 0 ? Math.round(totalScore / updatedCourses.length) : 0;
-        const newRisk = getRiskLevel(averageScore);
-        
-        if (auth.currentUser) {
-            updateRiskOnServer(auth.currentUser.uid, newRisk.level);
-        }
 
-        return updatedCourses;
-    });
-    setStudentData(prev => ({
-        ...prev,
-        overallAttendance: Math.min(100, prev.overallAttendance + 0.5)
-    }));
-};
+            return updatedCourses;
+        });
+        setStudentData(prev => ({
+            ...prev,
+            overallAttendance: Math.min(100, prev.overallAttendance + 0.5)
+        }));
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -482,6 +508,25 @@ export default function StudentDashboard() {
         setIsAttendanceModalOpen(true);
     };
 
+    const markMessageAsRead = async (messageId) => {
+        try {
+            const messageRef = doc(db, "messages", messageId);
+            await updateDoc(messageRef, { read: true });
+        } catch (error) {
+            console.error("Error marking message as read:", error);
+        }
+    };
+
+    const openMessagesModal = () => {
+        setIsMessagesModalOpen(true);
+        studentMessages.forEach(msg => {
+            if (!msg.read) {
+                markMessageAsRead(msg.id);
+            }
+        });
+        setUnreadMessageCount(0);
+    };
+
     const filteredCourses = courses.filter(c => 
         c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         c.id?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -499,39 +544,40 @@ export default function StudentDashboard() {
     const overallRiskLevel = getRiskLevel(overallRiskScore);
     
     const updateRiskOnServer = async (uid, riskLevel) => {
-    try {
-        const token = localStorage.getItem('token'); 
-        
-        const response = await fetch('http://localhost:3001/api/attendance/update-risk', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
-            },
-            body: JSON.stringify({
-                uid: uid,
-                riskLevel: riskLevel
-            })
-        });
+        try {
+            const token = localStorage.getItem('token'); 
+            
+            const response = await fetch('http://localhost:3001/api/attendance/update-risk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({
+                    uid: uid,
+                    riskLevel: riskLevel
+                })
+            });
 
-        const data = await response.json();
-        
-        if (data.success) {
-            console.log("Server updated: ", data.message);
-            if (riskLevel === "High Risk") {
-                showNotification("Alert: High risk level detected due to low attendance!", "error");
-            } else if (riskLevel === "Medium Risk") {
-                showNotification("Warning: Your risk level is now Medium. Stay consistent!", "warning");
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log("Server updated: ", data.message);
+                if (riskLevel === "High Risk") {
+                    showNotification("Alert: High risk level detected due to low attendance!", "error");
+                } else if (riskLevel === "Medium Risk") {
+                    showNotification("Warning: Your risk level is now Medium. Stay consistent!", "warning");
+                } else {
+                    showNotification("Status Check: Risk level updated successfully.", "success");
+                }
             } else {
-                showNotification("Status Check: Risk level updated successfully.", "success");
+                console.error("Server update failed: ", data.error);
             }
-        } else {
-            console.error("Server update failed: ", data.error);
+        } catch (error) {
+            console.error("Error connecting to backend:", error);
         }
-    } catch (error) {
-        console.error("Error connecting to backend:", error);
-    }
-};
+    };
+    
     const openDigitalID = () => {
         setIsDigitalIdModalOpen(true);
         const navbar = document.querySelector('.navbar-container');
@@ -667,9 +713,11 @@ export default function StudentDashboard() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button className="student-notification-button">
+                        <button className="student-notification-button" onClick={openMessagesModal}>
                             <Bell size={20} />
-                            <span className="student-notification-badge">0</span>
+                            {unreadMessageCount > 0 && (
+                                <span className="student-notification-badge">{unreadMessageCount}</span>
+                            )}
                         </button>
                     </div>
                 </header>
@@ -1451,6 +1499,97 @@ export default function StudentDashboard() {
                                     <p className="student-id-issue-date">Issued: March 2026</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Messages Modal */}
+            {isMessagesModalOpen && (
+                <div className="student-modal-overlay" onClick={() => setIsMessagesModalOpen(false)}>
+                    <div className="student-modal-container messages-modal" onClick={e => e.stopPropagation()}>
+                        <div className="student-modal-header">
+                            <h2>
+                                <Inbox size={20} style={{ marginRight: '10px' }} />
+                                Messages from Admin
+                            </h2>
+                            <button className="student-close-modal-button" onClick={() => setIsMessagesModalOpen(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="student-messages-list">
+                            {studentMessages.length === 0 ? (
+                                <p className="student-no-data">No messages yet</p>
+                            ) : (
+                                studentMessages.map(msg => (
+                                    <div 
+                                        key={msg.id} 
+                                        className={`student-message-item ${!msg.read ? 'unread' : ''}`}
+                                        onClick={() => {
+                                            if (!msg.read) markMessageAsRead(msg.id);
+                                            setSelectedMessage(msg);
+                                        }}
+                                    >
+                                        <div className="student-message-avatar">
+                                            {msg.fromName?.charAt(0).toUpperCase() || 'A'}
+                                        </div>
+                                        <div className="student-message-content">
+                                            <div className="student-message-header">
+                                                <span className="student-message-sender">Admin</span>
+                                                <span className="student-message-date">
+                                                    {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                                </span>
+                                            </div>
+                                            {msg.subject && <span className="student-message-subject">{msg.subject}</span>}
+                                            <p className="student-message-text">{msg.message.length > 100 ? msg.message.substring(0, 100) + '...' : msg.message}</p>
+                                        </div>
+                                        {!msg.read && <div className="student-unread-dot"></div>}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        
+                        <div className="student-modal-actions">
+                            <button className="student-cancel-button" onClick={() => setIsMessagesModalOpen(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Message Detail Modal */}
+            {selectedMessage && (
+                <div className="student-modal-overlay" onClick={() => setSelectedMessage(null)}>
+                    <div className="student-modal-container message-detail-modal" onClick={e => e.stopPropagation()}>
+                        <div className="student-modal-header">
+                            <h2>Message Details</h2>
+                            <button className="student-close-modal-button" onClick={() => setSelectedMessage(null)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="student-message-detail">
+                            <div className="student-message-detail-header">
+                                <div className="student-message-detail-sender">
+                                    <strong>From:</strong> Admin ({selectedMessage.fromName || 'System'})
+                                </div>
+                                <div className="student-message-detail-date">
+                                    <strong>Date:</strong> {selectedMessage.createdAt?.toDate ? new Date(selectedMessage.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                </div>
+                            </div>
+                            {selectedMessage.subject && (
+                                <div className="student-message-detail-subject">
+                                    <strong>Subject:</strong> {selectedMessage.subject}
+                                </div>
+                            )}
+                            <div className="student-message-detail-body">
+                                <strong>Message:</strong>
+                                <p>{selectedMessage.message}</p>
+                            </div>
+                        </div>
+                        
+                        <div className="student-modal-actions">
+                            <button className="student-submit-button" onClick={() => setSelectedMessage(null)}>Close</button>
                         </div>
                     </div>
                 </div>

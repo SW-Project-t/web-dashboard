@@ -1986,12 +1986,12 @@
 .student-cancel-button {
     flex: 1;
     padding: 14px;
-    background: #edf2f7;
+    background: #4a90e2;
     border: none;
     border-radius: 16px;
     font-weight: 700;
     font-size: 15px;
-    color: #718096;
+    color: #fff;
     cursor: pointer;
     transition: all 0.3s;
 }
@@ -2379,8 +2379,6 @@
     background: #e6f0fa;
     transform: translateY(-2px);
 }
-
-/* Print Styles */
 @media print {
     .student-sidebar-wrapper,
     .student-content-header,
@@ -2398,4 +2396,188 @@
         box-shadow: none;
         border: 2px solid #4a90e2;
     }
+}
+.messages-modal,
+.message-detail-modal {
+    max-width: 550px;
+}
+
+.student-messages-list {
+    max-height: 500px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.student-messages-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.student-messages-list::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.student-messages-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #7ba8e0, #4a90e2);
+    border-radius: 10px;
+}
+
+.student-message-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    background: #f8fafd;
+    border-radius: 16px;
+    transition: all 0.3s;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    position: relative;
+}
+
+.student-message-item:hover {
+    transform: translateX(5px);
+    background: white;
+    border-color: #4a90e2;
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.1);
+}
+
+.student-message-item.unread {
+    background: linear-gradient(135deg, #e6f0fa, #ffffff);
+    border-left: 3px solid #4a90e2;
+}
+
+.student-message-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4a90e2, #2b6cb0);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.student-message-content {
+    flex: 1;
+}
+
+.student-message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.student-message-sender {
+    font-weight: 800;
+    color: #2d3748;
+    font-size: 15px;
+}
+
+.student-message-date {
+    font-size: 11px;
+    color: #a0aec0;
+}
+
+.student-message-subject {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4a90e2;
+    background: #e6f0fa;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+}
+
+.student-message-text {
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.student-unread-dot {
+    width: 10px;
+    height: 10px;
+    background: #4a90e2;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 15px;
+    animation: studentPulse 1.5s infinite;
+}
+.student-message-detail {
+    padding: 20px;
+    background: #f8fafd;
+    border-radius: 16px;
+    margin-bottom: 20px;
+}
+
+.student-message-detail-header {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 15px;
+}
+
+.student-message-detail-sender,
+.student-message-detail-date {
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.student-message-detail-subject {
+    padding: 10px;
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    border-left: 3px solid #4a90e2;
+    color: #000;
+}
+
+.student-message-detail-body {
+    font-size: 15px;
+    color: #2d3748;
+    line-height: 1.6;
+}
+
+.student-message-detail-body p {
+    margin-top: 10px;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.student-notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 20px;
+    height: 20px;
+    background: #ef4444;
+    color: white;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid white;
+    animation: studentBlink 1s infinite;
 }

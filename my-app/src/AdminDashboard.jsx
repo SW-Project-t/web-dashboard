@@ -5,10 +5,10 @@ import {
     Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
     Download, Shield, Building, X, Menu, Mail, Phone, Calendar,
     BookMarked, Clock, Hash, DoorOpen, UserCheck, GraduationCap,
-    Star
+    Star, CheckCircle, Send, MessageSquare, Inbox
 } from 'lucide-react';
 import axios from 'axios';
-import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc, addDoc, orderBy, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, db } from './firebase'; 
 import './AdminDashboard.css';
@@ -23,16 +23,23 @@ const AdminDashboard = () => {
     const [departments, setDepartments] = useState([]);
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [searchQuery, setSearchQuery] = useState('');
+    const [messages, setMessages] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const [adminData, setAdminData] = useState({ name: 'System Admin', code: 'ADM-001' });
     const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
 
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
     const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
+    const [isDigitalIdModalOpen, setIsDigitalIdModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [messageText, setMessageText] = useState('');
+    const [messageSubject, setMessageSubject] = useState('');
 
     const [newUserData, setNewUserData] = useState({
         fullName: '', email: '', password: '', role: '',
@@ -49,6 +56,7 @@ const AdminDashboard = () => {
         currentPassword: '', newPassword: '', confirmPassword: ''
     });
 
+    // Load users
     useEffect(() => {
         const q = query(collection(db, "users"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -69,6 +77,7 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, []);
 
+    // Load courses
     useEffect(() => {
         const q = query(collection(db, "courses"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -77,6 +86,27 @@ const AdminDashboard = () => {
                 coursesArray.push({ id: doc.id, ...doc.data() });
             });
             setCourses(coursesArray);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Load messages for admin
+    useEffect(() => {
+        const messagesRef = collection(db, "messages");
+        const q = query(messagesRef, orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const messagesArray = [];
+            let unread = 0;
+            querySnapshot.forEach((doc) => {
+                const messageData = { id: doc.id, ...doc.data() };
+                messagesArray.push(messageData);
+                // Count unread messages for admin (where admin hasn't read or is new)
+                if (messageData.to === 'admin' && !messageData.adminRead) {
+                    unread++;
+                }
+            });
+            setMessages(messagesArray);
+            setUnreadCount(unread);
         });
         return () => unsubscribe();
     }, []);
@@ -122,6 +152,8 @@ const AdminDashboard = () => {
             c.courseId?.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [courses, searchQuery]);
+
+    const studentUsers = users.filter(u => u.role === 'student');
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -194,7 +226,6 @@ const AdminDashboard = () => {
         }
     };
 
-    //abdo
     const handleAddCourseSubmit = async (e) => {
         e.preventDefault();
         const isFormValid = Object.values(newCourseData).every(value => value.trim() !== "");
@@ -307,6 +338,49 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleSendMessage = async () => {
+        if (!selectedStudent || !messageText.trim()) {
+            alert("Please select a student and enter a message");
+            return;
+        }
+
+        try {
+            const messageData = {
+                from: 'admin',
+                fromId: auth.currentUser?.uid,
+                fromName: adminData.name,
+                to: 'student',
+                toId: selectedStudent.id,
+                toName: selectedStudent.fullName,
+                subject: messageSubject.trim() || 'No Subject',
+                message: messageText.trim(),
+                createdAt: serverTimestamp(),
+                read: false,
+                adminRead: true // Admin has read it since they sent it
+            };
+
+            await addDoc(collection(db, "messages"), messageData);
+            
+            alert("Message sent successfully!");
+            setIsMessageModalOpen(false);
+            setSelectedStudent(null);
+            setMessageText('');
+            setMessageSubject('');
+        } catch (error) {
+            console.error("Error sending message:", error);
+            alert("Failed to send message");
+        }
+    };
+
+    const markMessageAsRead = async (messageId) => {
+        try {
+            const messageRef = doc(db, "messages", messageId);
+            await updateDoc(messageRef, { adminRead: true });
+        } catch (error) {
+            console.error("Error marking message as read:", error);
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         setTimeout(() => { navigate('/'); }, 1000);
@@ -329,6 +403,9 @@ const AdminDashboard = () => {
         return '#ef4444';
     };
 
+    const adminMessages = messages.filter(m => m.to === 'admin');
+    const unreadAdminMessages = adminMessages.filter(m => !m.adminRead);
+
     return (
         <div className="dashboard-container">
             
@@ -347,6 +424,15 @@ const AdminDashboard = () => {
                     <input type="file" id="admin-profile-upload" style={{ display: 'none' }} accept="image/*" onChange={handleImageUpload} />
                     <h3 className="profile-name">{adminData.name}</h3>
                     <p className="profile-id">ID: {adminData.code}</p>
+                    
+                    <button 
+                        className="digital-id-button"
+                        onClick={() => setIsDigitalIdModalOpen(true)}
+                    >
+                        <Shield size={16} />
+                        <span>Digital ID</span>
+                    </button>
+                    
                     {adminProfileImage && (
                         <button className="remove-photo-button" onClick={removeProfileImage}>Remove Photo</button>
                     )}
@@ -364,6 +450,13 @@ const AdminDashboard = () => {
                     <button className={`nav-button ${activeTab === 'Courses' ? 'active' : ''}`} onClick={() => setActiveTab('Courses')}>
                         <BookOpen size={20} />
                         <span>Courses</span>
+                    </button>
+                    <button className={`nav-button ${activeTab === 'Messages' ? 'active' : ''}`} onClick={() => setActiveTab('Messages')}>
+                        <MessageSquare size={20} />
+                        <span>Messages</span>
+                        {unreadCount > 0 && (
+                            <span className="message-badge">{unreadCount}</span>
+                        )}
                     </button>
                     <button className={`nav-button ${activeTab === 'Analytics' ? 'active' : ''}`} onClick={() => setActiveTab('Analytics')}>
                         <TrendingUp size={20} />
@@ -409,9 +502,11 @@ const AdminDashboard = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button className="notification-button">
+                        <button className="notification-button" onClick={() => setActiveTab('Messages')}>
                             <Bell size={20} />
-                            <span className="notification-badge"></span>
+                            {unreadCount > 0 && (
+                                <span className="notification-badge"></span>
+                            )}
                         </button>
                     </div>
                 </header>
@@ -428,9 +523,9 @@ const AdminDashboard = () => {
                                     <Users size={28} />
                                     <span>New User</span>
                                 </div>
-                                <div className="action-card-item card-yellow" onClick={() => setActiveTab('Analytics')}>
-                                    <Download size={28} />
-                                    <span>Reports</span>
+                                <div className="action-card-item card-yellow" onClick={() => setActiveTab('Messages')}>
+                                    <Send size={28} />
+                                    <span>Send Message</span>
                                 </div>
                                 <div className="action-card-item card-red" onClick={() => setActiveTab('Settings')}>
                                     <Shield size={28} />
@@ -532,6 +627,14 @@ const AdminDashboard = () => {
                                                             <button className="icon-button delete-button" onClick={() => handleDelete('users', u.id)} title="Delete">
                                                                 <Trash2 size={16}/>
                                                             </button>
+                                                            {u.role === 'student' && (
+                                                                <button className="icon-button message-button" onClick={() => {
+                                                                    setSelectedStudent(u);
+                                                                    setIsMessageModalOpen(true);
+                                                                }} title="Send Message">
+                                                                    <Mail size={16}/>
+                                                                </button>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -573,6 +676,7 @@ const AdminDashboard = () => {
                                                             </button>
                                                         </td>
                                                     </tr>
+                                                   
                                                 ))}
                                             </tbody>
                                         </table>
@@ -643,6 +747,14 @@ const AdminDashboard = () => {
                                                     <button className="icon-button delete-button" onClick={() => handleDelete('users', u.id)} title="Delete">
                                                         <Trash2 size={16}/>
                                                     </button>
+                                                    {u.role === 'student' && (
+                                                        <button className="icon-button message-button" onClick={() => {
+                                                            setSelectedStudent(u);
+                                                            setIsMessageModalOpen(true);
+                                                        }} title="Send Message">
+                                                            <Mail size={16}/>
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -702,6 +814,100 @@ const AdminDashboard = () => {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Messages' && (
+                        <div className="messages-container">
+                            <div className="messages-header">
+                                <div className="flex-align-center">
+                                    <MessageSquare size={24} className="text-primary margin-right-2" />
+                                    <h3>Message Center</h3>
+                                </div>
+                                <button className="primary-action-button" onClick={() => {
+                                    setSelectedStudent(null);
+                                    setIsMessageModalOpen(true);
+                                }}>
+                                    <Send size={18} /> New Message
+                                </button>
+                            </div>
+
+                            <div className="messages-grid">
+                                {/* Compose Section */}
+                                <div className="compose-message-card">
+                                    <h4>Quick Message</h4>
+                                    <select 
+                                        className="form-input"
+                                        value={selectedStudent?.id || ''}
+                                        onChange={(e) => {
+                                            const student = studentUsers.find(s => s.id === e.target.value);
+                                            setSelectedStudent(student);
+                                        }}
+                                    >
+                                        <option value="">Select Student</option>
+                                        {studentUsers.map(s => (
+                                            <option key={s.id} value={s.id}>{s.fullName} ({s.code})</option>
+                                        ))}
+                                    </select>
+                                    <input 
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="Subject (optional)"
+                                        value={messageSubject}
+                                        onChange={(e) => setMessageSubject(e.target.value)}
+                                    />
+                                    <textarea
+                                        className="form-input message-textarea"
+                                        placeholder="Type your message here..."
+                                        value={messageText}
+                                        onChange={(e) => setMessageText(e.target.value)}
+                                        rows="4"
+                                    />
+                                    <button 
+                                        className="submit-button send-message-btn"
+                                        onClick={handleSendMessage}
+                                        disabled={!selectedStudent || !messageText.trim()}
+                                    >
+                                        <Send size={16} /> Send Message
+                                    </button>
+                                </div>
+
+                                {/* Inbox Section */}
+                                <div className="inbox-card">
+                                    <h4>
+                                        <Inbox size={18} />
+                                        Inbox ({unreadAdminMessages.length} unread)
+                                    </h4>
+                                    <div className="messages-list">
+                                        {adminMessages.length === 0 ? (
+                                            <p className="no-data-message">No messages yet</p>
+                                        ) : (
+                                            adminMessages.map(msg => (
+                                                <div 
+                                                    key={msg.id} 
+                                                    className={`message-item ${!msg.adminRead ? 'unread' : ''}`}
+                                                    onClick={() => markMessageAsRead(msg.id)}
+                                                >
+                                                    <div className="message-avatar">
+                                                        {msg.fromName?.charAt(0).toUpperCase() || 'S'}
+                                                    </div>
+                                                    <div className="message-content">
+                                                        <div className="message-header">
+                                                            <span className="message-sender">{msg.fromName || 'Student'}</span>
+                                                            <span className="message-date">
+                                                                {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                                            </span>
+                                                        </div>
+                                                        {msg.subject && <span className="message-subject">{msg.subject}</span>}
+                                                        <p className="message-text">{msg.message}</p>
+                                                    </div>
+                                                    {!msg.adminRead && <div className="unread-dot"></div>}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -820,6 +1026,82 @@ const AdminDashboard = () => {
                                 <button type="submit" className="submit-button">Add User</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Message Modal */}
+            {isMessageModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-container modal-small">
+                        <div className="modal-header">
+                            <div className="flex-align-center">
+                                <h2>Send Message</h2>
+                                <Mail size={24} className="text-primary margin-left-2" />
+                            </div>
+                            <button className="close-modal-button" onClick={() => {
+                                setIsMessageModalOpen(false);
+                                setSelectedStudent(null);
+                                setMessageText('');
+                                setMessageSubject('');
+                            }}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="modal-form">
+                            <div className="form-group">
+                                <label className="view-label">To:</label>
+                                <select 
+                                    className="form-input"
+                                    value={selectedStudent?.id || ''}
+                                    onChange={(e) => {
+                                        const student = studentUsers.find(s => s.id === e.target.value);
+                                        setSelectedStudent(student);
+                                    }}
+                                >
+                                    <option value="">Select Student</option>
+                                    {studentUsers.map(s => (
+                                        <option key={s.id} value={s.id}>{s.fullName} ({s.code})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label className="view-label">Subject (Optional):</label>
+                                <input 
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Enter subject"
+                                    value={messageSubject}
+                                    onChange={(e) => setMessageSubject(e.target.value)}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="view-label">Message:</label>
+                                <textarea
+                                    className="form-input message-textarea"
+                                    placeholder="Type your message here..."
+                                    value={messageText}
+                                    onChange={(e) => setMessageText(e.target.value)}
+                                    rows="5"
+                                />
+                            </div>
+                            <div className="modal-action-buttons">
+                                <button type="button" className="cancel-button" onClick={() => {
+                                    setIsMessageModalOpen(false);
+                                    setSelectedStudent(null);
+                                    setMessageText('');
+                                    setMessageSubject('');
+                                }}>Cancel</button>
+                                <button 
+                                    type="button" 
+                                    className="submit-button"
+                                    onClick={handleSendMessage}
+                                    disabled={!selectedStudent || !messageText.trim()}
+                                >
+                                    <Send size={16} /> Send
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -1070,6 +1352,107 @@ const AdminDashboard = () => {
                                 <button type="submit" className="submit-button">Update</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Digital ID Modal */}
+            {isDigitalIdModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsDigitalIdModalOpen(false)}>
+                    <div className="modal-container digital-id-modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Admin Digital ID Card</h2>
+                            <button className="close-modal-button" onClick={() => setIsDigitalIdModalOpen(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="digital-id-full">
+                            <div className="id-card-header">
+                                <div className="id-school">
+                                    <Building size={24} />
+                                    <div>
+                                        <h3>YallaClass University</h3>
+                                        <p>Administrator Identification Card</p>
+                                    </div>
+                                </div>
+                                <Shield size={32} className="id-shield" />
+                            </div>
+
+                            <div className="id-card-body">
+                                <div className="id-photo-section">
+                                    {adminProfileImage ? (
+                                        <img src={adminProfileImage} alt="Admin" className="id-photo" />
+                                    ) : (
+                                        <div className="id-photo-placeholder">
+                                            {adminData.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="id-info-section">
+                                    <div className="id-field">
+                                        <span className="id-field-label">Admin Name</span>
+                                        <span className="id-field-value">{adminData.name}</span>
+                                    </div>
+                                    <div className="id-field">
+                                        <span className="id-field-label">Admin ID</span>
+                                        <span className="id-field-value">{adminData.code}</span>
+                                    </div>
+                                    <div className="id-field">
+                                        <span className="id-field-label">Department</span>
+                                        <span className="id-field-value">System Administration</span>
+                                    </div>
+                                    <div className="id-field">
+                                        <span className="id-field-label">Email</span>
+                                        <span className="id-field-value">{auth.currentUser?.email || 'admin@yallaclass.com'}</span>
+                                    </div>
+                                    <div className="id-field">
+                                        <span className="id-field-label">Role</span>
+                                        <span className="id-field-value role-admin">🔐 System Administrator</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="id-card-footer">
+                                <div className="id-qr-large">
+                                    <img 
+                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                                            JSON.stringify({
+                                                id: adminData.code,
+                                                name: adminData.name,
+                                                email: auth.currentUser?.email,
+                                                department: 'System Administration',
+                                                type: 'admin',
+                                                university: 'YallaClass',
+                                                role: 'Administrator'
+                                            })
+                                        )}`}
+                                        alt="Admin QR Code"
+                                        className="qr-image-large"
+                                    />
+                                </div>
+                                <div className="id-validity">
+                                    <div className="id-validity-badge">
+                                        <CheckCircle size={16} />
+                                        <span>ADMIN ID 2026</span>
+                                    </div>
+                                    <p className="id-scan-text">Scan QR code to verify administrator identity</p>
+                                    <p className="id-issue-date">Issued: March 2026 | Valid through: 2028</p>
+                                </div>
+                            </div>
+
+                            <div className="id-actions">
+                                <button className="id-download-btn" onClick={() => alert('Downloading ID Card...')}>
+                                    <Download size={18} />
+                                    Download ID
+                                </button>
+                                <button className="id-print-btn" onClick={() => window.print()}>
+                                    <Eye size={18} />
+                                    Print Card
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

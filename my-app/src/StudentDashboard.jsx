@@ -6,7 +6,7 @@ import {
     Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
     Download, Shield, Building, X, Menu, User, Calendar,
     Clock, MapPin, CheckCircle, AlertCircle, AlertTriangle,
-    BookPlus, Inbox, MessageSquare
+    BookPlus, GraduationCap, FileText, Video, MessageSquare, Award, Zap
 } from 'lucide-react';
 
 import { auth, db } from './firebase';
@@ -111,6 +111,7 @@ export default function StudentDashboard() {
             document.body.classList.remove('digital-id-open');
         };
     }, [isDigitalIdModalOpen]);
+
     useEffect(() => {
         if (!auth.currentUser) return;
         
@@ -677,6 +678,13 @@ export default function StudentDashboard() {
                         <User size={20} />
                         <span>Profile</span>
                     </button>
+                    <button 
+                        className={`student-nav-button ${activeTab === 'LMS' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('LMS')}
+                    >
+                        <GraduationCap size={20} />
+                        <span>L.M.S.</span>
+                    </button>
                 </nav>
 
                 <div className="student-sidebar-footer">
@@ -1174,6 +1182,128 @@ export default function StudentDashboard() {
                             </div>
                         </div>
                     )}
+                    {activeTab === 'LMS' && (
+                        <div className="student-lms-container">
+                            <div className="student-lms-header">
+                                <div className="student-lms-title">
+                                    <GraduationCap size={40} />
+                                    <div>
+                                        <h2>Learning Management System</h2>
+                                        <p>Access your course materials, assignments, and learning resources</p>
+                                    </div>
+                                </div>
+                                <button className="student-primary-button" onClick={() => showNotification('LMS features coming soon!', 'info')}>
+                                    <BookOpen size={18} /> Explore
+                                </button>
+                            </div>
+
+                            <div className="student-lms-stats">
+                                <div className="student-lms-stat-card">
+                                    <div className="student-lms-stat-icon">
+                                        <BookOpen size={24} />
+                                    </div>
+                                    <div className="student-lms-stat-value">{courses.length}</div>
+                                    <div className="student-lms-stat-label">Enrolled Courses</div>
+                                </div>
+                                <div className="student-lms-stat-card">
+                                    <div className="student-lms-stat-icon">
+                                        <FileText size={24} />
+                                    </div>
+                                    <div className="student-lms-stat-value">12</div>
+                                    <div className="student-lms-stat-label">Pending Assignments</div>
+                                </div>
+                                <div className="student-lms-stat-card">
+                                    <div className="student-lms-stat-icon">
+                                        <Video size={24} />
+                                    </div>
+                                    <div className="student-lms-stat-value">8</div>
+                                    <div className="student-lms-stat-label">Video Lectures</div>
+                                </div>
+                                <div className="student-lms-stat-card">
+                                    <div className="student-lms-stat-icon">
+                                        <Award size={24} />
+                                    </div>
+                                    <div className="student-lms-stat-value">85%</div>
+                                    <div className="student-lms-stat-label">Avg. Grade</div>
+                                </div>
+                            </div>
+
+                            <div className="student-lms-cards">
+                                <div className="student-lms-card" onClick={() => showNotification('Course Materials feature coming soon!', 'info')}>
+                                    <div className="student-lms-card-icon">
+                                        <Video size={28} />
+                                    </div>
+                                    <h3>Course Materials</h3>
+                                    <p>Access video lectures, slides, and reading materials for all your courses.</p>
+                                    <div className="student-lms-card-footer">
+                                        <span className="student-lms-card-count">24 Materials</span>
+                                        <span className="student-lms-card-link">View All →</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="student-lms-card" onClick={() => showNotification('Assignments feature coming soon!', 'info')}>
+                                    <div className="student-lms-card-icon">
+                                        <FileText size={28} />
+                                    </div>
+                                    <h3>Assignments</h3>
+                                    <p>Submit your homework, view deadlines, and track your grades.</p>
+                                    <div className="student-lms-card-footer">
+                                        <span className="student-lms-card-count">5 Pending</span>
+                                        <span className="student-lms-card-link">View All →</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="student-lms-card" onClick={() => showNotification('Quizzes feature coming soon!', 'info')}>
+                                    <div className="student-lms-card-icon">
+                                        <Award size={28} />
+                                    </div>
+                                    <h3>Quizzes & Exams</h3>
+                                    <p>Take online quizzes, view results, and prepare for upcoming exams.</p>
+                                    <div className="student-lms-card-footer">
+                                        <span className="student-lms-card-count">2 Upcoming</span>
+                                        <span className="student-lms-card-link">View All →</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="student-lms-card" onClick={() => showNotification('Discussions feature coming soon!', 'info')}>
+                                    <div className="student-lms-card-icon">
+                                        <MessageSquare size={28} />
+                                    </div>
+                                    <h3>Discussions</h3>
+                                    <p>Join class discussions, ask questions, and collaborate with classmates.</p>
+                                    <div className="student-lms-card-footer">
+                                        <span className="student-lms-card-count">8 New Posts</span>
+                                        <span className="student-lms-card-link">View All →</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="student-lms-features">
+                                <h3>
+                                    <Zap size={20} />
+                                    Quick Access
+                                </h3>
+                                <div className="student-lms-features-grid">
+                                    <div className="student-lms-feature-item" onClick={() => showNotification('Recent Lectures', 'info')}>
+                                        <Video size={18} />
+                                        <span>Recent Lectures</span>
+                                    </div>
+                                    <div className="student-lms-feature-item" onClick={() => showNotification('Upcoming Deadlines', 'info')}>
+                                        <Calendar size={18} />
+                                        <span>Deadlines</span>
+                                    </div>
+                                    <div className="student-lms-feature-item" onClick={() => showNotification('My Grades', 'info')}>
+                                        <Award size={18} />
+                                        <span>My Grades</span>
+                                    </div>
+                                    <div className="student-lms-feature-item" onClick={() => showNotification('Announcements', 'info')}>
+                                        <Bell size={18} />
+                                        <span>Announcements</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
 
@@ -1510,7 +1640,6 @@ export default function StudentDashboard() {
                     <div className="student-modal-container messages-modal" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">
                             <h2>
-                                <Inbox size={20} style={{ marginRight: '10px' }} />
                                 Messages from Admin
                             </h2>
                             <button className="student-close-modal-button" onClick={() => setIsMessagesModalOpen(false)}>

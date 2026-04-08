@@ -1666,3 +1666,211 @@ body {
 body.digital-id-open .navbar-container {
     display: none !important;
 }
+
+/* LMS Page Styles */
+.professor-lms-container {
+    background: white;
+    border-radius: 24px;
+    padding: 35px;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(123, 168, 224, 0.2);
+}
+
+.professor-lms-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.professor-lms-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.professor-lms-title h2 {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #2d3748, #1a202c);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 5px;
+}
+
+.professor-lms-title p {
+    color: #718096;
+    font-size: 14px;
+}
+
+.professor-lms-title svg {
+    color: #4a90e2;
+}
+
+.professor-lms-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 35px;
+}
+
+.professor-lms-stat-card {
+    background: linear-gradient(135deg, #f8fafd, #ffffff);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s;
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.professor-lms-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(74, 144, 226, 0.1);
+}
+
+.professor-lms-stat-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #7ba8e0, #4a90e2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    color: white;
+}
+
+.professor-lms-stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #2d3748;
+}
+
+.professor-lms-stat-label {
+    font-size: 14px;
+    color: #718096;
+    font-weight: 500;
+}
+
+.professor-lms-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.professor-lms-card {
+    background: #f8fafd;
+    border-radius: 20px;
+    padding: 25px;
+    transition: all 0.3s;
+    cursor: pointer;
+    border: 1px solid rgba(74, 144, 226, 0.1);
+}
+
+.professor-lms-card:hover {
+    transform: translateY(-5px);
+    border-color: #4a90e2;
+    box-shadow: 0 10px 25px rgba(74, 144, 226, 0.1);
+}
+
+.professor-lms-card-icon {
+    width: 55px;
+    height: 55px;
+    background: linear-gradient(135deg, #7ba8e0, #4a90e2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.professor-lms-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.professor-lms-card p {
+    color: #718096;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.professor-lms-features {
+    background: #f8fafd;
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.professor-lms-features h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.professor-lms-features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.professor-lms-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 12px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.professor-lms-feature-item:hover {
+    transform: translateX(5px);
+    background: #e6f0fa;
+}
+
+.professor-lms-feature-item svg {
+    color: #4a90e2;
+}
+
+.professor-lms-feature-item span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+@media (max-width: 1024px) {
+    .professor-lms-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .professor-lms-features-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .professor-lms-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .professor-lms-container {
+        padding: 20px;
+    }
+    
+    .professor-lms-features-grid {
+        grid-template-columns: 1fr;
+    }
+}

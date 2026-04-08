@@ -6,7 +6,8 @@ import {
     LogOut, Key, Plus, Edit, Trash2, Bell, Download,
     TrendingUp, Clock, CheckCircle, XCircle, AlertCircle,
     Menu, Search, ChevronRight, BarChart3, UserPlus,
-    X, Shield, Building, Eye
+    X, Shield, Building, Eye, GraduationCap, Video, 
+    FileText, MessageSquare, Award, Upload, Share2, Zap
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
@@ -498,11 +499,11 @@ useEffect(() => {
                         <span>Analytics</span>
                     </button>
                     <button 
-                        className={`professor-nav-button ${activeTab === 'Settings' ? 'active' : ''}`} 
-                        onClick={() => setActiveTab('Settings')}
+                        className={`professor-nav-button ${activeTab === 'LMS' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('LMS')}
                     >
-                        <Settings size={20} />
-                        <span>Settings</span>
+                        <GraduationCap size={20} />
+                        <span>L.M.S.</span>
                     </button>
                 </nav>
 
@@ -738,8 +739,109 @@ useEffect(() => {
                         </div>
                     )}
 
+                    {/* LMS Page */}
+                    {activeTab === 'LMS' && (
+                        <div className="professor-lms-container">
+                            <div className="professor-lms-header">
+                                <div className="professor-lms-title">
+                                    <GraduationCap size={40} />
+                                    <div>
+                                        <h2>Learning Management System</h2>
+                                        <p>Manage your courses, content, and student engagement</p>
+                                    </div>
+                                </div>
+                                <button className="professor-primary-button" onClick={() => showNotification('LMS features coming soon!', 'info')}>
+                                    <Zap size={18} /> Quick Access
+                                </button>
+                            </div>
+
+                            <div className="professor-lms-stats">
+                                <div className="professor-lms-stat-card">
+                                    <div className="professor-lms-stat-icon">
+                                        <BookOpen size={24} />
+                                    </div>
+                                    <div className="professor-lms-stat-value">{courses.length}</div>
+                                    <div className="professor-lms-stat-label">Active Courses</div>
+                                </div>
+                                <div className="professor-lms-stat-card">
+                                    <div className="professor-lms-stat-icon">
+                                        <FileText size={24} />
+                                    </div>
+                                    <div className="professor-lms-stat-value">24</div>
+                                    <div className="professor-lms-stat-label">Materials Uploaded</div>
+                                </div>
+                                <div className="professor-lms-stat-card">
+                                    <div className="professor-lms-stat-icon">
+                                        <Users size={24} />
+                                    </div>
+                                    <div className="professor-lms-stat-value">{totalStudents}</div>
+                                    <div className="professor-lms-stat-label">Enrolled Students</div>
+                                </div>
+                            </div>
+
+                            <div className="professor-lms-cards">
+                                <div className="professor-lms-card" onClick={() => showNotification('Course Content feature coming soon!', 'info')}>
+                                    <div className="professor-lms-card-icon">
+                                        <Video size={28} />
+                                    </div>
+                                    <h3>Course Content</h3>
+                                    <p>Upload and manage video lectures, presentations, and reading materials for your courses.</p>
+                                </div>
+                                
+                                <div className="professor-lms-card" onClick={() => showNotification('Assignments feature coming soon!', 'info')}>
+                                    <div className="professor-lms-card-icon">
+                                        <FileText size={28} />
+                                    </div>
+                                    <h3>Assignments</h3>
+                                    <p>Create, distribute, and grade assignments. Track student submissions and provide feedback.</p>
+                                </div>
+                                
+                                <div className="professor-lms-card" onClick={() => showNotification('Quizzes feature coming soon!', 'info')}>
+                                    <div className="professor-lms-card-icon">
+                                        <Award size={28} />
+                                    </div>
+                                    <h3>Quizzes & Assessments</h3>
+                                    <p>Create interactive quizzes, exams, and assessments with automatic grading.</p>
+                                </div>
+                                
+                                <div className="professor-lms-card" onClick={() => showNotification('Discussion feature coming soon!', 'info')}>
+                                    <div className="professor-lms-card-icon">
+                                        <MessageSquare size={28} />
+                                    </div>
+                                    <h3>Discussions</h3>
+                                    <p>Facilitate student discussions, Q&A forums, and collaborative learning.</p>
+                                </div>
+                            </div>
+
+                            <div className="professor-lms-features">
+                                <h3>
+                                    <Zap size={20} />
+                                    Quick Features
+                                </h3>
+                                <div className="professor-lms-features-grid">
+                                    <div className="professor-lms-feature-item" onClick={() => showNotification('Upload Materials', 'info')}>
+                                        <Upload size={18} />
+                                        <span>Upload Materials</span>
+                                    </div>
+                                    <div className="professor-lms-feature-item" onClick={() => showNotification('Share Content', 'info')}>
+                                        <Share2 size={18} />
+                                        <span>Share Content</span>
+                                    </div>
+                                    <div className="professor-lms-feature-item" onClick={() => showNotification('Virtual Classroom', 'info')}>
+                                        <Video size={18} />
+                                        <span>Virtual Classroom</span>
+                                    </div>
+                                    <div className="professor-lms-feature-item" onClick={() => showNotification('Grade Book', 'info')}>
+                                        <Award size={18} />
+                                        <span>Grade Book</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Under Development Pages */}
-                    {(activeTab === 'Students' || activeTab === 'Schedule' || activeTab === 'Analytics' || activeTab === 'Settings') && (
+                    {(activeTab === 'Students' || activeTab === 'Schedule' || activeTab === 'Analytics') && (
                         <div className="professor-under-development">
                             <Settings size={60} />
                             <h2>This page is currently under development</h2>

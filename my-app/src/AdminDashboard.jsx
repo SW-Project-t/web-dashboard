@@ -56,6 +56,37 @@ const AdminDashboard = () => {
         currentPassword: '', newPassword: '', confirmPassword: ''
     });
 
+    // إخفاء الناف بار عند فتح Digital ID Modal
+    useEffect(() => {
+        const navbar = document.querySelector('.navbar-container');
+        
+        if (isDigitalIdModalOpen) {
+            if (navbar) {
+                navbar.style.display = 'none';
+                navbar.classList.add('hidden');
+            }
+            document.body.style.overflow = 'hidden';
+            document.body.classList.add('digital-id-open');
+        } else {
+            if (navbar) {
+                navbar.style.display = 'flex';
+                navbar.classList.remove('hidden');
+            }
+            document.body.style.overflow = '';
+            document.body.classList.remove('digital-id-open');
+        }
+        
+        return () => {
+            const navbarCleanup = document.querySelector('.navbar-container');
+            if (navbarCleanup) {
+                navbarCleanup.style.display = 'flex';
+                navbarCleanup.classList.remove('hidden');
+            }
+            document.body.style.overflow = '';
+            document.body.classList.remove('digital-id-open');
+        };
+    }, [isDigitalIdModalOpen]);
+
     // Load users
     useEffect(() => {
         const q = query(collection(db, "users"));
@@ -100,7 +131,6 @@ const AdminDashboard = () => {
             querySnapshot.forEach((doc) => {
                 const messageData = { id: doc.id, ...doc.data() };
                 messagesArray.push(messageData);
-                // Count unread messages for admin (where admin hasn't read or is new)
                 if (messageData.to === 'admin' && !messageData.adminRead) {
                     unread++;
                 }
@@ -356,7 +386,7 @@ const AdminDashboard = () => {
                 message: messageText.trim(),
                 createdAt: serverTimestamp(),
                 read: false,
-                adminRead: true // Admin has read it since they sent it
+                adminRead: true
             };
 
             await addDoc(collection(db, "messages"), messageData);
@@ -408,7 +438,6 @@ const AdminDashboard = () => {
 
     return (
         <div className="dashboard-container">
-            
             <aside className={`sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
                 <div className="profile-section">
                     <div className="profile-image-wrapper" onClick={() => document.getElementById('admin-profile-upload').click()}>
@@ -457,14 +486,6 @@ const AdminDashboard = () => {
                         {unreadCount > 0 && (
                             <span className="message-badge">{unreadCount}</span>
                         )}
-                    </button>
-                    <button className={`nav-button ${activeTab === 'Analytics' ? 'active' : ''}`} onClick={() => setActiveTab('Analytics')}>
-                        <TrendingUp size={20} />
-                        <span>Analytics</span>
-                    </button>
-                    <button className={`nav-button ${activeTab === 'Settings' ? 'active' : ''}`} onClick={() => setActiveTab('Settings')}>
-                        <Settings size={20} />
-                        <span>Settings</span>
                     </button>
                 </nav>
 
@@ -526,10 +547,6 @@ const AdminDashboard = () => {
                                 <div className="action-card-item card-yellow" onClick={() => setActiveTab('Messages')}>
                                     <Send size={28} />
                                     <span>Send Message</span>
-                                </div>
-                                <div className="action-card-item card-red" onClick={() => setActiveTab('Settings')}>
-                                    <Shield size={28} />
-                                    <span>Settings</span>
                                 </div>
                             </div>
 
@@ -676,7 +693,6 @@ const AdminDashboard = () => {
                                                             </button>
                                                         </td>
                                                     </tr>
-                                                   
                                                 ))}
                                             </tbody>
                                         </table>
@@ -834,7 +850,6 @@ const AdminDashboard = () => {
                             </div>
 
                             <div className="messages-grid">
-                                {/* Compose Section */}
                                 <div className="compose-message-card">
                                     <h4>Quick Message</h4>
                                     <select 
@@ -873,7 +888,6 @@ const AdminDashboard = () => {
                                     </button>
                                 </div>
 
-                                {/* Inbox Section */}
                                 <div className="inbox-card">
                                     <h4>
                                         <Inbox size={18} />
@@ -911,17 +925,10 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     )}
-
-                    {(activeTab === 'Analytics' || activeTab === 'Settings') && (
-                        <div className="under-development-page">
-                            <Settings size={60} className="text-muted" />
-                            <h2>This page is currently under development</h2>
-                        </div>
-                    )}
                 </div>
             </main>
 
-            {/* Add Course Modal */}
+            {/* باقي المودالات */}
             {isAddCourseModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container">
@@ -961,7 +968,6 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Add User Modal */}
             {isAddUserModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container">
@@ -1030,7 +1036,6 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Message Modal */}
             {isMessageModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container modal-small">
@@ -1106,7 +1111,6 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* View Modal */}
             {isViewModalOpen && selectedItem && (
                 <div className="modal-overlay">
                     <div className="modal-container view-modal-container">
@@ -1132,45 +1136,31 @@ const AdminDashboard = () => {
                                 <div className="view-badge course">Course</div>
                                 <div className="view-grid">
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <BookMarked size={16} /> Course Name
-                                        </div>
+                                        <div className="view-label"><BookMarked size={16} /> Course Name</div>
                                         <div className="view-value">{selectedItem.courseName}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <Hash size={16} /> Course Code
-                                        </div>
+                                        <div className="view-label"><Hash size={16} /> Course Code</div>
                                         <div className="view-value id-value">{selectedItem.courseId}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <UserCheck size={16} /> Instructor
-                                        </div>
+                                        <div className="view-label"><UserCheck size={16} /> Instructor</div>
                                         <div className="view-value">{selectedItem.instructorName}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <Calendar size={16} /> Day
-                                        </div>
+                                        <div className="view-label"><Calendar size={16} /> Day</div>
                                         <div className="view-value">{selectedItem.SelectDays}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <Clock size={16} /> Time
-                                        </div>
+                                        <div className="view-label"><Clock size={16} /> Time</div>
                                         <div className="view-value">{selectedItem.Time}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <DoorOpen size={16} /> Room
-                                        </div>
+                                        <div className="view-label"><DoorOpen size={16} /> Room</div>
                                         <div className="view-value">{selectedItem.RoomNumber}</div>
                                     </div>
                                     <div className="view-item view-item-full-width">
-                                        <div className="view-label">
-                                            <Users size={16} /> Capacity
-                                        </div>
+                                        <div className="view-label"><Users size={16} /> Capacity</div>
                                         <div className="view-value">{selectedItem.capacity} Students</div>
                                     </div>
                                 </div>
@@ -1182,46 +1172,32 @@ const AdminDashboard = () => {
                                 </div>
                                 <div className="view-grid">
                                     <div className="view-item view-item-full-width">
-                                        <div className="view-label">
-                                            <Users size={16} /> Full Name
-                                        </div>
+                                        <div className="view-label"><Users size={16} /> Full Name</div>
                                         <div className="view-value">{selectedItem.fullName}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <Mail size={16} /> Email
-                                        </div>
+                                        <div className="view-label"><Mail size={16} /> Email</div>
                                         <div className="view-value">{selectedItem.email}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <Hash size={16} /> ID
-                                        </div>
+                                        <div className="view-label"><Hash size={16} /> ID</div>
                                         <div className="view-value id-value">{selectedItem.code}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <Building size={16} /> Department
-                                        </div>
+                                        <div className="view-label"><Building size={16} /> Department</div>
                                         <div className="view-value">{selectedItem.department || 'General'}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <Phone size={16} /> Phone
-                                        </div>
+                                        <div className="view-label"><Phone size={16} /> Phone</div>
                                         <div className="view-value">{selectedItem.phoneNumber}</div>
                                     </div>
                                     <div className="view-item">
-                                        <div className="view-label">
-                                            <Calendar size={16} /> Academic Year
-                                        </div>
+                                        <div className="view-label"><Calendar size={16} /> Academic Year</div>
                                         <div className="view-value">{selectedItem.academicYear || '2024'}</div>
                                     </div>
                                     {selectedItem.role === 'student' && (
                                         <div className="view-item">
-                                            <div className="view-label">
-                                                <Star size={16} /> GPA
-                                            </div>
+                                            <div className="view-label"><Star size={16} /> GPA</div>
                                             <div className="view-value">
                                                 <span style={{ color: getGpaColor(selectedItem.gpa), fontWeight: 'bold' }}>
                                                     {selectedItem.gpa || 'Not set'}
@@ -1244,7 +1220,6 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Edit Modal */}
             {isEditModalOpen && selectedItem && (
                 <div className="modal-overlay">
                     <div className="modal-container modal-small">
@@ -1276,9 +1251,7 @@ const AdminDashboard = () => {
                             </div>
                             {!selectedItem.courseName && selectedItem.role === 'student' && (
                                 <div className="form-group-single">
-                                    <label className="view-label">
-                                        <Star size={16} /> GPA
-                                    </label>
+                                    <label className="view-label"><Star size={16} /> GPA</label>
                                     <input 
                                         type="number" 
                                         step="0.01" 
@@ -1306,7 +1279,6 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Password Modal */}
             {isPasswordModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container modal-small">
@@ -1355,102 +1327,76 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
-
-            {/* Digital ID Modal */}
+            {/* Digital ID Modal*/}
             {isDigitalIdModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsDigitalIdModalOpen(false)}>
                     <div className="modal-container digital-id-modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2>Admin Digital ID Card</h2>
-                            <button className="close-modal-button" onClick={() => setIsDigitalIdModalOpen(false)}>
-                                <X size={24} />
-                            </button>
-                        </div>
-                        
-                        <div className="digital-id-full">
-                            <div className="id-card-header">
-                                <div className="id-school">
-                                    <Building size={24} />
-                                    <div>
-                                        <h3>YallaClass University</h3>
-                                        <p>Administrator Identification Card</p>
+                        <div className="digital-id-full new-design">
+                            <div className="id-card-header new-header">
+                                <div className="university-badge">
+                                    <div className="university-icon">
+                                        <GraduationCap size={28} />
+                                    </div>
+                                    <div className="university-text">
+                                        <h3>Cairo University</h3>
+                                        <p>Student Identification Card</p>
                                     </div>
                                 </div>
-                                <Shield size={32} className="id-shield" />
                             </div>
 
-                            <div className="id-card-body">
-                                <div className="id-photo-section">
-                                    {adminProfileImage ? (
-                                        <img src={adminProfileImage} alt="Admin" className="id-photo" />
-                                    ) : (
-                                        <div className="id-photo-placeholder">
-                                            {adminData.name.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div className="id-info-section">
+                            <div className="id-card-body new-body">
+                                <div className="id-info-section new-info">
                                     <div className="id-field">
-                                        <span className="id-field-label">Admin Name</span>
+                                        <span className="id-field-label">STUDENT NAME</span>
                                         <span className="id-field-value">{adminData.name}</span>
                                     </div>
                                     <div className="id-field">
-                                        <span className="id-field-label">Admin ID</span>
-                                        <span className="id-field-value">{adminData.code}</span>
+                                        <span className="id-field-label">STUDENT ID</span>
+                                        <span className="id-field-value id-value">{adminData.code}</span>
                                     </div>
                                     <div className="id-field">
-                                        <span className="id-field-label">Department</span>
-                                        <span className="id-field-value">System Administration</span>
+                                        <span className="id-field-label">DEPARTMENT</span>
+                                        <span className="id-field-value">CS</span>
                                     </div>
                                     <div className="id-field">
-                                        <span className="id-field-label">Email</span>
-                                        <span className="id-field-value">{auth.currentUser?.email || 'admin@yallaclass.com'}</span>
+                                        <span className="id-field-label">ACADEMIC YEAR</span>
+                                        <span className="id-field-value">2024</span>
                                     </div>
                                     <div className="id-field">
-                                        <span className="id-field-label">Role</span>
-                                        <span className="id-field-value role-admin">🔐 System Administrator</span>
+                                        <span className="id-field-label">EMAIL</span>
+                                        <span className="id-field-value">{auth.currentUser?.email || 'student.yallaclass@gmail.com'}</span>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="id-card-footer">
-                                <div className="id-qr-large">
-                                    <img 
-                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
-                                            JSON.stringify({
-                                                id: adminData.code,
-                                                name: adminData.name,
-                                                email: auth.currentUser?.email,
-                                                department: 'System Administration',
-                                                type: 'admin',
-                                                university: 'YallaClass',
-                                                role: 'Administrator'
-                                            })
-                                        )}`}
-                                        alt="Admin QR Code"
-                                        className="qr-image-large"
-                                    />
-                                </div>
-                                <div className="id-validity">
-                                    <div className="id-validity-badge">
-                                        <CheckCircle size={16} />
-                                        <span>ADMIN ID 2026</span>
+                            <div className="id-card-footer new-footer">
+                                <div className="qr-section">
+                                    <div className="qr-code-box">
+                                        <img 
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
+                                                JSON.stringify({
+                                                    id: adminData.code,
+                                                    name: adminData.name,
+                                                    email: auth.currentUser?.email,
+                                                    department: 'CS',
+                                                    type: 'student',
+                                                    university: 'Cairo University'
+                                                })
+                                            )}`}
+                                            alt="QR Code"
+                                            className="qr-image"
+                                        />
                                     </div>
-                                    <p className="id-scan-text">Scan QR code to verify administrator identity</p>
-                                    <p className="id-issue-date">Issued: March 2026 | Valid through: 2028</p>
+                                    <div className="qr-label">QR Code</div>
                                 </div>
-                            </div>
-
-                            <div className="id-actions">
-                                <button className="id-download-btn" onClick={() => alert('Downloading ID Card...')}>
-                                    <Download size={18} />
-                                    Download ID
-                                </button>
-                                <button className="id-print-btn" onClick={() => window.print()}>
-                                    <Eye size={18} />
-                                    Print Card
-                                </button>
+                                
+                                <div className="validity-section">
+                                    <div className="validity-badge">
+                                        <CheckCircle size={14} />
+                                        <span>VALID ID 2026</span>
+                                    </div>
+                                    <p className="scan-text">Scan QR code to verify identity</p>
+                                    <p className="issue-date">Issued: March 2026</p>
+                                </div>
                             </div>
                         </div>
                     </div>

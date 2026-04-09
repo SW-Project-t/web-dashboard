@@ -6,11 +6,11 @@ import {
     Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
     Download, Shield, Building, X, Menu, User, Calendar,
     Clock, MapPin, CheckCircle, AlertCircle, AlertTriangle,
-    BookPlus, GraduationCap, FileText, Video, MessageSquare, Award, Zap
+    BookPlus, GraduationCap, FileText, Video, MessageSquare, Award, Zap, Upload
 } from 'lucide-react';
 
 import { auth, db } from './firebase';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot, addDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 const STORAGE_KEYS = {
@@ -20,6 +20,9 @@ const STORAGE_KEYS = {
     ATTENDANCE: 'yallaclass_attendance',
     TREND: 'yallaclass_trend'
 };
+
+const CLOUDINARY_CLOUD_NAME = 'dsxijrxup'; 
+const CLOUDINARY_UPLOAD_PRESET = 'Lms_uploads';
 
 const calculateRiskScore = (attendanceRate, grades, gpa, timeliness) => {
     const attendanceWeight = 0.2;
@@ -96,6 +99,152 @@ export default function StudentDashboard() {
         emergencyContact: ''
     });
 
+// ========== LMS States ==========
+const [lmsMaterials, setLmsMaterials] = useState([]);
+const [lmsAssignments, setLmsAssignments] = useState([]);
+const [lmsQuizzes, setLmsQuizzes] = useState([]);
+const [lmsDiscussions, setLmsDiscussions] = useState([]);
+const [selectedCourseForLMS, setSelectedCourseForLMS] = useState(null);
+const [activeLmsTab, setActiveLmsTab] = useState('materials');
+const [isLmsModalOpen, setIsLmsModalOpen] = useState(false);
+const [lmsModalType, setLmsModalType] = useState('');
+const [selectedAssignment, setSelectedAssignment] = useState(null);
+const [submissionFile, setSubmissionFile] = useState(null);
+const [isSubmitting, setIsSubmitting] = useState(false);
+//-------
+// ========== LMS Functions ==========
+const fetchLMSMaterials = async (courseId) => {
+    try {
+        const q = query(collection(db, "lms_materials"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const materials = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setLmsMaterials(materials);
+    } catch (error) {
+        console.error("Error fetching materials:", error);
+        setLmsMaterials([]);
+    }
+};
+
+const fetchLMSAssignments = async (courseId) => {
+    try {
+        const q = query(collection(db, "lms_assignments"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        
+        const user = auth.currentUser;
+        if (user) {
+            for (let assignment of assignments) {
+                const submissionQuery = query(
+                    collection(db, "lms_submissions"),
+                    where("assignmentId", "==", assignment.id),
+                    where("studentId", "==", user.uid)
+                );
+                const submissionSnap = await getDocs(submissionQuery);
+                if (!submissionSnap.empty) {
+                    assignment.submitted = true;
+                    assignment.submission = submissionSnap.docs[0].data();
+                } else {
+                    assignment.submitted = false;
+                }
+            }
+        }
+        
+        setLmsAssignments(assignments);
+    } catch (error) {
+        console.error("Error fetching assignments:", error);
+        setLmsAssignments([]);
+    }
+};
+
+const fetchLMSQuizzes = async (courseId) => {
+    try {
+        const q = query(collection(db, "lms_quizzes"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const quizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setLmsQuizzes(quizzes);
+    } catch (error) {
+        console.error("Error fetching quizzes:", error);
+        setLmsQuizzes([]);
+    }
+};
+
+const fetchLMSDiscussions = async (courseId) => {
+    try {
+        const q = query(collection(db, "lms_discussions"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const discussions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setLmsDiscussions(discussions);
+    } catch (error) {
+        console.error("Error fetching discussions:", error);
+        setLmsDiscussions([]);
+    }
+};
+
+
+useEffect(() => {
+    if (selectedCourseForLMS) {
+        fetchLMSMaterials(selectedCourseForLMS.id);
+        fetchLMSAssignments(selectedCourseForLMS.id);
+        fetchLMSQuizzes(selectedCourseForLMS.id);
+        fetchLMSDiscussions(selectedCourseForLMS.id);
+    }
+}, [selectedCourseForLMS]);
+
+
+const handleAssignmentSubmit = async () => {
+    if (!submissionFile) {
+        showNotification('Please select a file to submit', 'error');
+        return;
+    }
+    
+    setIsSubmitting(true);
+    const user = auth.currentUser;
+    
+    try {
+        
+        const formData = new FormData();
+        formData.append('file', submissionFile);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const uploadData = await uploadRes.json();
+        
+        if (!uploadData.secure_url) {
+            throw new Error('Upload failed');
+        }
+        
+        
+        await addDoc(collection(db, "lms_submissions"), {
+            assignmentId: selectedAssignment.id,
+            assignmentTitle: selectedAssignment.title,
+            courseId: selectedCourseForLMS.id,
+            studentId: user.uid,
+            studentName: studentData.name,
+            fileUrl: uploadData.secure_url,
+            fileName: submissionFile.name,
+            submittedAt: new Date().toISOString(),
+            grade: null,
+            feedback: ''
+        });
+        
+        showNotification('Assignment submitted successfully!', 'success');
+        setIsLmsModalOpen(false);
+        setSubmissionFile(null);
+        setSelectedAssignment(null);
+        fetchLMSAssignments(selectedCourseForLMS.id);
+        
+    } catch (error) {
+        console.error("Error submitting assignment:", error);
+        showNotification('Error submitting assignment', 'error');
+    } finally {
+        setIsSubmitting(false);
+    }
+};
+//------------
     const navigate = useNavigate();
     useEffect(() => {
         const event = isDigitalIdModalOpen ? 'openDigitalID' : 'closeDigitalID';
@@ -1182,128 +1331,206 @@ export default function StudentDashboard() {
                             </div>
                         </div>
                     )}
-                    {activeTab === 'LMS' && (
-                        <div className="student-lms-container">
-                            <div className="student-lms-header">
-                                <div className="student-lms-title">
-                                    <GraduationCap size={40} />
-                                    <div>
-                                        <h2>Learning Management System</h2>
-                                        <p>Access your course materials, assignments, and learning resources</p>
-                                    </div>
-                                </div>
-                                <button className="student-primary-button" onClick={() => showNotification('LMS features coming soon!', 'info')}>
-                                    <BookOpen size={18} /> Explore
-                                </button>
-                            </div>
+{activeTab === 'LMS' && (
+    <div className="student-lms-container">
+        <div className="student-lms-header">
+            <div className="student-lms-title">
+                <GraduationCap size={40} />
+                <div>
+                    <h2>Learning Management System</h2>
+                    <p>Access your course materials, assignments, and learning resources</p>
+                </div>
+            </div>
+        </div>
 
-                            <div className="student-lms-stats">
-                                <div className="student-lms-stat-card">
-                                    <div className="student-lms-stat-icon">
-                                        <BookOpen size={24} />
-                                    </div>
-                                    <div className="student-lms-stat-value">{courses.length}</div>
-                                    <div className="student-lms-stat-label">Enrolled Courses</div>
-                                </div>
-                                <div className="student-lms-stat-card">
-                                    <div className="student-lms-stat-icon">
-                                        <FileText size={24} />
-                                    </div>
-                                    <div className="student-lms-stat-value">12</div>
-                                    <div className="student-lms-stat-label">Pending Assignments</div>
-                                </div>
-                                <div className="student-lms-stat-card">
-                                    <div className="student-lms-stat-icon">
-                                        <Video size={24} />
-                                    </div>
-                                    <div className="student-lms-stat-value">8</div>
-                                    <div className="student-lms-stat-label">Video Lectures</div>
-                                </div>
-                                <div className="student-lms-stat-card">
-                                    <div className="student-lms-stat-icon">
-                                        <Award size={24} />
-                                    </div>
-                                    <div className="student-lms-stat-value">85%</div>
-                                    <div className="student-lms-stat-label">Avg. Grade</div>
-                                </div>
-                            </div>
-
-                            <div className="student-lms-cards">
-                                <div className="student-lms-card" onClick={() => showNotification('Course Materials feature coming soon!', 'info')}>
-                                    <div className="student-lms-card-icon">
-                                        <Video size={28} />
-                                    </div>
-                                    <h3>Course Materials</h3>
-                                    <p>Access video lectures, slides, and reading materials for all your courses.</p>
-                                    <div className="student-lms-card-footer">
-                                        <span className="student-lms-card-count">24 Materials</span>
-                                        <span className="student-lms-card-link">View All →</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="student-lms-card" onClick={() => showNotification('Assignments feature coming soon!', 'info')}>
-                                    <div className="student-lms-card-icon">
-                                        <FileText size={28} />
-                                    </div>
-                                    <h3>Assignments</h3>
-                                    <p>Submit your homework, view deadlines, and track your grades.</p>
-                                    <div className="student-lms-card-footer">
-                                        <span className="student-lms-card-count">5 Pending</span>
-                                        <span className="student-lms-card-link">View All →</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="student-lms-card" onClick={() => showNotification('Quizzes feature coming soon!', 'info')}>
-                                    <div className="student-lms-card-icon">
-                                        <Award size={28} />
-                                    </div>
-                                    <h3>Quizzes & Exams</h3>
-                                    <p>Take online quizzes, view results, and prepare for upcoming exams.</p>
-                                    <div className="student-lms-card-footer">
-                                        <span className="student-lms-card-count">2 Upcoming</span>
-                                        <span className="student-lms-card-link">View All →</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="student-lms-card" onClick={() => showNotification('Discussions feature coming soon!', 'info')}>
-                                    <div className="student-lms-card-icon">
-                                        <MessageSquare size={28} />
-                                    </div>
-                                    <h3>Discussions</h3>
-                                    <p>Join class discussions, ask questions, and collaborate with classmates.</p>
-                                    <div className="student-lms-card-footer">
-                                        <span className="student-lms-card-count">8 New Posts</span>
-                                        <span className="student-lms-card-link">View All →</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="student-lms-features">
-                                <h3>
-                                    <Zap size={20} />
-                                    Quick Access
-                                </h3>
-                                <div className="student-lms-features-grid">
-                                    <div className="student-lms-feature-item" onClick={() => showNotification('Recent Lectures', 'info')}>
-                                        <Video size={18} />
-                                        <span>Recent Lectures</span>
-                                    </div>
-                                    <div className="student-lms-feature-item" onClick={() => showNotification('Upcoming Deadlines', 'info')}>
-                                        <Calendar size={18} />
-                                        <span>Deadlines</span>
-                                    </div>
-                                    <div className="student-lms-feature-item" onClick={() => showNotification('My Grades', 'info')}>
-                                        <Award size={18} />
-                                        <span>My Grades</span>
-                                    </div>
-                                    <div className="student-lms-feature-item" onClick={() => showNotification('Announcements', 'info')}>
-                                        <Bell size={18} />
-                                        <span>Announcements</span>
-                                    </div>
-                                </div>
-                            </div>
+        {/* Select Course First */}
+        {!selectedCourseForLMS ? (
+            <div className="student-lms-select-course">
+                <h3>Select a course to start</h3>
+                <div className="student-lms-course-grid">
+                    {courses.length === 0 ? (
+                        <div className="student-lms-empty-courses">
+                            <p>You are not enrolled in any courses yet.</p>
+                            <button 
+                                className="student-primary-button"
+                                onClick={() => setIsAddCourseModalOpen(true)}
+                            >
+                                <BookPlus size={18} /> Enroll in a Course
+                            </button>
                         </div>
+                    ) : (
+                        courses.map(course => (
+                            <div 
+                                key={course.id} 
+                                className="student-lms-course-option"
+                                onClick={() => setSelectedCourseForLMS(course)}
+                            >
+                                <BookOpen size={32} />
+                                <h4>{course.name}</h4>
+                                <p>{course.id}</p>
+                                <small>{course.instructor}</small>
+                            </div>
+                        ))
                     )}
+                </div>
+            </div>
+        ) : (
+            <>
+                {/* Course Header */}
+                <div className="student-lms-course-header">
+                    <button 
+                        className="student-back-button"
+                        onClick={() => setSelectedCourseForLMS(null)}
+                    >
+                        ← Back to Courses
+                    </button>
+                    <div className="student-lms-course-info">
+                        <h3>{selectedCourseForLMS.name}</h3>
+                        <span>{selectedCourseForLMS.id}</span>
+                        <small>{selectedCourseForLMS.instructor}</small>
+                    </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="student-lms-tabs">
+                    <button 
+                        className={`student-lms-tab ${activeLmsTab === 'materials' ? 'active' : ''}`}
+                        onClick={() => setActiveLmsTab('materials')}
+                    >
+                        <Video size={18} /> Materials
+                    </button>
+                    <button 
+                        className={`student-lms-tab ${activeLmsTab === 'assignments' ? 'active' : ''}`}
+                        onClick={() => setActiveLmsTab('assignments')}
+                    >
+                        <FileText size={18} /> Assignments
+                    </button>
+                    <button 
+                        className={`student-lms-tab ${activeLmsTab === 'quizzes' ? 'active' : ''}`}
+                        onClick={() => setActiveLmsTab('quizzes')}
+                    >
+                        <Award size={18} /> Quizzes
+                    </button>
+                    <button 
+                        className={`student-lms-tab ${activeLmsTab === 'discussions' ? 'active' : ''}`}
+                        onClick={() => setActiveLmsTab('discussions')}
+                    >
+                        <MessageSquare size={18} /> Discussions
+                    </button>
+                </div>
+
+                {/* Materials Tab */}
+                {activeLmsTab === 'materials' && (
+                    <div className="student-lms-materials">
+                        {lmsMaterials.length === 0 ? (
+                            <div className="student-lms-empty">
+                                <p>No materials uploaded yet for this course.</p>
+                            </div>
+                        ) : (
+                            <div className="student-lms-materials-grid">
+                                {lmsMaterials.map(material => (
+                                    <div key={material.id} className="student-lms-material-card">
+                                        <div className="student-lms-material-icon">
+                                            {material.fileType === 'video' ? <Video size={24} /> : <FileText size={24} />}
+                                        </div>
+                                        <div className="student-lms-material-info">
+                                            <h4>{material.title}</h4>
+                                            <p>{material.description}</p>
+                                            {material.fileUrl && (
+                                                <a 
+                                                    href={material.fileUrl} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="student-material-link"
+                                                >
+                                                    {material.fileName || 'View File'}
+                                                </a>
+                                            )}
+                                            <div className="student-material-meta">
+                                                <small>Uploaded by: {material.uploadedBy || 'Professor'}</small>
+                                                <small> {new Date(material.uploadedAt).toLocaleDateString()}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Assignments Tab */}
+                {activeLmsTab === 'assignments' && (
+                    <div className="student-lms-assignments">
+                        {lmsAssignments.length === 0 ? (
+                            <div className="student-lms-empty">
+                                <p>No assignments created yet for this course.</p>
+                            </div>
+                        ) : (
+                            <div className="student-lms-assignments-list">
+                                {lmsAssignments.map(assignment => (
+                                    <div key={assignment.id} className="student-lms-assignment-card">
+                                        <div className="student-assignment-info">
+                                            <h4>{assignment.title}</h4>
+                                            <p>{assignment.description}</p>
+                                            <div className="student-assignment-meta">
+                                                <span className="due-date">Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                                <span className="max-score">Max Score: {assignment.maxScore}</span>
+                                            </div>
+                                            {assignment.submitted && (
+                                                <div className="student-submission-status submitted">
+                                                    <CheckCircle size={14} />
+                                                    <span>Submitted on {new Date(assignment.submission.submittedAt).toLocaleDateString()}</span>
+                                                    {assignment.submission.grade && (
+                                                        <span className="grade">Grade: {assignment.submission.grade}/{assignment.maxScore}</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="student-assignment-actions">
+                                            {assignment.submitted ? (
+                                                <button className="student-view-submission-button" disabled>
+                                                    ✓ Submitted
+                                                </button>
+                                            ) : (
+                                                <button 
+                                                    className="student-submit-button"
+                                                    onClick={() => {
+                                                        setSelectedAssignment(assignment);
+                                                        setIsLmsModalOpen(true);
+                                                    }}
+                                                >
+                                                    <Upload size={16} /> Submit Assignment
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Quizzes Tab - Coming Soon */}
+                {activeLmsTab === 'quizzes' && (
+                    <div className="student-lms-coming-soon">
+                        <Award size={48} />
+                        <h3>Quizzes & Exams Coming Soon</h3>
+                        <p>Take online quizzes and view your results instantly.</p>
+                    </div>
+                )}
+
+                {/* Discussions Tab - Coming Soon */}
+                {activeLmsTab === 'discussions' && (
+                    <div className="student-lms-coming-soon">
+                        <MessageSquare size={48} />
+                        <h3>Discussions Coming Soon</h3>
+                        <p>Ask questions and collaborate with your classmates.</p>
+                    </div>
+                )}
+            </>
+        )}
+    </div>
+)}
                 </div>
             </main>
 
@@ -1723,6 +1950,60 @@ export default function StudentDashboard() {
                     </div>
                 </div>
             )}
+
+            {/* Submit Assignment Modal */}
+{isLmsModalOpen && selectedAssignment && (
+    <div className="student-modal-overlay" onClick={() => setIsLmsModalOpen(false)}>
+        <div className="student-modal-container" onClick={e => e.stopPropagation()}>
+            <div className="student-modal-header">
+                <h2>Submit Assignment</h2>
+                <button className="student-close-modal-button" onClick={() => setIsLmsModalOpen(false)}>
+                    <X size={20} />
+                </button>
+            </div>
+            
+            <div className="student-modal-form">
+                <div className="student-form-group">
+                    <label>Assignment: <strong>{selectedAssignment.title}</strong></label>
+                </div>
+                <div className="student-form-group">
+                    <label>Due Date: {new Date(selectedAssignment.dueDate).toLocaleDateString()}</label>
+                </div>
+                <div className="student-form-group">
+                    <label>Upload File (PDF, DOCX, Image)</label>
+                    <div className="student-file-upload-area">
+                        <input
+                            type="file"
+                            id="assignment-file"
+                            accept=".pdf,.docx,.jpg,.png"
+                            onChange={(e) => setSubmissionFile(e.target.files[0])}
+                            style={{ display: 'none' }}
+                        />
+                        <button 
+                            type="button"
+                            className="student-upload-button"
+                            onClick={() => document.getElementById('assignment-file').click()}
+                        >
+                            <Upload size={18} />
+                            {submissionFile ? submissionFile.name : 'Choose File'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="student-modal-actions">
+                <button className="student-cancel-button" onClick={() => setIsLmsModalOpen(false)}>Cancel</button>
+                <button 
+                    className="student-submit-button"
+                    onClick={handleAssignmentSubmit}
+                    disabled={isSubmitting || !submissionFile}
+                >
+                    {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
+                </button>
+            </div>
+        </div>
+    </div>
+)}
         </div>
     );
 }

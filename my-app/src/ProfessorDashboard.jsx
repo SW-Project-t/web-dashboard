@@ -99,6 +99,8 @@ const [lmsFormData, setLmsFormData] = useState({
     questions: []
 });
 
+const [assignmentFile, setAssignmentFile] = useState(null);
+
 const [selectedFile, setSelectedFile] = useState(null);
 const [isUploading, setIsUploading] = useState(false);
 // ========== LMS Functions ==========
@@ -194,7 +196,46 @@ const addLMSMaterial = async () => {
 
 
 const addLMSAssignment = async () => {
-    if (!selectedCourseForLMS) return;
+    if (!selectedCourseForLMS) {
+        showNotification('Please select a course first', 'error');
+        return;
+    }
+    
+    if (!lmsFormData.title) {
+        showNotification('Please enter a title', 'error');
+        return;
+    }
+    
+    setIsUploading(true);
+    let uploadedFileUrl = lmsFormData.fileUrl || '';
+    let uploadedFileName = '';
+    let uploadedFileType = '';
+    
+    if (assignmentFile) {
+        const formData = new FormData();
+        formData.append('file', assignmentFile);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        
+        try {
+            const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const uploadData = await uploadRes.json();
+            
+            if (uploadData.secure_url) {
+                uploadedFileUrl = uploadData.secure_url;
+                uploadedFileName = assignmentFile.name;
+                uploadedFileType = uploadData.resource_type;
+                showNotification('File uploaded successfully!', 'success');
+            } else {
+                showNotification('File upload failed, but assignment will be saved', 'warning');
+            }
+        } catch (error) {
+            console.error("Error uploading assignment file:", error);
+            showNotification('File upload failed, but assignment will be saved', 'warning');
+        }
+    }
     
     try {
         await addDoc(collection(db, "lms_assignments"), {
@@ -204,15 +245,21 @@ const addLMSAssignment = async () => {
             description: lmsFormData.description,
             dueDate: lmsFormData.dueDate,
             maxScore: lmsFormData.maxScore,
+            fileUrl: uploadedFileUrl,
+            fileName: uploadedFileName,
+            fileType: uploadedFileType,
             createdAt: new Date().toISOString()
         });
         showNotification('Assignment added successfully!', 'success');
         setShowLmsModal(false);
         setLmsFormData({ title: '', description: '', dueDate: '', fileUrl: '', maxScore: 100, questions: [] });
+        setAssignmentFile(null);
         fetchLMSAssignments(selectedCourseForLMS.id);
     } catch (error) {
         console.error("Error adding assignment:", error);
         showNotification('Error adding assignment', 'error');
+    } finally {
+        setIsUploading(false);
     }
 };
 
@@ -1119,35 +1166,45 @@ useEffect(() => {
                 )}
 
                 {/* Assignments Tab */}
-                {activeLmsTab === 'assignments' && (
-                    <div className="professor-lms-assignments">
-                        {lmsAssignments.length === 0 ? (
-                            <div className="professor-lms-empty">
-                                <p>No assignments created yet</p>
-                                <button onClick={() => {
-                                    setLmsModalType('assignment');
-                                    setShowLmsModal(true);
-                                }}>Create Assignment</button>
+{activeLmsTab === 'assignments' && (
+    <div className="professor-lms-assignments">
+        {lmsAssignments.length === 0 ? (
+            <div className="professor-lms-empty">
+                <p>No assignments created yet</p>
+                <button onClick={() => {
+                    setLmsModalType('assignment');
+                    setShowLmsModal(true);
+                }}>Create Assignment</button>
+            </div>
+        ) : (
+            <div className="professor-lms-assignments-list">
+                {lmsAssignments.map(assignment => (
+                    <div key={assignment.id} className="professor-lms-assignment-card">
+                        <div>
+                            <h4>{assignment.title}</h4>
+                            <p>{assignment.description}</p>
+                            {assignment.fileUrl && (
+                                <a 
+                                    href={assignment.fileUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    style={{ color: '#4a90e2', fontSize: '13px', display: 'inline-block', marginBottom: '8px' }}
+                                >
+                                    {assignment.fileName || 'Assignment File'}
+                                </a>
+                            )}
+                            <div className="professor-lms-assignment-meta">
+                                <span>Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                <span>Max Score: {assignment.maxScore}</span>
                             </div>
-                        ) : (
-                            <div className="professor-lms-assignments-list">
-                                {lmsAssignments.map(assignment => (
-                                    <div key={assignment.id} className="professor-lms-assignment-card">
-                                        <div>
-                                            <h4>{assignment.title}</h4>
-                                            <p>{assignment.description}</p>
-                                            <div className="professor-lms-assignment-meta">
-                                                <span>📅 Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
-                                                <span>⭐ Max Score: {assignment.maxScore}</span>
-                                            </div>
-                                        </div>
-                                        <button className="professor-secondary-button">View Submissions</button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        </div>
+                        <button className="professor-secondary-button">View Submissions</button>
                     </div>
-                )}
+                ))}
+            </div>
+        )}
+    </div>
+)}
 
                 {/* Quizzes Tab - Coming Soon */}
                 {activeLmsTab === 'quizzes' && (
@@ -1509,27 +1566,72 @@ useEffect(() => {
                 </div>
 
                 {lmsModalType === 'assignment' && (
-                    <>
-                        <div className="professor-form-group">
-                            <label>Due Date</label>
-                            <input
-                                type="date"
-                                className="professor-form-input"
-                                value={lmsFormData.dueDate}
-                                onChange={(e) => setLmsFormData({...lmsFormData, dueDate: e.target.value})}
-                            />
-                        </div>
-                        <div className="professor-form-group">
-                            <label>Max Score</label>
-                            <input
-                                type="number"
-                                className="professor-form-input"
-                                value={lmsFormData.maxScore}
-                                onChange={(e) => setLmsFormData({...lmsFormData, maxScore: parseInt(e.target.value)})}
-                            />
-                        </div>
-                    </>
+    <>
+        <div className="professor-form-group">
+            <label>Due Date *</label>
+            <input
+                type="date"
+                className="professor-form-input"
+                value={lmsFormData.dueDate}
+                onChange={(e) => setLmsFormData({...lmsFormData, dueDate: e.target.value})}
+                required
+            />
+        </div>
+        <div className="professor-form-group">
+            <label>Max Score *</label>
+            <input
+                type="number"
+                className="professor-form-input"
+                value={lmsFormData.maxScore}
+                onChange={(e) => setLmsFormData({...lmsFormData, maxScore: parseInt(e.target.value) || 0})}
+                min="0"
+                step="5"
+                required
+            />
+        </div>
+        <div className="professor-form-group">
+            <label>Upload Assignment File (PDF, DOCX, etc.)</label>
+            <div className="professor-file-upload-area">
+                <input
+                    type="file"
+                    id="assignment-file-upload"
+                    accept=".pdf,.docx,.jpg,.png"
+                    onChange={(e) => setAssignmentFile(e.target.files[0])}
+                    style={{ display: 'none' }}
+                />
+                <button 
+                    type="button"
+                    className="professor-upload-button"
+                    onClick={() => document.getElementById('assignment-file-upload').click()}
+                >
+                    <Upload size={18} />
+                    {assignmentFile ? assignmentFile.name : 'Choose File'}
+                </button>
+                {assignmentFile && (
+                    <button 
+                        type="button"
+                        className="professor-clear-file-button"
+                        onClick={() => setAssignmentFile(null)}
+                    >
+                        ✕
+                    </button>
                 )}
+            </div>
+            <small>Supported: PDF, DOCX, JPG, PNG (Max 50MB)</small>
+        </div>
+        <div className="professor-form-group">
+            <label>OR Paste Link (Google Drive, etc.)</label>
+            <input
+                type="text"
+                className="professor-form-input"
+                value={lmsFormData.fileUrl}
+                onChange={(e) => setLmsFormData({...lmsFormData, fileUrl: e.target.value})}
+                placeholder="https://drive.google.com/..."
+            />
+        </div>
+    </>
+)}
+
 {/* Material Specific: Cloudinary Upload */}
 {lmsModalType === 'material' && (
     <>

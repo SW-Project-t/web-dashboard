@@ -1458,57 +1458,67 @@ const handleAssignmentSubmit = async () => {
                     </div>
                 )}
 
-                {/* Assignments Tab */}
-                {activeLmsTab === 'assignments' && (
-                    <div className="student-lms-assignments">
-                        {lmsAssignments.length === 0 ? (
-                            <div className="student-lms-empty">
-                                <p>No assignments created yet for this course.</p>
+  {/* Assignments Tab */}
+{activeLmsTab === 'assignments' && (
+    <div className="student-lms-assignments">
+        {lmsAssignments.length === 0 ? (
+            <div className="student-lms-empty">
+                <p>No assignments created yet for this course.</p>
+            </div>
+        ) : (
+            <div className="student-lms-assignments-list">
+                {lmsAssignments.map(assignment => (
+                    <div key={assignment.id} className="student-lms-assignment-card">
+                        <div className="student-assignment-info">
+                            <h4>{assignment.title}</h4>
+                            <p>{assignment.description}</p>
+                            {assignment.fileUrl && (
+                                <a 
+                                    href={assignment.fileUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="student-assignment-file-link"
+                                >
+                                    {assignment.fileName || 'Download Assignment File'}
+                                </a>
+                            )}
+                            <div className="student-assignment-meta">
+                                <span className="due-date">Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                <span className="max-score">Max Score: {assignment.maxScore}</span>
                             </div>
-                        ) : (
-                            <div className="student-lms-assignments-list">
-                                {lmsAssignments.map(assignment => (
-                                    <div key={assignment.id} className="student-lms-assignment-card">
-                                        <div className="student-assignment-info">
-                                            <h4>{assignment.title}</h4>
-                                            <p>{assignment.description}</p>
-                                            <div className="student-assignment-meta">
-                                                <span className="due-date">Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
-                                                <span className="max-score">Max Score: {assignment.maxScore}</span>
-                                            </div>
-                                            {assignment.submitted && (
-                                                <div className="student-submission-status submitted">
-                                                    <CheckCircle size={14} />
-                                                    <span>Submitted on {new Date(assignment.submission.submittedAt).toLocaleDateString()}</span>
-                                                    {assignment.submission.grade && (
-                                                        <span className="grade">Grade: {assignment.submission.grade}/{assignment.maxScore}</span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="student-assignment-actions">
-                                            {assignment.submitted ? (
-                                                <button className="student-view-submission-button" disabled>
-                                                    ✓ Submitted
-                                                </button>
-                                            ) : (
-                                                <button 
-                                                    className="student-submit-button"
-                                                    onClick={() => {
-                                                        setSelectedAssignment(assignment);
-                                                        setIsLmsModalOpen(true);
-                                                    }}
-                                                >
-                                                    <Upload size={16} /> Submit Assignment
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                            {assignment.submitted && (
+                                <div className="student-submission-status submitted">
+                                    <CheckCircle size={14} />
+                                    <span>Submitted on {new Date(assignment.submission.submittedAt).toLocaleDateString()}</span>
+                                    {assignment.submission.grade && (
+                                        <span className="grade">Grade: {assignment.submission.grade}/{assignment.maxScore}</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div className="student-assignment-actions">
+                            {assignment.submitted ? (
+                                <button className="student-view-submission-button" disabled>
+                                    ✓ Submitted
+                                </button>
+                            ) : (
+                                <button 
+                                    className="student-submit-button"
+                                    onClick={() => {
+                                        setSelectedAssignment(assignment);
+                                        setIsLmsModalOpen(true);
+                                    }}
+                                >
+                                    <Upload size={16} /> Submit Assignment
+                                </button>
+                            )}
+                        </div>
                     </div>
-                )}
+                ))}
+            </div>
+        )}
+    </div>
+)}
 
                 {/* Quizzes Tab - Coming Soon */}
                 {activeLmsTab === 'quizzes' && (

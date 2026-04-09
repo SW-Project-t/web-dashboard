@@ -2267,3 +2267,96 @@ body.digital-id-open .navbar-container {
     cursor: not-allowed;
     background: #a0aec0;
 }
+
+/* ============================================ */
+/* File Upload Styles - Assignment & Material   */
+/* ============================================ */
+
+/* File Upload Area */
+.professor-file-upload-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Choose File Button */
+.professor-upload-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f0f7ff;
+    border: 2px dashed #4a90e2;
+    padding: 12px 24px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #4a90e2;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.professor-upload-button:hover {
+    background: #4a90e2;
+    color: white;
+    border-color: #4a90e2;
+    transform: translateY(-2px);
+}
+
+/* Clear File Button */
+.professor-clear-file-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fee2e2;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    color: #ef4444;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.professor-clear-file-button:hover {
+    background: #ef4444;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* File name display */
+.professor-file-name {
+    font-size: 13px;
+    color: #10b981;
+    background: #d1fae5;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+/* Small helper text */
+.professor-form-group small {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 6px;
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .professor-file-upload-area {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .professor-upload-button {
+        justify-content: center;
+    }
+    
+    .professor-clear-file-button {
+        width: 100%;
+        padding: 10px;
+    }
+}

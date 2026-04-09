@@ -1164,17 +1164,26 @@ useEffect(() => {
                         )}
                     </div>
                 )}
-
-                {/* Assignments Tab */}
+{/* Assignments Tab */}
 {activeLmsTab === 'assignments' && (
     <div className="professor-lms-assignments">
-        {lmsAssignments.length === 0 ? (
-            <div className="professor-lms-empty">
-                <p>No assignments created yet</p>
-                <button onClick={() => {
+        
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+            <button 
+                className="professor-primary-button"
+                onClick={() => {
                     setLmsModalType('assignment');
                     setShowLmsModal(true);
-                }}>Create Assignment</button>
+                }}
+            >
+                <Plus size={18} /> Create Assignment
+            </button>
+        </div>
+
+        
+        {lmsAssignments.length === 0 ? (
+            <div className="professor-lms-empty">
+                <p>No assignments created yet. Click the button above to create one.</p>
             </div>
         ) : (
             <div className="professor-lms-assignments-list">

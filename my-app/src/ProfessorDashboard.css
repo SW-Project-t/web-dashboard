@@ -1874,3 +1874,396 @@ body.digital-id-open .navbar-container {
         grid-template-columns: 1fr;
     }
 }
+ .professor-lms-select-course {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.professor-lms-select-course h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 30px;
+}
+
+.professor-lms-course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.professor-lms-course-option {
+    background: #f8fafd;
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.professor-lms-course-option:hover {
+    transform: translateY(-6px);
+    border-color: #4a90e2;
+    background: white;
+    box-shadow: 0 20px 35px -10px rgba(74, 144, 226, 0.2);
+}
+
+.professor-lms-course-option svg {
+    color: #4a90e2;
+    margin-bottom: 16px;
+}
+
+.professor-lms-course-option h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.professor-lms-course-option p {
+    color: #718096;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Course Header */
+.professor-lms-course-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.professor-back-button {
+    background: none;
+    border: none;
+    color: #4a90e2;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 30px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.professor-back-button:hover {
+    background: #e6f0fa;
+    transform: translateX(-3px);
+}
+
+.professor-lms-course-info {
+    text-align: center;
+}
+
+.professor-lms-course-info h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.professor-lms-course-info span {
+    font-size: 13px;
+    color: #4a90e2;
+    background: #e6f0fa;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* LMS Tabs */
+.professor-lms-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #edf2f7;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+.professor-lms-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #718096;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s;
+    border-radius: 30px 30px 0 0;
+}
+
+.professor-lms-tab:hover {
+    color: #4a90e2;
+    background: #f0f7ff;
+}
+
+.professor-lms-tab.active {
+    color: #4a90e2;
+    border-bottom: 3px solid #4a90e2;
+    margin-bottom: -2px;
+    background: #f0f7ff;
+}
+
+/* Materials Grid */
+.professor-lms-materials {
+    min-height: 300px;
+}
+
+.professor-lms-materials-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.professor-lms-material-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: #f8fafd;
+    padding: 18px 20px;
+    border-radius: 18px;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+}
+
+.professor-lms-material-card:hover {
+    background: white;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.professor-lms-material-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #e6f0fa, #dbeafe);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a90e2;
+}
+
+.professor-lms-material-info {
+    flex: 1;
+}
+
+.professor-lms-material-info h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 6px;
+}
+
+.professor-lms-material-info p {
+    font-size: 13px;
+    color: #718096;
+    margin-bottom: 6px;
+}
+
+.professor-lms-material-info small {
+    font-size: 11px;
+    color: #a0aec0;
+}
+
+/* Assignments List */
+.professor-lms-assignments {
+    min-height: 300px;
+}
+
+.professor-lms-assignments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.professor-lms-assignment-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    background: #f8fafd;
+    padding: 20px;
+    border-radius: 18px;
+    transition: all 0.3s;
+}
+
+.professor-lms-assignment-card:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.professor-lms-assignment-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 6px;
+}
+
+.professor-lms-assignment-card p {
+    font-size: 13px;
+    color: #718096;
+    margin-bottom: 8px;
+}
+
+.professor-lms-assignment-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.professor-lms-assignment-meta span {
+    font-size: 12px;
+    font-weight: 500;
+    color: #4a90e2;
+    background: #e6f0fa;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* Empty State */
+.professor-lms-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8fafd;
+    border-radius: 24px;
+}
+
+.professor-lms-empty p {
+    color: #a0aec0;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.professor-lms-empty button {
+    background: linear-gradient(135deg, #7ba8e0, #4a90e2);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+}
+
+.professor-lms-empty button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(74, 144, 226, 0.4);
+}
+
+/* Coming Soon */
+.professor-lms-coming-soon {
+    text-align: center;
+    padding: 80px 20px;
+    background: #f8fafd;
+    border-radius: 24px;
+}
+
+.professor-lms-coming-soon svg {
+    color: #cbd5e0;
+    margin-bottom: 20px;
+}
+
+.professor-lms-coming-soon h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.professor-lms-coming-soon p {
+    color: #718096;
+    font-size: 14px;
+}
+
+/* LMS Modal Enhancements */
+.professor-modal-container {
+    max-width: 550px;
+}
+
+.professor-modal-form textarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.professor-modal-form small {
+    display: block;
+    margin-top: 5px;
+}
+
+.professor-update-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .professor-lms-course-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .professor-lms-tabs {
+        gap: 4px;
+    }
+    
+    .professor-lms-tab {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .professor-lms-material-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .professor-lms-assignment-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .professor-lms-assignment-meta {
+        justify-content: center;
+    }
+}
+/* Cloudinary Upload Button */
+.professor-cloudinary-upload-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #7ba8e0, #4a90e2);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.professor-cloudinary-upload-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(74, 144, 226, 0.3);
+}
+
+.professor-cloudinary-upload-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #a0aec0;
+}

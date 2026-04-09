@@ -483,9 +483,6 @@ const AdminDashboard = () => {
                     <button className={`nav-button ${activeTab === 'Messages' ? 'active' : ''}`} onClick={() => setActiveTab('Messages')}>
                         <MessageSquare size={20} />
                         <span>Messages</span>
-                        {unreadCount > 0 && (
-                            <span className="message-badge">{unreadCount}</span>
-                        )}
                     </button>
                 </nav>
 
@@ -523,10 +520,17 @@ const AdminDashboard = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button className="notification-button" onClick={() => setActiveTab('Messages')}>
-                            <Bell size={20} />
+                        <button 
+                            className="notification-button" 
+                            onClick={() => {
+                                setActiveTab('Messages');
+                                setSelectedStudent(null);
+                                setIsMessageModalOpen(true);
+                            }}
+                        >
+                            <MessageSquare size={20} />
                             {unreadCount > 0 && (
-                                <span className="notification-badge"></span>
+                                <span className="notification-badge">{unreadCount}</span>
                             )}
                         </button>
                     </div>
@@ -544,7 +548,11 @@ const AdminDashboard = () => {
                                     <Users size={28} />
                                     <span>New User</span>
                                 </div>
-                                <div className="action-card-item card-yellow" onClick={() => setActiveTab('Messages')}>
+                                <div className="action-card-item card-yellow" onClick={() => {
+                                    setActiveTab('Messages');
+                                    setSelectedStudent(null);
+                                    setIsMessageModalOpen(true);
+                                }}>
                                     <Send size={28} />
                                     <span>Send Message</span>
                                 </div>
@@ -841,12 +849,7 @@ const AdminDashboard = () => {
                                     <MessageSquare size={24} className="text-primary margin-right-2" />
                                     <h3>Message Center</h3>
                                 </div>
-                                <button className="primary-action-button" onClick={() => {
-                                    setSelectedStudent(null);
-                                    setIsMessageModalOpen(true);
-                                }}>
-                                    <Send size={18} /> New Message
-                                </button>
+
                             </div>
 
                             <div className="messages-grid">

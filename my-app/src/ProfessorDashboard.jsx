@@ -263,6 +263,18 @@ const addLMSAssignment = async () => {
     }
 };
 
+const deleteLMSAssignment = async (assignmentId) => {
+    if (!window.confirm('Delete this assignment?')) return;
+    try {
+        await deleteDoc(doc(db, "lms_assignments", assignmentId));
+        showNotification('Assignment deleted successfully', 'success');
+        fetchLMSAssignments(selectedCourseForLMS.id);
+    } catch (error) {
+        console.error("Error deleting assignment:", error);
+        showNotification('Error deleting assignment', 'error');
+    }
+};
+
 const deleteLMSMaterial = async (materialId) => {
     if (!window.confirm('Delete this material?')) return;
     try {
@@ -1188,27 +1200,37 @@ useEffect(() => {
         ) : (
             <div className="professor-lms-assignments-list">
                 {lmsAssignments.map(assignment => (
-                    <div key={assignment.id} className="professor-lms-assignment-card">
-                        <div>
-                            <h4>{assignment.title}</h4>
-                            <p>{assignment.description}</p>
-                            {assignment.fileUrl && (
-                                <a 
-                                    href={assignment.fileUrl} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    style={{ color: '#4a90e2', fontSize: '13px', display: 'inline-block', marginBottom: '8px' }}
-                                >
-                                    {assignment.fileName || 'Assignment File'}
-                                </a>
-                            )}
-                            <div className="professor-lms-assignment-meta">
-                                <span>Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
-                                <span>Max Score: {assignment.maxScore}</span>
-                            </div>
-                        </div>
-                        <button className="professor-secondary-button">View Submissions</button>
-                    </div>
+
+<div key={assignment.id} className="professor-lms-assignment-card">
+    <div style={{ flex: 1 }}>
+        <h4>{assignment.title}</h4>
+        <p>{assignment.description}</p>
+        {assignment.fileUrl && (
+            <a 
+                href={assignment.fileUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#4a90e2', fontSize: '13px', display: 'inline-block', marginBottom: '8px' }}
+            >
+                {assignment.fileName || 'Assignment File'}
+            </a>
+        )}
+        <div className="professor-lms-assignment-meta">
+            <span>Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+            <span>Max Score: {assignment.maxScore}</span>
+        </div>
+    </div>
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <button className="professor-secondary-button">View Submissions</button>
+        <button 
+            className="professor-icon-button delete"
+            onClick={() => deleteLMSAssignment(assignment.id)}
+            title="Delete Assignment"
+        >
+            <Trash2 size={18} />
+        </button>
+    </div>
+</div>
                 ))}
             </div>
         )}
@@ -1675,15 +1697,16 @@ useEffect(() => {
                     <button className="professor-cancel-button" onClick={() => setShowLmsModal(false)}>
                         Cancel
                     </button>
-                    <button 
-                        className="professor-update-button"
-                        onClick={() => {
-                            if (lmsModalType === 'material') addLMSMaterial();
-                            if (lmsModalType === 'assignment') addLMSAssignment();
-                        }}
-                    >
-                        Save
-                    </button>
+                   <button 
+    className="professor-update-button"
+    onClick={() => {
+        if (lmsModalType === 'material') addLMSMaterial();
+        if (lmsModalType === 'assignment') addLMSAssignment();
+    }}
+    disabled={isUploading}
+>
+    {isUploading ? 'Uploading... Please wait' : 'Save'}
+</button>
                 </div>
             </div>
         </div>

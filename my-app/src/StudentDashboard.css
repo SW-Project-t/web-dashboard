@@ -3020,3 +3020,444 @@
     background: #cbd5e0;
     transform: translateY(-2px);
 }
+ .student-lms-select-course {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.student-lms-select-course h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 30px;
+}
+
+.student-lms-course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.student-lms-course-option {
+    background: #f8fafd;
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.student-lms-course-option:hover {
+    transform: translateY(-6px);
+    border-color: #4a90e2;
+    background: white;
+    box-shadow: 0 20px 35px rgba(74, 144, 226, 0.15);
+}
+
+.student-lms-course-option svg {
+    color: #4a90e2;
+    margin-bottom: 16px;
+}
+
+.student-lms-course-option h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.student-lms-course-option p {
+    color: #718096;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.student-lms-course-option small {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #4a90e2;
+}
+
+.student-lms-empty-courses {
+    text-align: center;
+    padding: 60px;
+    background: #f8fafd;
+    border-radius: 24px;
+}
+
+/* Course Header */
+.student-lms-course-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.student-back-button {
+    background: none;
+    border: none;
+    color: #4a90e2;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 30px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.student-back-button:hover {
+    background: #e6f0fa;
+    transform: translateX(-3px);
+}
+
+.student-lms-course-info {
+    text-align: center;
+}
+
+.student-lms-course-info h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.student-lms-course-info span {
+    font-size: 13px;
+    color: #4a90e2;
+    background: #e6f0fa;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.student-lms-course-info small {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #718096;
+}
+
+/* Tabs */
+.student-lms-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #edf2f7;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+.student-lms-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #718096;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s;
+    border-radius: 30px 30px 0 0;
+}
+
+.student-lms-tab:hover {
+    color: #4a90e2;
+    background: #f0f7ff;
+}
+
+.student-lms-tab.active {
+    color: #4a90e2;
+    border-bottom: 3px solid #4a90e2;
+    margin-bottom: -2px;
+    background: #f0f7ff;
+}
+
+/* Materials Grid */
+.student-lms-materials {
+    min-height: 300px;
+}
+
+.student-lms-materials-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.student-lms-material-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    background: #f8fafd;
+    padding: 18px 20px;
+    border-radius: 18px;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+}
+
+.student-lms-material-card:hover {
+    background: white;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.student-lms-material-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #e6f0fa, #dbeafe);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a90e2;
+    flex-shrink: 0;
+}
+
+.student-lms-material-info {
+    flex: 1;
+}
+
+.student-lms-material-info h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 6px;
+}
+
+.student-lms-material-info p {
+    font-size: 13px;
+    color: #718096;
+    margin-bottom: 8px;
+}
+
+.student-material-link {
+    display: inline-block;
+    color: #4a90e2;
+    font-size: 13px;
+    margin-bottom: 8px;
+    text-decoration: none;
+}
+
+.student-material-link:hover {
+    text-decoration: underline;
+}
+
+.student-material-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: #a0aec0;
+}
+
+.student-material-meta small {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Assignments */
+.student-lms-assignments {
+    min-height: 300px;
+}
+
+.student-lms-assignments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.student-lms-assignment-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    background: #f8fafd;
+    padding: 20px;
+    border-radius: 18px;
+    transition: all 0.3s;
+}
+
+.student-lms-assignment-card:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.student-assignment-info {
+    flex: 1;
+}
+
+.student-assignment-info h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 6px;
+}
+
+.student-assignment-info p {
+    font-size: 13px;
+    color: #718096;
+    margin-bottom: 8px;
+}
+
+.student-assignment-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.student-assignment-meta span {
+    font-size: 12px;
+    font-weight: 500;
+    color: #4a90e2;
+    background: #e6f0fa;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.student-submission-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #10b981;
+}
+
+.student-submission-status .grade {
+    color: #4a90e2;
+    font-weight: 600;
+}
+
+.student-assignment-actions {
+    flex-shrink: 0;
+}
+
+.student-view-submission-button {
+    padding: 10px 20px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: default;
+}
+
+/* File Upload Area */
+.student-file-upload-area {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.student-upload-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #e6f0fa;
+    border: 2px dashed #4a90e2;
+    padding: 12px 20px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #4a90e2;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.student-upload-button:hover {
+    background: #4a90e2;
+    color: white;
+    border-color: #4a90e2;
+}
+
+/* Empty State */
+.student-lms-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8fafd;
+    border-radius: 24px;
+}
+
+.student-lms-empty p {
+    color: #a0aec0;
+    font-size: 16px;
+}
+
+/* Coming Soon */
+.student-lms-coming-soon {
+    text-align: center;
+    padding: 80px 20px;
+    background: #f8fafd;
+    border-radius: 24px;
+}
+
+.student-lms-coming-soon svg {
+    color: #cbd5e0;
+    margin-bottom: 20px;
+}
+
+.student-lms-coming-soon h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.student-lms-coming-soon p {
+    color: #718096;
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .student-lms-select-course h3 {
+        font-size: 18px;
+    }
+    
+    .student-lms-course-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .student-lms-tabs {
+        gap: 4px;
+    }
+    
+    .student-lms-tab {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .student-lms-material-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .student-lms-material-icon {
+        margin: 0 auto;
+    }
+    
+    .student-material-meta {
+        justify-content: center;
+    }
+    
+    .student-lms-assignment-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .student-assignment-meta {
+        justify-content: center;
+    }
+}

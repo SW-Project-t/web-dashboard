@@ -18,6 +18,9 @@ const STORAGE_KEYS = {
     PROF_IMAGE: 'yallaclass_prof_image'
 };
 
+const CLOUDINARY_CLOUD_NAME = 'dsxijrxup'; 
+const CLOUDINARY_UPLOAD_PRESET = 'Lms_uploads';
+
 export default function ProfessorDashboard() {
     const navigate = useNavigate();
     
@@ -77,6 +80,249 @@ export default function ProfessorDashboard() {
 
     // abdo
     const [adminCourses, setAdminCourses] = useState([]);
+
+    // ========== LMS States ==========
+const [lmsMaterials, setLmsMaterials] = useState([]);
+const [lmsAssignments, setLmsAssignments] = useState([]);
+const [lmsQuizzes, setLmsQuizzes] = useState([]);
+const [lmsDiscussions, setLmsDiscussions] = useState([]);
+const [selectedCourseForLMS, setSelectedCourseForLMS] = useState(null);
+const [showLmsModal, setShowLmsModal] = useState(false);
+const [lmsModalType, setLmsModalType] = useState(''); 
+const [activeLmsTab, setActiveLmsTab] = useState('materials');
+const [lmsFormData, setLmsFormData] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    fileUrl: '',
+    maxScore: 100,
+    questions: []
+});
+
+const [selectedFile, setSelectedFile] = useState(null);
+const [isUploading, setIsUploading] = useState(false);
+// ========== LMS Functions ==========
+
+const fetchLMSMaterials = async (courseId) => {
+    try {
+        const q = query(collection(db, "lms_materials"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const materials = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setLmsMaterials(materials);
+    } catch (error) {
+        console.error("Error fetching materials:", error);
+        setLmsMaterials([]);
+    }
+};
+
+
+const fetchLMSAssignments = async (courseId) => {
+    try {
+        const q = query(collection(db, "lms_assignments"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setLmsAssignments(assignments);
+    } catch (error) {
+        console.error("Error fetching assignments:", error);
+        setLmsAssignments([]);
+    }
+};
+
+
+const fetchLMSQuizzes = async (courseId) => {
+    try {
+        const q = query(collection(db, "lms_quizzes"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const quizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setLmsQuizzes(quizzes);
+    } catch (error) {
+        console.error("Error fetching quizzes:", error);
+        setLmsQuizzes([]);
+    }
+};
+
+
+const fetchLMSDiscussions = async (courseId) => {
+    try {
+        const q = query(collection(db, "lms_discussions"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const discussions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setLmsDiscussions(discussions);
+    } catch (error) {
+        console.error("Error fetching discussions:", error);
+        setLmsDiscussions([]);
+    }
+};
+
+
+useEffect(() => {
+    if (selectedCourseForLMS) {
+        fetchLMSMaterials(selectedCourseForLMS.id);
+        fetchLMSAssignments(selectedCourseForLMS.id);
+        fetchLMSQuizzes(selectedCourseForLMS.id);
+        fetchLMSDiscussions(selectedCourseForLMS.id);
+    }
+}, [selectedCourseForLMS]);
+//------------------
+
+const addLMSMaterial = async () => {
+    if (!selectedCourseForLMS) {
+        showNotification('Please select a course first', 'error');
+        return;
+    }
+    
+    try {
+        await addDoc(collection(db, "lms_materials"), {
+            courseId: selectedCourseForLMS.id,
+            courseName: selectedCourseForLMS.name,
+            title: lmsFormData.title,
+            description: lmsFormData.description,
+            fileUrl: lmsFormData.fileUrl || '',
+            uploadedBy: profData.name,
+            uploadedById: auth.currentUser?.uid,
+            uploadedAt: new Date().toISOString()
+        });
+        showNotification('Material added successfully!', 'success');
+        setShowLmsModal(false);
+        setLmsFormData({ title: '', description: '', dueDate: '', fileUrl: '', maxScore: 100, questions: [] });
+        fetchLMSMaterials(selectedCourseForLMS.id);
+    } catch (error) {
+        console.error("Error adding material:", error);
+        showNotification('Error adding material', 'error');
+    }
+};
+
+
+const addLMSAssignment = async () => {
+    if (!selectedCourseForLMS) return;
+    
+    try {
+        await addDoc(collection(db, "lms_assignments"), {
+            courseId: selectedCourseForLMS.id,
+            courseName: selectedCourseForLMS.name,
+            title: lmsFormData.title,
+            description: lmsFormData.description,
+            dueDate: lmsFormData.dueDate,
+            maxScore: lmsFormData.maxScore,
+            createdAt: new Date().toISOString()
+        });
+        showNotification('Assignment added successfully!', 'success');
+        setShowLmsModal(false);
+        setLmsFormData({ title: '', description: '', dueDate: '', fileUrl: '', maxScore: 100, questions: [] });
+        fetchLMSAssignments(selectedCourseForLMS.id);
+    } catch (error) {
+        console.error("Error adding assignment:", error);
+        showNotification('Error adding assignment', 'error');
+    }
+};
+
+const deleteLMSMaterial = async (materialId) => {
+    if (!window.confirm('Delete this material?')) return;
+    try {
+        await deleteDoc(doc(db, "lms_materials", materialId));
+        showNotification('Material deleted', 'success');
+        fetchLMSMaterials(selectedCourseForLMS.id);
+    } catch (error) {
+        showNotification('Error deleting material', 'error');
+    }
+};
+//------
+// ========== Cloudinary Upload Functions ==========
+const openCloudinaryWidget = () => {
+    if (!selectedCourseForLMS) {
+        showNotification('Please select a course first', 'error');
+        return;
+    }
+    
+    if (!lmsFormData.title) {
+        showNotification('Please enter a title first', 'error');
+        return;
+    }
+    
+    const widget = window.cloudinary.createUploadWidget(
+        {
+            cloudName: 'dsxijrxup',
+            uploadPreset: 'lms_uploads',
+            apiKey:'739947389236212',
+            sources: ['local', 'camera', 'url', 'google_drive'],
+            multiple: false,
+            maxFiles: 1,
+            resourceType: 'auto',
+            clientAllowedFormats: ['pdf', 'mp4', 'mov', 'jpg', 'png', 'jpeg', 'pptx', 'docx'],
+            maxFileSize: 200 * 1024 * 1024, // 200 MB
+            folder: `lms/${selectedCourseForLMS.id}`,
+            type: 'upload',
+            styles: {
+                palette: {
+                    window: '#FFFFFF',
+                    windowBorder: '#4a90e2',
+                    tabIcon: '#4a90e2',
+                    menuIcons: '#4a90e2',
+                    textDark: '#2d3748',
+                    textLight: '#FFFFFF',
+                    link: '#4a90e2',
+                    action: '#4a90e2',
+                    inactiveTabIcon: '#a0aec0',
+                    error: '#f44236',
+                    inProgress: '#4a90e2',
+                    complete: '#10b981',
+                    sourceBg: '#f8fafd'
+                }
+            }
+        },
+        (error, result) => {
+            if (error) {
+                console.error("Upload error:", error);
+                showNotification('Upload failed. Please try again.', 'error');
+                return;
+            }
+            
+            if (result && result.event === 'success') {
+                const uploadedUrl = result.info.secure_url;
+                const fileName = result.info.original_filename;
+                const fileType = result.info.resource_type;
+                const fileFormat = result.info.format;
+                
+                
+                saveMaterialToFirebase(uploadedUrl, fileName, fileType, fileFormat);
+                widget.close();
+            }
+        }
+    );
+    widget.open();
+};
+
+const saveMaterialToFirebase = async (fileUrl, fileName, fileType, fileFormat) => {
+    setIsUploading(true);
+    
+    try {
+        await addDoc(collection(db, "lms_materials"), {
+            courseId: selectedCourseForLMS.id,
+            courseName: selectedCourseForLMS.name,
+            title: lmsFormData.title,
+            description: lmsFormData.description,
+            fileUrl: fileUrl,
+            fileName: fileName,
+
+            fileType: fileType,
+            fileFormat: fileFormat,
+            uploadedBy: profData.name,
+            uploadedById: auth.currentUser?.uid,
+            uploadedAt: new Date().toISOString()
+        });
+        
+        showNotification('Material uploaded successfully!', 'success');
+        setShowLmsModal(false);
+        setLmsFormData({ title: '', description: '', dueDate: '', fileUrl: '', maxScore: 100, questions: [] });
+        fetchLMSMaterials(selectedCourseForLMS.id);
+    } catch (error) {
+        console.error("Error saving to Firebase:", error);
+        showNotification('File uploaded but failed to save metadata', 'error');
+    } finally {
+        setIsUploading(false);
+    }
+};
+//------
     useEffect(() => {
         const fetchAdminCourses = async () => {
             const querySnapshot = await getDocs(collection(db, "courses"));
@@ -741,104 +987,189 @@ useEffect(() => {
 
                     {/* LMS Page */}
                     {activeTab === 'LMS' && (
-                        <div className="professor-lms-container">
-                            <div className="professor-lms-header">
-                                <div className="professor-lms-title">
-                                    <GraduationCap size={40} />
-                                    <div>
-                                        <h2>Learning Management System</h2>
-                                        <p>Manage your courses, content, and student engagement</p>
-                                    </div>
-                                </div>
-                                <button className="professor-primary-button" onClick={() => showNotification('LMS features coming soon!', 'info')}>
-                                    <Zap size={18} /> Quick Access
-                                </button>
-                            </div>
+    <div className="professor-lms-container">
+        {/* Header */}
+        <div className="professor-lms-header">
+            <div className="professor-lms-title">
+                <GraduationCap size={40} />
+                <div>
+                    <h2>Learning Management System</h2>
+                    <p>Manage course content, assignments, quizzes, and discussions</p>
+                </div>
+            </div>
+        </div>
 
-                            <div className="professor-lms-stats">
-                                <div className="professor-lms-stat-card">
-                                    <div className="professor-lms-stat-icon">
-                                        <BookOpen size={24} />
-                                    </div>
-                                    <div className="professor-lms-stat-value">{courses.length}</div>
-                                    <div className="professor-lms-stat-label">Active Courses</div>
-                                </div>
-                                <div className="professor-lms-stat-card">
-                                    <div className="professor-lms-stat-icon">
-                                        <FileText size={24} />
-                                    </div>
-                                    <div className="professor-lms-stat-value">24</div>
-                                    <div className="professor-lms-stat-label">Materials Uploaded</div>
-                                </div>
-                                <div className="professor-lms-stat-card">
-                                    <div className="professor-lms-stat-icon">
-                                        <Users size={24} />
-                                    </div>
-                                    <div className="professor-lms-stat-value">{totalStudents}</div>
-                                    <div className="professor-lms-stat-label">Enrolled Students</div>
-                                </div>
-                            </div>
-
-                            <div className="professor-lms-cards">
-                                <div className="professor-lms-card" onClick={() => showNotification('Course Content feature coming soon!', 'info')}>
-                                    <div className="professor-lms-card-icon">
-                                        <Video size={28} />
-                                    </div>
-                                    <h3>Course Content</h3>
-                                    <p>Upload and manage video lectures, presentations, and reading materials for your courses.</p>
-                                </div>
-                                
-                                <div className="professor-lms-card" onClick={() => showNotification('Assignments feature coming soon!', 'info')}>
-                                    <div className="professor-lms-card-icon">
-                                        <FileText size={28} />
-                                    </div>
-                                    <h3>Assignments</h3>
-                                    <p>Create, distribute, and grade assignments. Track student submissions and provide feedback.</p>
-                                </div>
-                                
-                                <div className="professor-lms-card" onClick={() => showNotification('Quizzes feature coming soon!', 'info')}>
-                                    <div className="professor-lms-card-icon">
-                                        <Award size={28} />
-                                    </div>
-                                    <h3>Quizzes & Assessments</h3>
-                                    <p>Create interactive quizzes, exams, and assessments with automatic grading.</p>
-                                </div>
-                                
-                                <div className="professor-lms-card" onClick={() => showNotification('Discussion feature coming soon!', 'info')}>
-                                    <div className="professor-lms-card-icon">
-                                        <MessageSquare size={28} />
-                                    </div>
-                                    <h3>Discussions</h3>
-                                    <p>Facilitate student discussions, Q&A forums, and collaborative learning.</p>
-                                </div>
-                            </div>
-
-                            <div className="professor-lms-features">
-                                <h3>
-                                    <Zap size={20} />
-                                    Quick Features
-                                </h3>
-                                <div className="professor-lms-features-grid">
-                                    <div className="professor-lms-feature-item" onClick={() => showNotification('Upload Materials', 'info')}>
-                                        <Upload size={18} />
-                                        <span>Upload Materials</span>
-                                    </div>
-                                    <div className="professor-lms-feature-item" onClick={() => showNotification('Share Content', 'info')}>
-                                        <Share2 size={18} />
-                                        <span>Share Content</span>
-                                    </div>
-                                    <div className="professor-lms-feature-item" onClick={() => showNotification('Virtual Classroom', 'info')}>
-                                        <Video size={18} />
-                                        <span>Virtual Classroom</span>
-                                    </div>
-                                    <div className="professor-lms-feature-item" onClick={() => showNotification('Grade Book', 'info')}>
-                                        <Award size={18} />
-                                        <span>Grade Book</span>
-                                    </div>
-                                </div>
-                            </div>
+        {/* Select Course First */}
+        {!selectedCourseForLMS ? (
+            <div className="professor-lms-select-course">
+                <h3>Select a course to start</h3>
+                <div className="professor-lms-course-grid">
+                    {courses.map(course => (
+                        <div 
+                            key={course.id} 
+                            className="professor-lms-course-option"
+                            onClick={() => setSelectedCourseForLMS(course)}
+                        >
+                            <BookOpen size={32} />
+                            <h4>{course.name}</h4>
+                            <p>{course.id}</p>
                         </div>
-                    )}
+                    ))}
+                </div>
+            </div>
+        ) : (
+            <>
+                {/* Course Header with Back Button */}
+                <div className="professor-lms-course-header">
+                    <button 
+                        className="professor-back-button"
+                        onClick={() => setSelectedCourseForLMS(null)}
+                    >
+                        ← Back to Courses
+                    </button>
+                    <div className="professor-lms-course-info">
+                        <h3>{selectedCourseForLMS.name}</h3>
+                        <span>{selectedCourseForLMS.id}</span>
+                    </div>
+                    <button 
+                        className="professor-primary-button"
+                        onClick={() => {
+                            setLmsModalType('material');
+                            setShowLmsModal(true);
+                        }}
+                    >
+                        <Plus size={18} /> Add Content
+                    </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="professor-lms-tabs">
+                    <button 
+                        className={`professor-lms-tab ${activeLmsTab === 'materials' ? 'active' : ''}`}
+                        onClick={() => setActiveLmsTab('materials')}
+                    >
+                        <Video size={18} /> Materials
+                    </button>
+                    <button 
+                        className={`professor-lms-tab ${activeLmsTab === 'assignments' ? 'active' : ''}`}
+                        onClick={() => setActiveLmsTab('assignments')}
+                    >
+                        <FileText size={18} /> Assignments
+                    </button>
+                    <button 
+                        className={`professor-lms-tab ${activeLmsTab === 'quizzes' ? 'active' : ''}`}
+                        onClick={() => setActiveLmsTab('quizzes')}
+                    >
+                        <Award size={18} /> Quizzes
+                    </button>
+                    <button 
+                        className={`professor-lms-tab ${activeLmsTab === 'discussions' ? 'active' : ''}`}
+                        onClick={() => setActiveLmsTab('discussions')}
+                    >
+                        <MessageSquare size={18} /> Discussions
+                    </button>
+                </div>
+
+                {/* Materials Tab */}
+                {activeLmsTab === 'materials' && (
+                    <div className="professor-lms-materials">
+                        {lmsMaterials.length === 0 ? (
+                            <div className="professor-lms-empty">
+                                <p>No materials uploaded yet</p>
+                                <button onClick={() => {
+                                    setLmsModalType('material');
+                                    setShowLmsModal(true);
+                                }}>Upload First Material</button>
+                            </div>
+                        ) : (
+                            <div className="professor-lms-materials-grid">
+                                {lmsMaterials.map(material => (
+                                    <div key={material.id} className="professor-lms-material-card">
+                                        <div className="professor-lms-material-icon">
+                                            <FileText size={24} />
+                                        </div>
+                                        <div className="professor-lms-material-info">
+                                            <h4>{material.title}</h4>
+                                            <p>{material.description}</p>
+                                           
+                                           {material.fileUrl && (
+        <a 
+            href={material.fileUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ color: '#4a90e2', fontSize: '13px', display: 'inline-block', marginTop: '5px' }}
+        >
+          {material.fileName || 'View File'}
+        </a>
+    )}
+
+                                            <small>Uploaded: {new Date(material.uploadedAt).toLocaleDateString()}</small>
+                                        </div>
+                                        <button 
+                                            className="professor-icon-button delete"
+                                            onClick={() => deleteLMSMaterial(material.id)}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Assignments Tab */}
+                {activeLmsTab === 'assignments' && (
+                    <div className="professor-lms-assignments">
+                        {lmsAssignments.length === 0 ? (
+                            <div className="professor-lms-empty">
+                                <p>No assignments created yet</p>
+                                <button onClick={() => {
+                                    setLmsModalType('assignment');
+                                    setShowLmsModal(true);
+                                }}>Create Assignment</button>
+                            </div>
+                        ) : (
+                            <div className="professor-lms-assignments-list">
+                                {lmsAssignments.map(assignment => (
+                                    <div key={assignment.id} className="professor-lms-assignment-card">
+                                        <div>
+                                            <h4>{assignment.title}</h4>
+                                            <p>{assignment.description}</p>
+                                            <div className="professor-lms-assignment-meta">
+                                                <span>📅 Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                                <span>⭐ Max Score: {assignment.maxScore}</span>
+                                            </div>
+                                        </div>
+                                        <button className="professor-secondary-button">View Submissions</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Quizzes Tab - Coming Soon */}
+                {activeLmsTab === 'quizzes' && (
+                    <div className="professor-lms-coming-soon">
+                        <Award size={48} />
+                        <h3>Quizzes Feature Coming Soon</h3>
+                        <p>Create interactive quizzes with automatic grading</p>
+                    </div>
+                )}
+
+                {/* Discussions Tab - Coming Soon */}
+                {activeLmsTab === 'discussions' && (
+                    <div className="professor-lms-coming-soon">
+                        <MessageSquare size={48} />
+                        <h3>Discussions Feature Coming Soon</h3>
+                        <p>Facilitate student discussions and Q&A forums</p>
+                    </div>
+                )}
+            </>
+        )}
+    </div>
+)}
 
                     {/* Under Development Pages */}
                     {(activeTab === 'Students' || activeTab === 'Schedule' || activeTab === 'Analytics') && (
@@ -1140,6 +1471,113 @@ useEffect(() => {
                     </div>
                 </div>
             )}
+            {/* LMS Add Modal */}
+{showLmsModal && (
+    <div className="professor-modal-overlay" onClick={() => setShowLmsModal(false)}>
+        <div className="professor-modal-container" onClick={e => e.stopPropagation()}>
+            <div className="professor-modal-header">
+                <h3>
+                    {lmsModalType === 'material' && 'Add Course Material'}
+                    {lmsModalType === 'assignment' && 'Create Assignment'}
+                </h3>
+                <button className="professor-close-modal-button" onClick={() => setShowLmsModal(false)}>
+                    <X size={20} />
+                </button>
+            </div>
+
+            <div className="professor-modal-form">
+                <div className="professor-form-group">
+                    <label>Title</label>
+                    <input
+                        type="text"
+                        className="professor-form-input"
+                        value={lmsFormData.title}
+                        onChange={(e) => setLmsFormData({...lmsFormData, title: e.target.value})}
+                        placeholder="Enter title"
+                    />
+                </div>
+
+                <div className="professor-form-group">
+                    <label>Description</label>
+                    <textarea
+                        className="professor-form-input"
+                        rows="3"
+                        value={lmsFormData.description}
+                        onChange={(e) => setLmsFormData({...lmsFormData, description: e.target.value})}
+                        placeholder="Enter description"
+                    />
+                </div>
+
+                {lmsModalType === 'assignment' && (
+                    <>
+                        <div className="professor-form-group">
+                            <label>Due Date</label>
+                            <input
+                                type="date"
+                                className="professor-form-input"
+                                value={lmsFormData.dueDate}
+                                onChange={(e) => setLmsFormData({...lmsFormData, dueDate: e.target.value})}
+                            />
+                        </div>
+                        <div className="professor-form-group">
+                            <label>Max Score</label>
+                            <input
+                                type="number"
+                                className="professor-form-input"
+                                value={lmsFormData.maxScore}
+                                onChange={(e) => setLmsFormData({...lmsFormData, maxScore: parseInt(e.target.value)})}
+                            />
+                        </div>
+                    </>
+                )}
+{/* Material Specific: Cloudinary Upload */}
+{lmsModalType === 'material' && (
+    <>
+        <div className="professor-form-group">
+            <label>Upload File (PDF, Video, Image, PPTX)</label>
+            <button 
+                type="button"
+                className="professor-cloudinary-upload-button"
+                onClick={openCloudinaryWidget}
+                disabled={!lmsFormData.title}
+            >
+                <Upload size={18} />
+                {!lmsFormData.title ? 'Enter title first' : 'Click to Upload File'}
+            </button>
+            <small>Supported: PDF, MP4, JPG, PNG, PPTX, DOCX (Max 200MB)</small>
+        </div>
+
+        <div className="professor-form-group">
+            <label>OR Paste Link (YouTube, Google Drive, etc.)</label>
+            <input
+                type="text"
+                className="professor-form-input"
+                value={lmsFormData.fileUrl}
+                onChange={(e) => setLmsFormData({...lmsFormData, fileUrl: e.target.value})}
+                placeholder="https://example.com/lecture.pdf"
+            />
+        </div>
+    </>
+)}
+
+                <div className="professor-modal-actions centered">
+                    <button className="professor-cancel-button" onClick={() => setShowLmsModal(false)}>
+                        Cancel
+                    </button>
+                    <button 
+                        className="professor-update-button"
+                        onClick={() => {
+                            if (lmsModalType === 'material') addLMSMaterial();
+                            if (lmsModalType === 'assignment') addLMSAssignment();
+                        }}
+                    >
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+)}
         </div>
     );
 }

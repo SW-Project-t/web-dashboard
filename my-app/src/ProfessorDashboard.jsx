@@ -14,6 +14,7 @@ import {
 import { auth, db } from './firebase'; 
 import { doc, getDoc, updateDoc, getDocs, collection, setDoc, addDoc, where, query, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { attendanceAPI } from './services/api';
 
 const STORAGE_KEYS = {
     PROF_IMAGE: 'yallaclass_prof_image'

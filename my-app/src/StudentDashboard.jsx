@@ -12,6 +12,7 @@ import {
 import { auth, db } from './firebase';
 import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot, addDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { attendanceAPI } from './services/api';
 
 const STORAGE_KEYS = {
     USER: 'yallaclass_user',
@@ -349,6 +350,23 @@ const handleAssignmentSubmit = async () => {
                 setStudentData(prev => ({ ...prev, enrolledCourses: 0 }));
                 return;
             }
+
+            // Fetch real attendance data from API
+            let attendanceSummary = null;
+            try {
+                const attendanceData = await attendanceAPI.getStudentAttendance(userId);
+                if (attendanceData.success) {
+                    attendanceSummary = attendanceData.summary;
+                    // Update overall attendance from real data
+                    setStudentData(prev => ({
+                        ...prev,
+                        overallAttendance: attendanceSummary.attendanceRate || 0
+                    }));
+                }
+            } catch (attError) {
+                console.warn("Could not fetch attendance data, using defaults:", attError.message);
+            }
+            
             const coursesRef = collection(db, "courses");
             const enrolledCourses = [];
             
@@ -359,7 +377,13 @@ const handleAssignmentSubmit = async () => {
                 courseSnap.forEach((doc) => {
                     const courseData = doc.data();
                     
-                    const attendanceRate = Math.floor(Math.random() * 40) + 60;
+                    // Calculate attendance rate from real data if available, otherwise use default
+                    let attendanceRate = 75; // Default value
+                    if (attendanceSummary && attendanceSummary.totalRecords > 0) {
+                        // Use the overall attendance rate from the API
+                        attendanceRate = attendanceSummary.attendanceRate;
+                    }
+                    
                     const grades = Math.floor(Math.random() * 30) + 70;
                     const timeliness = Math.floor(Math.random() * 50) + 50;
                     const riskScore = calculateRiskScore(

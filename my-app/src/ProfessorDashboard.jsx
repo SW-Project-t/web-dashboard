@@ -1056,11 +1056,11 @@ export default function ProfessorDashboard() {
                         <span>Schedule</span>
                     </button>
                     <button 
-                        className={`professor-nav-button ${activeTab === 'Analytics' ? 'active' : ''}`} 
-                        onClick={() => setActiveTab('Analytics')}
+                        className={`professor-nav-button ${activeTab === 'Attendance Analytics' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Attendance Analytics')}
                     >
                         <BarChart3 size={20} />
-                        <span>Analytics</span>
+                        <span>Attendance Analytics</span>
                     </button>
                     <button 
                         className={`professor-nav-button ${activeTab === 'LMS' ? 'active' : ''}`} 
@@ -1818,7 +1818,7 @@ export default function ProfessorDashboard() {
                         </div>
                     )}
 
-                    {activeTab === 'Analytics' && (
+                    {activeTab === 'Attendance Analytics' && (
                         <div className="professor-analytics-container">
                             <div className="professor-analytics-header">
                                 <div className="flex-align-center">

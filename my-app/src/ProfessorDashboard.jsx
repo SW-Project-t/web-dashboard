@@ -8,13 +8,15 @@ import {
     Menu, Search, ChevronRight, BarChart3, UserPlus,
     X, Shield, Building, Eye, GraduationCap, Video, 
     FileText, MessageSquare, Award, Upload, Share2, Zap,
-    Filter, UserCheck, UserX, AlertTriangle, Star, Mail, Phone
+    Filter, UserCheck, UserX, AlertTriangle, Star, Mail, Phone,
+    PieChart, Activity
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
 import { doc, getDoc, updateDoc, getDocs, collection, setDoc, addDoc, where, query, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { attendanceAPI } from './services/api';
+import { subscribeToAllCoursesAttendance } from './services/firebaseAttendanceService';
 
 const STORAGE_KEYS = {
     PROF_IMAGE: 'yallaclass_prof_image'
@@ -25,7 +27,6 @@ const CLOUDINARY_UPLOAD_PRESET = 'Lms_uploads';
 
 export default function ProfessorDashboard() {
     const navigate = useNavigate();
-    
     const [profileImage, setProfileImage] = useState(localStorage.getItem(STORAGE_KEYS.PROF_IMAGE) || null);
     const [profData, setProfData] = useState({ name: 'Loading...', code: '...' });
     const [isLoading, setIsLoading] = useState(true);
@@ -39,33 +40,82 @@ export default function ProfessorDashboard() {
         newPassword: '',
         confirmPassword: ''
     });
-
+    const [cumulativeAttendanceStats, setCumulativeAttendanceStats] = useState({
+        courses: [],
+        overall: {
+            totalCourses: 0,
+            totalStudents: 0,
+            totalSessions: 0,
+            avgAttendanceRate: 0,
+            totalPresent: 0,
+            totalLate: 0,
+            totalAbsent: 0
+        }
+    });
+    const [attendanceLoading, setAttendanceLoading] = useState(true);
     const [enrolledStudents, setEnrolledStudents] = useState({});
     const [selectedCourseForStudents, setSelectedCourseForStudents] = useState(null);
     const [showStudentsModal, setShowStudentsModal] = useState(false);
     const [isLoadingStudents, setIsLoadingStudents] = useState(false);
     const [studentSearchQuery, setStudentSearchQuery] = useState('');
-    const [studentFilterType, setStudentFilterType] = useState('all'); // all, name, code, risk
+    const [studentFilterType, setStudentFilterType] = useState('all');
     const [riskFilterRange, setRiskFilterRange] = useState({ min: 0, max: 100 });
     const [showRiskFilter, setShowRiskFilter] = useState(false);
-    const [sortBy, setSortBy] = useState('name'); // name, code, risk, attendance
+    const [sortBy, setSortBy] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
-
     const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
     const [currentSubmissions, setCurrentSubmissions] = useState([]);
     const [selectedAssignmentForSub, setSelectedAssignmentForSub] = useState(null);
-    
-    const fetchAssignmentSubmissions = async (assignmentId) => {
-    try {
-        const q = query(collection(db, "lms_submissions"), where("assignmentId", "==", assignmentId));
-        const snapshot = await getDocs(q);
-        const submissions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setCurrentSubmissions(submissions);
-    } catch (error) {
-        console.error("Error fetching submissions:", error);
-        setCurrentSubmissions([]);
-    }
-};
+    const [adminCourses, setAdminCourses] = useState([]);
+    const [lmsMaterials, setLmsMaterials] = useState([]);
+    const [lmsAssignments, setLmsAssignments] = useState([]);
+    const [lmsQuizzes, setLmsQuizzes] = useState([]);
+    const [lmsDiscussions, setLmsDiscussions] = useState([]);
+    const [selectedCourseForLMS, setSelectedCourseForLMS] = useState(null);
+    const [showLmsModal, setShowLmsModal] = useState(false);
+    const [lmsModalType, setLmsModalType] = useState('');
+    const [activeLmsTab, setActiveLmsTab] = useState('materials');
+    const [lmsFormData, setLmsFormData] = useState({
+        title: '',
+        description: '',
+        dueDate: '',
+        fileUrl: '',
+        maxScore: 100,
+        questions: []
+    });
+    const [assignmentFile, setAssignmentFile] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [courses, setCourses] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+    const [modalType, setModalType] = useState('');
+    const [selectedCourse, setSelectedCourse] = useState(null);
+    const [notifications, setNotifications] = useState([]);
+    const [newCourse, setNewCourse] = useState({
+        id: '', name: '', schedule: '', room: '', students: '', capacity: ''
+    });
+
+    const getAttendanceColor = (rate) => {
+        if (rate >= 85) return '#28a745';
+        if (rate >= 70) return '#ffc107';
+        if (rate >= 50) return '#fd7e14';
+        return '#dc3545';
+    };
+
+    const getAttendanceStatus = (rate) => {
+        if (rate >= 85) return 'Excellent';
+        if (rate >= 70) return 'Good';
+        if (rate >= 50) return 'At Risk';
+        return 'Critical';
+    };
+
+    const showNotification = (message, type = 'success') => {
+        const id = Date.now();
+        setNotifications(prev => [...prev, { id, message, type }]);
+        setTimeout(() => {
+            setNotifications(prev => prev.filter(n => n.id !== id));
+        }, 3000);
+    };
 
     useEffect(() => {
         const event = isDigitalIdModalOpen ? 'openDigitalID' : 'closeDigitalID';
@@ -81,154 +131,209 @@ export default function ProfessorDashboard() {
             document.body.classList.remove('digital-id-open');
         };
     }, [isDigitalIdModalOpen]);
- const BASE_URL = "http://localhost:3001"; // تأكد إن ده بورت الباك-إند بتاعك
 
-async function enrollStudent(data) {
-  const response = await fetch(`${BASE_URL}/api/enroll-student`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error("Enrollment failed");
-  return response.json();
-}
+    useEffect(() => {
+        const fetchAdminCourses = async () => {
+            const querySnapshot = await getDocs(collection(db, "courses"));
+            const coursesList = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setAdminCourses(coursesList);
+        };
+        fetchAdminCourses();
+    }, []);
 
-async function unenrollStudent(data) {
-  const response = await fetch(`${BASE_URL}/api/unenroll-student`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error("Unenrollment failed");
-  return response.json();
-}
+    const fetchUserData = async (user) => {
+        try {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            const token = localStorage.getItem('token');
+            
+            if(!token) {
+                navigate('/');
+                return;
+            }
 
-async function getCourseStudents(courseId) {
-  const response = await fetch(`${BASE_URL}/api/course-students/${courseId}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!response.ok) throw new Error("Failed to fetch students");
-  return response.json();
-}
-
-    const openDigitalID = () => {
-        setIsDigitalIdModalOpen(true);
-        const navbar = document.querySelector('.navbar-container');
-        if (navbar) {
-            navbar.style.display = 'none';
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setProfData({
+                    name: data.fullName || "Dr. Anonymous",
+                    code: data.code || "No Code"
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            showNotification('Error fetching profile data', 'error');
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const closeDigitalID = () => {
-        setIsDigitalIdModalOpen(false);
-        const navbar = document.querySelector('.navbar-container');
-        if (navbar) {
-            navbar.style.display = 'flex';
-        }
-    };
-
-    const [adminCourses, setAdminCourses] = useState([]);
-    const [lmsMaterials, setLmsMaterials] = useState([]);
-    const [lmsAssignments, setLmsAssignments] = useState([]);
-    const [lmsQuizzes, setLmsQuizzes] = useState([]);
-    const [lmsDiscussions, setLmsDiscussions] = useState([]);
-    const [selectedCourseForLMS, setSelectedCourseForLMS] = useState(null);
-    const [showLmsModal, setShowLmsModal] = useState(false);
-    const [lmsModalType, setLmsModalType] = useState(''); 
-    const [activeLmsTab, setActiveLmsTab] = useState('materials');
-    const [lmsFormData, setLmsFormData] = useState({
-        title: '',
-        description: '',
-        dueDate: '',
-        fileUrl: '',
-        maxScore: 100,
-        questions: []
-    });
-
-    const [assignmentFile, setAssignmentFile] = useState(null);
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const fetchEnrolledStudents = async (courseId, courseName) => {
-    setIsLoadingStudents(true);
-    try {
-        // 1. نداء الـ API اللي إنت عملته في الباك لآخذ بيانات الطلاب
-       // تأكد من البورت 3001 ومن كلمة /api/
-        const response = await fetch(`http://localhost:3001/api/course-students/${courseId}`);
-        
-        // لو السيرفر رجع صفحة HTML (Error)، السطر ده هيمسكها
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            throw new TypeError("الباك إند رجع HTML مش JSON! تأكد من المسار في السيرفر.");
-        }
-
-        if (!response.ok) {
-            throw new Error("Failed to fetch students from server");
-        }
-
-        const students = await response.json();
-
-        // 2. معالجة البيانات وحساب الـ Risk Score (نفس اللوجيك بتاعك القديم)
-        const processedStudents = students.map(student => {
-            // ملاحظة: تأكد إن الباك-إند بيرجع attendanceRecords و grades لكل طالب
-            // لو الباك بيرجع البيانات دي جاهزة، تقدر تشيل الحسابات دي
-            
-            const attendance = student.attendanceRecords || [];
-            const grades = student.grades || [];
-            
-            const totalClasses = attendance.length || 1;
-            const presentClasses = attendance.filter(r => r.status === 'present').length;
-            const lateCount = attendance.filter(r => r.status === 'late').length;
-            const attendanceRate = (presentClasses / totalClasses) * 100;
-            
-            const totalScore = grades.reduce((sum, g) => sum + (g.score || 0), 0);
-            const averageGrade = grades.length > 0 ? (totalScore / grades.length) : 0;
-
-            let riskScore = 0;
-            
-            // حسابات الـ Risk Score (Attendance)
-            if (attendanceRate < 50) riskScore += 40;
-            else if (attendanceRate < 70) riskScore += 25;
-            else if (attendanceRate < 85) riskScore += 10;
-
-            // حسابات الـ Risk Score (Grades)
-            if (averageGrade < 50) riskScore += 40;
-            else if (averageGrade < 65) riskScore += 25;
-            else if (averageGrade < 75) riskScore += 10;
-
-            // حسابات الـ Risk Score (Lateness)
-            if (lateCount > 10) riskScore += 20;
-            else if (lateCount > 5) riskScore += 15;
-            else if (lateCount > 2) riskScore += 10;
-            else if (lateCount > 0) riskScore += 5;
-
-            return {
-                ...student,
-                attendanceRate: Math.round(attendanceRate),
-                averageGrade: Math.round(averageGrade),
-                riskScore: riskScore,
-                lateCount: lateCount,
-                totalClasses: totalClasses,
-                presentCount: presentClasses,
-                riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low'
-            };
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                fetchUserData(user);
+            } else {
+                navigate('/');
+            }
         });
+        return () => unsubscribe();
+    }, [navigate]);
 
-        // 3. تحديث الـ State
-        setEnrolledStudents(prev => ({
-            ...prev,
-            [courseId]: processedStudents
-        }));
+    useEffect(() => {
+        const fetchProfessorCourses = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
 
-        return processedStudents;
-    } catch (error) {
-        console.error("Error fetching enrolled students:", error);
-        showNotification('حدث خطأ أثناء تحميل الطلاب', 'error');
-        return [];
-    } finally {
-        setIsLoadingStudents(false);
-    }
-};
+            try {
+                const q = query(collection(db, "professorCourses"), where("professorId", "==", user.uid));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const professorCoursesList = querySnapshot.docs.map(doc => ({
+                        id: doc.data().courseId,
+                        name: doc.data().courseName,
+                        schedule: doc.data().schedule,
+                        room: doc.data().room,
+                        capacity: doc.data().capacity,
+                        students: doc.data().students || 0,
+                        avgAttendance: doc.data().avgAttendance || 0,
+                        todayPresent: doc.data().todayPresent || 0,
+                        todayLate: doc.data().todayLate || 0,
+                        todayAbsent: doc.data().todayAbsent || 0
+                    }));
+                    
+                    setCourses(professorCoursesList);
+                }
+            } catch (error) {
+                console.error("Error fetching professor courses:", error);
+            }
+        };
+
+        fetchProfessorCourses();
+    }, [auth.currentUser]);
+     useEffect(() => {
+        if (courses.length === 0) return;
+        
+        setAttendanceLoading(true);
+        const unsubscribe = subscribeToAllCoursesAttendance((data) => {
+            if (data && data.courses) {
+                const professorCourseIds = courses.map(c => c.id);
+                const filteredCourses = data.courses.filter(course => 
+                    professorCourseIds.includes(course.courseId)
+                );
+                
+                const transformedData = {
+                    courses: filteredCourses.map(course => ({
+                        courseId: course.courseId,
+                        courseName: course.courseName,
+                        courseCode: course.courseId,
+                        attendanceRate: course.attendanceRate || 0,
+                        totalRecords: course.totalRecords || 0,
+                        presentCount: course.presentCount || 0,
+                        lateCount: course.lateCount || 0,
+                        absentCount: course.absentCount || 0,
+                        totalStudents: course.totalStudents || 0
+                    })),
+                    overall: {
+                        totalCourses: filteredCourses.length,
+                        totalStudents: filteredCourses.reduce((sum, c) => sum + (c.totalStudents || 0), 0),
+                        totalSessions: filteredCourses.reduce((sum, c) => sum + (c.totalRecords || 0), 0),
+                        avgAttendanceRate: filteredCourses.length > 0 
+                            ? Math.round(filteredCourses.reduce((sum, c) => sum + (c.attendanceRate || 0), 0) / filteredCourses.length)
+                            : 0,
+                        totalPresent: filteredCourses.reduce((sum, c) => sum + (c.presentCount || 0), 0),
+                        totalLate: filteredCourses.reduce((sum, c) => sum + (c.lateCount || 0), 0),
+                        totalAbsent: filteredCourses.reduce((sum, c) => sum + (c.absentCount || 0), 0)
+                    }
+                };
+                setCumulativeAttendanceStats(transformedData);
+            }
+            setAttendanceLoading(false);
+        });
+        return () => unsubscribe();
+    }, [courses]);
+
+    useEffect(() => {
+        if (selectedCourseForLMS) {
+            fetchLMSMaterials(selectedCourseForLMS.id);
+            fetchLMSAssignments(selectedCourseForLMS.id);
+            fetchLMSQuizzes(selectedCourseForLMS.id);
+            fetchLMSDiscussions(selectedCourseForLMS.id);
+        }
+    }, [selectedCourseForLMS]);
+
+    const fetchEnrolledStudents = async (courseId, courseName) => {
+        setIsLoadingStudents(true);
+        try {
+            const response = await fetch(`http://localhost:3001/api/course-students/${courseId}`);
+            
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new TypeError("Backend returned HTML not JSON!");
+            }
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch students from server");
+            }
+
+            const students = await response.json();
+
+            const processedStudents = students.map(student => {
+                const attendance = student.attendanceRecords || [];
+                const grades = student.grades || [];
+                
+                const totalClasses = attendance.length || 1;
+                const presentClasses = attendance.filter(r => r.status === 'present').length;
+                const lateCount = attendance.filter(r => r.status === 'late').length;
+                const attendanceRate = (presentClasses / totalClasses) * 100;
+                
+                const totalScore = grades.reduce((sum, g) => sum + (g.score || 0), 0);
+                const averageGrade = grades.length > 0 ? (totalScore / grades.length) : 0;
+
+                let riskScore = 0;
+                
+                if (attendanceRate < 50) riskScore += 40;
+                else if (attendanceRate < 70) riskScore += 25;
+                else if (attendanceRate < 85) riskScore += 10;
+
+                if (averageGrade < 50) riskScore += 40;
+                else if (averageGrade < 65) riskScore += 25;
+                else if (averageGrade < 75) riskScore += 10;
+
+                if (lateCount > 10) riskScore += 20;
+                else if (lateCount > 5) riskScore += 15;
+                else if (lateCount > 2) riskScore += 10;
+                else if (lateCount > 0) riskScore += 5;
+
+                return {
+                    ...student,
+                    attendanceRate: Math.round(attendanceRate),
+                    averageGrade: Math.round(averageGrade),
+                    riskScore: riskScore,
+                    lateCount: lateCount,
+                    totalClasses: totalClasses,
+                    presentCount: presentClasses,
+                    riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low'
+                };
+            });
+
+            setEnrolledStudents(prev => ({
+                ...prev,
+                [courseId]: processedStudents
+            }));
+
+            return processedStudents;
+        } catch (error) {
+            console.error("Error fetching enrolled students:", error);
+            showNotification('Error loading students', 'error');
+            return [];
+        } finally {
+            setIsLoadingStudents(false);
+        }
+    };
+
     const viewCourseStudents = async (course) => {
         setSelectedCourseForStudents(course);
         setStudentSearchQuery('');
@@ -244,37 +349,33 @@ async function getCourseStudents(courseId) {
         setShowStudentsModal(true);
     };
 
-  const removeStudentFromCourse = async (enrollmentId, courseId, studentName) => {
-    if (!window.confirm(`Are you sure you want to remove ${studentName} from this course?`)) return;
-    
-    try {
-        // نداء الـ API اللي إنت عملته (unenroll-student)
-        const response = await fetch("/api/unenroll-student", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                enrollmentId: enrollmentId 
-                // ملحوظة: لو الباك محتاج studentId أو courseId برضه ضيفهم هنا
-            }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Unenrollment failed");
-        }
-
-        // تحديث الـ UI محلياً بعد نجاح الـ Request
-        setEnrolledStudents(prev => ({
-            ...prev,
-            [courseId]: prev[courseId].filter(s => s.id !== enrollmentId)
-        }));
+    const removeStudentFromCourse = async (enrollmentId, courseId, studentName) => {
+        if (!window.confirm(`Are you sure you want to remove ${studentName} from this course?`)) return;
         
-        showNotification(`${studentName} removed from course`, 'success');
-    } catch (error) {
-        console.error("Error removing student:", error);
-        showNotification(error.message || 'Error removing student', 'error');
-    }
-};
+        try {
+            const response = await fetch("/api/unenroll-student", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enrollmentId: enrollmentId }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Unenrollment failed");
+            }
+
+            setEnrolledStudents(prev => ({
+                ...prev,
+                [courseId]: prev[courseId].filter(s => s.id !== enrollmentId)
+            }));
+            
+            showNotification(`${studentName} removed from course`, 'success');
+        } catch (error) {
+            console.error("Error removing student:", error);
+            showNotification(error.message || 'Error removing student', 'error');
+        }
+    };
+
     const getFilteredAndSortedStudents = () => {
         if (!selectedCourseForStudents) return [];
         
@@ -297,7 +398,7 @@ async function getCourseStudents(courseId) {
                         students = students.filter(s => s.riskScore <= riskValue);
                     }
                     break;
-                default: // all
+                default:
                     students = students.filter(s => 
                         s.studentName?.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
                         s.studentCode?.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
@@ -339,19 +440,19 @@ async function getCourseStudents(courseId) {
         return students;
     };
 
-    
     const getRiskColor = (riskScore) => {
         if (riskScore >= 70) return '#dc3545';
         if (riskScore >= 40) return '#ffc107';
         return '#28a745';
     };
-     const getRiskText = (riskScore) => {
+
+    const getRiskText = (riskScore) => {
         if (riskScore >= 70) return 'High Risk';
         if (riskScore >= 40) return 'Medium Risk';
         return 'Low Risk';
     };
 
-     const fetchLMSMaterials = async (courseId) => {
+    const fetchLMSMaterials = async (courseId) => {
         try {
             const q = query(collection(db, "lms_materials"), where("courseId", "==", courseId));
             const snapshot = await getDocs(q);
@@ -364,25 +465,25 @@ async function getCourseStudents(courseId) {
     };
 
     const fetchLMSAssignments = async (courseId) => {
-    try {
-        const q = query(collection(db, "lms_assignments"), where("courseId", "==", courseId));
-        const snapshot = await getDocs(q);
-        const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        for (let assignment of assignments) {
-            const submissionsQuery = query(
-                collection(db, "lms_submissions"),
-                where("assignmentId", "==", assignment.id)
-            );
-            const submissionsSnap = await getDocs(submissionsQuery);
-            assignment.submissionsCount = submissionsSnap.size;
+        try {
+            const q = query(collection(db, "lms_assignments"), where("courseId", "==", courseId));
+            const snapshot = await getDocs(q);
+            const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            for (let assignment of assignments) {
+                const submissionsQuery = query(
+                    collection(db, "lms_submissions"),
+                    where("assignmentId", "==", assignment.id)
+                );
+                const submissionsSnap = await getDocs(submissionsQuery);
+                assignment.submissionsCount = submissionsSnap.size;
+            }
+            
+            setLmsAssignments(assignments);
+        } catch (error) {
+            console.error("Error fetching assignments:", error);
+            setLmsAssignments([]);
         }
-        
-        setLmsAssignments(assignments);
-    } catch (error) {
-        console.error("Error fetching assignments:", error);
-        setLmsAssignments([]);
-    }
-};
+    };
 
     const fetchLMSQuizzes = async (courseId) => {
         try {
@@ -408,14 +509,17 @@ async function getCourseStudents(courseId) {
         }
     };
 
-    useEffect(() => {
-        if (selectedCourseForLMS) {
-            fetchLMSMaterials(selectedCourseForLMS.id);
-            fetchLMSAssignments(selectedCourseForLMS.id);
-            fetchLMSQuizzes(selectedCourseForLMS.id);
-            fetchLMSDiscussions(selectedCourseForLMS.id);
+    const fetchAssignmentSubmissions = async (assignmentId) => {
+        try {
+            const q = query(collection(db, "lms_submissions"), where("assignmentId", "==", assignmentId));
+            const snapshot = await getDocs(q);
+            const submissions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCurrentSubmissions(submissions);
+        } catch (error) {
+            console.error("Error fetching submissions:", error);
+            setCurrentSubmissions([]);
         }
-    }, [selectedCourseForLMS]);
+    };
 
     const addLMSMaterial = async () => {
         if (!selectedCourseForLMS) {
@@ -628,55 +732,6 @@ async function getCourseStudents(courseId) {
         }
     };
 
-    useEffect(() => {
-        const fetchAdminCourses = async () => {
-            const querySnapshot = await getDocs(collection(db, "courses"));
-            const coursesList = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setAdminCourses(coursesList);
-        };
-        fetchAdminCourses();
-    }, []);
-
-    const fetchUserData = async (user) => {
-        try {
-            const docRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(docRef);
-            const token = localStorage.getItem('token');
-            
-            if(!token) {
-                navigate('/');
-                return;
-            }
-
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setProfData({
-                    name: data.fullName || "Dr. Anonymous",
-                    code: data.code || "No Code"
-                });
-            }
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            showNotification('Error fetching profile data', 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                fetchUserData(user);
-            } else {
-                navigate('/');
-            }
-        });
-        return () => unsubscribe();
-    }, [navigate]);
-    
     const handleLogout = () => {
         localStorage.removeItem('token');
         showNotification('Logging out...', 'success');
@@ -719,24 +774,6 @@ async function getCourseStudents(courseId) {
                 showNotification("Error updating password. Please try again.", 'error');
             }
         }
-    };
-   
-    const [courses, setCourses] = useState([]);
-
-    const [showModal, setShowModal] = useState(false);
-    const [modalType, setModalType] = useState('');
-    const [selectedCourse, setSelectedCourse] = useState(null);
-    const [notifications, setNotifications] = useState([]);
-    const [newCourse, setNewCourse] = useState({
-        id: '', name: '', schedule: '', room: '', students: '', capacity: ''
-    });
-
-    const showNotification = (message, type = 'success') => {
-        const id = Date.now();
-        setNotifications(prev => [...prev, { id, message, type }]);
-        setTimeout(() => {
-            setNotifications(prev => prev.filter(n => n.id !== id));
-        }, 3000);
     };
 
     const handleImageUpload = (e) => {
@@ -818,7 +855,7 @@ async function getCourseStudents(courseId) {
             showNotification('Error deleting course', 'error');
         }
     };
- 
+
     const handleSelectCourseFromAdmin = (courseId) => {
         const selected = adminCourses.find(c => c.courseId === courseId);
         if (selected) {
@@ -890,43 +927,6 @@ async function getCourseStudents(courseId) {
         }
     };
 
-    useEffect(() => {
-        const fetchProfessorCourses = async () => {
-            const user = auth.currentUser;
-            if (!user) return;
-
-            try {
-                const q = query(collection(db, "professorCourses"), where("professorId", "==", user.uid));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    const professorCoursesList = querySnapshot.docs.map(doc => ({
-                        id: doc.data().courseId,
-                        name: doc.data().courseName,
-                        schedule: doc.data().schedule,
-                        room: doc.data().room,
-                        capacity: doc.data().capacity,
-                        students: doc.data().students || 0,
-                        avgAttendance: doc.data().avgAttendance || 0,
-                        todayPresent: doc.data().todayPresent || 0,
-                        todayLate: doc.data().todayLate || 0,
-                        todayAbsent: doc.data().todayAbsent || 0
-                    }));
-                    
-                    setCourses(prev => {
-                        const existingIds = new Set(prev.map(c => c.id));
-                        const newCourses = professorCoursesList.filter(c => !existingIds.has(c.id));
-                        return [...prev, ...newCourses];
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching professor courses:", error);
-            }
-        };
-
-        fetchProfessorCourses();
-    }, [auth.currentUser]);
-
     const updateAttendance = (courseId, type) => {
         setCourses(courses.map(c => {
             if (c.id === courseId) {
@@ -960,6 +960,22 @@ async function getCourseStudents(courseId) {
         { day: 'Thu', value: 89 },
         { day: 'Fri', value: 93 }
     ];
+
+    const openDigitalID = () => {
+        setIsDigitalIdModalOpen(true);
+        const navbar = document.querySelector('.navbar-container');
+        if (navbar) {
+            navbar.style.display = 'none';
+        }
+    };
+
+    const closeDigitalID = () => {
+        setIsDigitalIdModalOpen(false);
+        const navbar = document.querySelector('.navbar-container');
+        if (navbar) {
+            navbar.style.display = 'flex';
+        }
+    };
 
     return (
         <div className="professor-dashboard-container">
@@ -1126,7 +1142,7 @@ async function getCourseStudents(courseId) {
                                 </div>
                             </div>
 
-                            {/* Stats Cards */}
+                            {/* Stats Cards with Attendance */}
                             <div className="professor-stats-grid">
                                 <div className="professor-stat-card">
                                     <BookOpen className="professor-stat-icon blue" />
@@ -1139,14 +1155,14 @@ async function getCourseStudents(courseId) {
                                     <Users className="professor-stat-icon green" />
                                     <div className="professor-stat-info">
                                         <span className="professor-stat-label">Total Students</span>
-                                        <span className="professor-stat-value">{totalStudents}</span>
+                                        <span className="professor-stat-value">{cumulativeAttendanceStats.overall.totalStudents || 0}</span>
                                     </div>
                                 </div>
                                 <div className="professor-stat-card">
                                     <TrendingUp className="professor-stat-icon purple" />
                                     <div className="professor-stat-info">
                                         <span className="professor-stat-label">Avg Attendance</span>
-                                        <span className="professor-stat-value">{avgAttendance}%</span>
+                                        <span className="professor-stat-value">{cumulativeAttendanceStats.overall.avgAttendanceRate || 0}%</span>
                                     </div>
                                 </div>
                                 <div className="professor-stat-card">
@@ -1158,7 +1174,7 @@ async function getCourseStudents(courseId) {
                                 </div>
                             </div>
 
-                            {/* Courses Section */}
+                            {/* Courses Section with Attendance Rate */}
                             <div className="professor-courses-section">
                                 <div className="professor-section-header">
                                     <h2>My Courses</h2>
@@ -1168,40 +1184,65 @@ async function getCourseStudents(courseId) {
                                 </div>
 
                                 <div className="professor-courses-grid">
-                                    {filteredCourses.slice(0, 3).map(course => (
-                                        <div key={course.id} className="professor-course-card">
-                                            <div className="professor-course-header">
-                                                <span className="professor-course-code">{course.id}</span>
-                                                <div className="professor-course-actions">
-                                                    <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                    {filteredCourses.slice(0, 3).map(course => {
+                                        const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === course.id);
+                                        const attendanceRate = courseStats?.attendanceRate || 0;
+                                        return (
+                                            <div key={course.id} className="professor-course-card">
+                                                <div className="professor-course-header">
+                                                    <span className="professor-course-code">{course.id}</span>
+                                                    <div className="professor-course-actions">
+                                                        <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
                                                 </div>
+                                                <h3 className="professor-course-name">{course.name}</h3>
+                                                <div className="professor-course-details">
+                                                    <p><Clock size={14} /> {course.schedule}</p>
+                                                    <p><Calendar size={14} /> {course.room}</p>
+                                                </div>
+                                                
+                                                {/* Cumulative Attendance Rate */}
+                                                <div className="professor-course-attendance-rate">
+                                                    <div className="attendance-rate-header">
+                                                        <Activity size={14} />
+                                                        <span>Cumulative Attendance</span>
+                                                    </div>
+                                                    <div className="attendance-rate-value" style={{ color: getAttendanceColor(attendanceRate) }}>
+                                                        {attendanceRate}%
+                                                    </div>
+                                                    <div className="attendance-progress-bar">
+                                                        <div 
+                                                            className="attendance-progress-fill"
+                                                            style={{ width: `${attendanceRate}%`, backgroundColor: getAttendanceColor(attendanceRate) }}
+                                                        ></div>
+                                                    </div>
+                                                    <div className="attendance-status-text" style={{ color: getAttendanceColor(attendanceRate) }}>
+                                                        {getAttendanceStatus(attendanceRate)}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="professor-attendance-summary">
+                                                    <div className="professor-attendance-item present">
+                                                        <CheckCircle size={14} />
+                                                        <span>{course.todayPresent} Present</span>
+                                                    </div>
+                                                    <div className="professor-attendance-item late">
+                                                        <AlertCircle size={14} />
+                                                        <span>{course.todayLate} Late</span>
+                                                    </div>
+                                                    <div className="professor-attendance-item absent">
+                                                        <XCircle size={14} />
+                                                        <span>{course.todayAbsent} Absent</span>
+                                                    </div>
+                                                </div>
+                                                <button className="professor-start-attendance-button" onClick={() => openAttendanceModal(course)}>
+                                                    Start Attendance
+                                                </button>
                                             </div>
-                                            <h3 className="professor-course-name">{course.name}</h3>
-                                            <div className="professor-course-details">
-                                                <p><Clock size={14} /> {course.schedule}</p>
-                                                <p><Calendar size={14} /> {course.room}</p>
-                                            </div>
-                                            <div className="professor-attendance-summary">
-                                                <div className="professor-attendance-item present">
-                                                    <CheckCircle size={14} />
-                                                    <span>{course.todayPresent} Present</span>
-                                                </div>
-                                                <div className="professor-attendance-item late">
-                                                    <AlertCircle size={14} />
-                                                    <span>{course.todayLate} Late</span>
-                                                </div>
-                                                <div className="professor-attendance-item absent">
-                                                    <XCircle size={14} />
-                                                    <span>{course.todayAbsent} Absent</span>
-                                                </div>
-                                            </div>
-                                            <button className="professor-start-attendance-button" onClick={() => openAttendanceModal(course)}>
-                                                Start Attendance
-                                            </button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -1227,7 +1268,6 @@ async function getCourseStudents(courseId) {
                         </div>
                     )}
 
-                    {/* My Courses Page */}
                     {activeTab === 'My Courses' && (
                         <div className="professor-courses-full-view">
                             <div className="professor-page-header">
@@ -1245,44 +1285,64 @@ async function getCourseStudents(courseId) {
                                             <th>Schedule</th>
                                             <th>Room</th>
                                             <th>Students</th>
-                                            <th>Attendance</th>
+                                            <th>Attendance Rate</th>
+                                            <th>Today's Attendance</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {filteredCourses.length === 0 ? (
                                             <tr>
-                                                <td colSpan="7" className="professor-no-data">No courses found</td>
+                                                <td colSpan="8" className="professor-no-data">No courses found</td>
                                             </tr>
                                         ) : (
-                                            filteredCourses.map(course => (
-                                                <tr key={course.id}>
-                                                    <td className="professor-code-cell">{course.id}</td>
-                                                    <td className="professor-name-cell">{course.name}</td>
-                                                    <td>{course.schedule}</td>
-                                                    <td>{course.room}</td>
-                                                    <td>{course.students}</td>
-                                                    <td>
-                                                        <span className="professor-attendance-badge">
-                                                            {course.avgAttendance}%
-                                                        </span>
-                                                    </td>
-                                                    <td className="professor-actions-cell">
-                                                        <button className="professor-icon-button" onClick={() => openAttendanceModal(course)} title="Start Attendance">
-                                                            <CheckCircle size={18} />
-                                                        </button>
-                                                        <button className="professor-icon-button" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
-                                                            <Clock size={18} />
-                                                        </button>
-                                                        <button className="professor-icon-button" onClick={() => viewCourseStudents(course)} title="View Students">
-                                                            <Users size={18} />
-                                                        </button>
-                                                        <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
-                                                            <Trash2 size={18} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))
+                                            filteredCourses.map(course => {
+                                                const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === course.id);
+                                                const attendanceRate = courseStats?.attendanceRate || 0;
+                                                return (
+                                                    <tr key={course.id}>
+                                                        <td className="professor-code-cell">{course.id}</td>
+                                                        <td className="professor-name-cell">{course.name}</td>
+                                                        <td>{course.schedule}</td>
+                                                        <td>{course.room}</td>
+                                                        <td>{courseStats?.totalStudents || course.students || 0}</td>
+                                                        <td>
+                                                            <div className="professor-attendance-cell">
+                                                                <span className="attendance-rate-text" style={{ color: getAttendanceColor(attendanceRate), fontWeight: 'bold' }}>
+                                                                    {attendanceRate}%
+                                                                </span>
+                                                                <div className="mini-attendance-bar">
+                                                                    <div 
+                                                                        className="mini-attendance-fill"
+                                                                        style={{ width: `${attendanceRate}%`, backgroundColor: getAttendanceColor(attendanceRate) }}
+                                                                    ></div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div className="professor-today-attendance">
+                                                                <span className="present-badge">P: {course.todayPresent}</span>
+                                                                <span className="late-badge">L: {course.todayLate}</span>
+                                                                <span className="absent-badge">A: {course.todayAbsent}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="professor-actions-cell">
+                                                            <button className="professor-icon-button" onClick={() => openAttendanceModal(course)} title="Start Attendance">
+                                                                <CheckCircle size={18} />
+                                                            </button>
+                                                            <button className="professor-icon-button" onClick={() => resetDailyAttendance(course.id)} title="Reset Today">
+                                                                <Clock size={18} />
+                                                            </button>
+                                                            <button className="professor-icon-button" onClick={() => viewCourseStudents(course)} title="View Students">
+                                                                <Users size={18} />
+                                                            </button>
+                                                            <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                         )}
                                     </tbody>
                                 </table>
@@ -1290,7 +1350,6 @@ async function getCourseStudents(courseId) {
                         </div>
                     )}
 
-                    {/* Students Page - New Enhanced Version */}
                     {activeTab === 'Students' && (
                         <div className="professor-students-full-view">
                             <div className="professor-page-header">
@@ -1298,38 +1357,44 @@ async function getCourseStudents(courseId) {
                                 <p>View and manage students across all your courses</p>
                             </div>
 
-                            {/* Courses Selection Cards */}
                             <div className="professor-courses-selector">
                                 <h3>Select a Course</h3>
                                 <div className="professor-course-cards-grid">
-                                    {courses.map(course => (
-                                        <div 
-                                            key={course.id} 
-                                            className={`professor-course-select-card ${selectedCourseForStudents?.id === course.id ? 'active' : ''}`}
-                                            onClick={() => {
-                                                setSelectedCourseForStudents(course);
-                                                if (!enrolledStudents[course.id]) {
-                                                    fetchEnrolledStudents(course.id, course.name);
-                                                }
-                                                setStudentSearchQuery('');
-                                                setStudentFilterType('all');
-                                                setShowRiskFilter(false);
-                                            }}
-                                        >
-                                            <BookOpen size={24} />
-                                            <div className="professor-course-select-info">
-                                                <h4>{course.name}</h4>
-                                                <p>{course.id}</p>
-                                                <span className="professor-student-count">
-                                                    <Users size={14} /> {enrolledStudents[course.id]?.length || 0} Students
-                                                </span>
+                                    {courses.map(course => {
+                                        const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === course.id);
+                                        const attendanceRate = courseStats?.attendanceRate || 0;
+                                        return (
+                                            <div 
+                                                key={course.id} 
+                                                className={`professor-course-select-card ${selectedCourseForStudents?.id === course.id ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setSelectedCourseForStudents(course);
+                                                    if (!enrolledStudents[course.id]) {
+                                                        fetchEnrolledStudents(course.id, course.name);
+                                                    }
+                                                    setStudentSearchQuery('');
+                                                    setStudentFilterType('all');
+                                                    setShowRiskFilter(false);
+                                                }}
+                                            >
+                                                <BookOpen size={24} />
+                                                <div className="professor-course-select-info">
+                                                    <h4>{course.name}</h4>
+                                                    <p>{course.id}</p>
+                                                    <div className="course-attendance-preview">
+                                                        <span>Attendance: </span>
+                                                        <strong style={{ color: getAttendanceColor(attendanceRate) }}>{attendanceRate}%</strong>
+                                                    </div>
+                                                    <span className="professor-student-count">
+                                                        <Users size={14} /> {enrolledStudents[course.id]?.length || 0} Students
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
-                            {/* Students Table */}
                             {selectedCourseForStudents && (
                                 <div className="professor-students-table-container">
                                     <div className="professor-students-header">
@@ -1338,7 +1403,6 @@ async function getCourseStudents(courseId) {
                                             <span className="professor-total-badge">{enrolledStudents[selectedCourseForStudents.id]?.length || 0} Total</span>
                                         </h3>
                                         
-                                        {/* Filter Controls */}
                                         <div className="professor-filter-controls">
                                             <div className="professor-search-filter-group">
                                                 <Search size={18} className="professor-filter-icon" />
@@ -1389,7 +1453,6 @@ async function getCourseStudents(courseId) {
                                             </button>
                                         </div>
                                         
-                                        {/* Risk Range Filter */}
                                         {showRiskFilter && (
                                             <div className="professor-risk-range-filter">
                                                 <label>Risk Score Range:</label>
@@ -1516,7 +1579,6 @@ async function getCourseStudents(courseId) {
                                         </div>
                                     )}
                                     
-                                    {/* Summary Cards */}
                                     <div className="professor-students-summary">
                                         <div className="professor-summary-card">
                                             <Star size={20} />
@@ -1545,7 +1607,6 @@ async function getCourseStudents(courseId) {
                         </div>
                     )}
 
-                    {/* LMS Page */}
                     {activeTab === 'LMS' && (
                         <div className="professor-lms-container">
                             <div className="professor-lms-header">
@@ -1757,8 +1818,168 @@ async function getCourseStudents(courseId) {
                         </div>
                     )}
 
-                    {/* Under Development Pages */}
-                    {(activeTab === 'Schedule' || activeTab === 'Analytics') && (
+                    {activeTab === 'Analytics' && (
+                        <div className="professor-analytics-container">
+                            <div className="professor-analytics-header">
+                                <div className="flex-align-center">
+                                    <PieChart size={28} className="text-primary margin-right-2" />
+                                    <div>
+                                        <h2>Course Analytics</h2>
+                                        <p>Detailed attendance and performance metrics for your courses</p>
+                                    </div>
+                                </div>
+                                <button className="professor-export-button" onClick={exportData}>
+                                    <Download size={18} />
+                                    Export Report
+                                </button>
+                            </div>
+
+                            <div className="professor-analytics-stats">
+                                <div className="analytics-stat-card">
+                                    <div className="stat-icon blue"><BookOpen size={24} /></div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Total Courses</span>
+                                        <span className="stat-value">{cumulativeAttendanceStats.overall.totalCourses}</span>
+                                    </div>
+                                </div>
+                                <div className="analytics-stat-card">
+                                    <div className="stat-icon green"><Users size={24} /></div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Total Students</span>
+                                        <span className="stat-value">{cumulativeAttendanceStats.overall.totalStudents}</span>
+                                    </div>
+                                </div>
+                                <div className="analytics-stat-card">
+                                    <div className="stat-icon purple"><Activity size={24} /></div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Total Sessions</span>
+                                        <span className="stat-value">{cumulativeAttendanceStats.overall.totalSessions}</span>
+                                    </div>
+                                </div>
+                                <div className="analytics-stat-card">
+                                    <div className="stat-icon orange"><TrendingUp size={24} /></div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Overall Attendance</span>
+                                        <span className="stat-value">{cumulativeAttendanceStats.overall.avgAttendanceRate}%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="professor-analytics-table-container">
+                                <h3>Course Attendance Details</h3>
+                                <div className="professor-table-responsive">
+                                    <table className="professor-analytics-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Course Code</th>
+                                                <th>Course Name</th>
+                                                <th>Attendance Rate</th>
+                                                <th>Status</th>
+                                                <th>Sessions</th>
+                                                <th>Present</th>
+                                                <th>Late</th>
+                                                <th>Absent</th>
+                                                <th>Students</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {attendanceLoading ? (
+                                                <tr><td colSpan="9" className="loading-cell">Loading analytics data...</td></tr>
+                                            ) : cumulativeAttendanceStats.courses.length === 0 ? (
+                                                <tr><td colSpan="9" className="no-data-cell">No attendance data available</td>
+                                            </tr>
+                                            ) : (
+                                                cumulativeAttendanceStats.courses.map(course => {
+                                                    const rate = course.attendanceRate;
+                                                    return (
+                                                        <tr key={course.courseId}>
+                                                            <td className="course-code">{course.courseCode}</td>
+                                                            <td className="course-name">{course.courseName}</td>
+                                                            <td>
+                                                                <div className="attendance-cell">
+                                                                    <span className="attendance-rate" style={{ color: getAttendanceColor(rate), fontWeight: 'bold' }}>
+                                                                        {rate}%
+                                                                    </span>
+                                                                    <div className="attendance-bar">
+                                                                        <div className="attendance-fill" style={{ width: `${rate}%`, backgroundColor: getAttendanceColor(rate) }}></div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span className={`status-badge ${getAttendanceStatus(rate).toLowerCase().replace(' ', '-')}`} style={{ backgroundColor: getAttendanceColor(rate) + '20', color: getAttendanceColor(rate) }}>
+                                                                    {getAttendanceStatus(rate)}
+                                                                </span>
+                                                            </td>
+                                                            <td>{course.totalRecords || 0}</td>
+                                                            <td className="present-cell">{course.presentCount || 0}</td>
+                                                            <td className="late-cell">{course.lateCount || 0}</td>
+                                                            <td className="absent-cell">{course.absentCount || 0}</td>
+                                                            <td>{course.totalStudents || 0}</td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div className="professor-risk-distribution">
+                                <div className="risk-header">
+                                    <AlertTriangle size={20} />
+                                    <h3>Courses Risk Distribution</h3>
+                                </div>
+                                <div className="risk-stats">
+                                    {(() => {
+                                        const excellent = cumulativeAttendanceStats.courses.filter(c => c.attendanceRate >= 85).length;
+                                        const good = cumulativeAttendanceStats.courses.filter(c => c.attendanceRate >= 70 && c.attendanceRate < 85).length;
+                                        const risk = cumulativeAttendanceStats.courses.filter(c => c.attendanceRate >= 50 && c.attendanceRate < 70).length;
+                                        const critical = cumulativeAttendanceStats.courses.filter(c => c.attendanceRate < 50).length;
+                                        const total = cumulativeAttendanceStats.courses.length || 1;
+                                        
+                                        return (
+                                            <>
+                                                <div className="risk-item">
+                                                    <div className="risk-label">Excellent (≥85%)</div>
+                                                    <div className="risk-bar-container">
+                                                        <div className="risk-bar excellent-bar" style={{ width: `${(excellent / total) * 100}%` }}></div>
+                                                        <span className="risk-percent">{Math.round((excellent / total) * 100)}%</span>
+                                                    </div>
+                                                    <div className="risk-count">{excellent} courses</div>
+                                                </div>
+                                                <div className="risk-item">
+                                                    <div className="risk-label">Good (70-84%)</div>
+                                                    <div className="risk-bar-container">
+                                                        <div className="risk-bar good-bar" style={{ width: `${(good / total) * 100}%` }}></div>
+                                                        <span className="risk-percent">{Math.round((good / total) * 100)}%</span>
+                                                    </div>
+                                                    <div className="risk-count">{good} courses</div>
+                                                </div>
+                                                <div className="risk-item">
+                                                    <div className="risk-label">At Risk (50-69%)</div>
+                                                    <div className="risk-bar-container">
+                                                        <div className="risk-bar risk-bar-fill" style={{ width: `${(risk / total) * 100}%` }}></div>
+                                                        <span className="risk-percent">{Math.round((risk / total) * 100)}%</span>
+                                                    </div>
+                                                    <div className="risk-count">{risk} courses</div>
+                                                </div>
+                                                <div className="risk-item">
+                                                    <div className="risk-label">Critical (&lt;50%)</div>
+                                                    <div className="risk-bar-container">
+                                                        <div className="risk-bar critical-bar" style={{ width: `${(critical / total) * 100}%` }}></div>
+                                                        <span className="risk-percent">{Math.round((critical / total) * 100)}%</span>
+                                                    </div>
+                                                    <div className="risk-count">{critical} courses</div>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Schedule' && (
                         <div className="professor-under-development">
                             <Settings size={60} />
                             <h2>This page is currently under development</h2>
@@ -2207,94 +2428,95 @@ async function getCourseStudents(courseId) {
                     </div>
                 </div>
             )}
+
             {/* Submissions Modal */}
-{showSubmissionsModal && selectedAssignmentForSub && (
-    <div className="professor-modal-overlay" onClick={() => setShowSubmissionsModal(false)}>
-        <div className="professor-modal-container large" onClick={e => e.stopPropagation()}>
-            <div className="professor-modal-header">
-                <h2>Submissions - {selectedAssignmentForSub.title}</h2>
-                <button className="professor-close-modal-button" onClick={() => setShowSubmissionsModal(false)}>
-                    <X size={20} />
-                </button>
-            </div>
+            {showSubmissionsModal && selectedAssignmentForSub && (
+                <div className="professor-modal-overlay" onClick={() => setShowSubmissionsModal(false)}>
+                    <div className="professor-modal-container large" onClick={e => e.stopPropagation()}>
+                        <div className="professor-modal-header">
+                            <h2>Submissions - {selectedAssignmentForSub.title}</h2>
+                            <button className="professor-close-modal-button" onClick={() => setShowSubmissionsModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
 
-            <div className="professor-submissions-list">
-                {currentSubmissions.length === 0 ? (
-                    <div className="professor-lms-empty">
-                        <p>No submissions yet for this assignment.</p>
+                        <div className="professor-submissions-list">
+                            {currentSubmissions.length === 0 ? (
+                                <div className="professor-lms-empty">
+                                    <p>No submissions yet for this assignment.</p>
+                                </div>
+                            ) : (
+                                <table className="professor-submissions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student Name</th>
+                                            <th>Student ID</th>
+                                            <th>Submitted File</th>
+                                            <th>Submission Date</th>
+                                            <th>Grade</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {currentSubmissions.map(sub => (
+                                            <tr key={sub.id}>
+                                                <td>{sub.studentName}</td>
+                                                <td>{sub.studentCode}</td>
+                                                <td>
+                                                    <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" className="professor-submission-link">
+                                                        {sub.fileName}
+                                                    </a>
+                                                </td>
+                                                <td>{new Date(sub.submittedAt).toLocaleString()}</td>
+                                                <td>
+                                                    <input 
+                                                        type="number" 
+                                                        className="professor-grade-input"
+                                                        defaultValue={sub.grade || ''}
+                                                        placeholder="Grade"
+                                                        min="0"
+                                                        max={selectedAssignmentForSub.maxScore}
+                                                        id={`grade-${sub.id}`}
+                                                    />
+                                                    <span>/{selectedAssignmentForSub.maxScore}</span>
+                                                </td>
+                                                <td>
+                                                    <button 
+                                                        className="professor-save-grade-button"
+                                                        onClick={async () => {
+                                                            const gradeInput = document.getElementById(`grade-${sub.id}`);
+                                                            const newGrade = parseInt(gradeInput.value);
+                                                            if (!isNaN(newGrade)) {
+                                                                try {
+                                                                    await updateDoc(doc(db, "lms_submissions", sub.id), {
+                                                                        grade: newGrade,
+                                                                        gradedAt: new Date().toISOString(),
+                                                                        gradedBy: auth.currentUser?.uid
+                                                                    });
+                                                                    showNotification(`Grade saved for ${sub.studentName}`, 'success');
+                                                                } catch (error) {
+                                                                    console.error("Error saving grade:", error);
+                                                                    showNotification('Error saving grade', 'error');
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        Save Grade
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+
+                        <div className="professor-modal-actions">
+                            <button className="professor-cancel-button" onClick={() => setShowSubmissionsModal(false)}>Close</button>
+                        </div>
                     </div>
-                ) : (
-                    <table className="professor-submissions-table">
-                        <thead>
-                            <tr>
-                                <th>Student Name</th>
-                                <th>Student ID</th>
-                                <th>Submitted File</th>
-                                <th>Submission Date</th>
-                                <th>Grade</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {currentSubmissions.map(sub => (
-                                <tr key={sub.id}>
-                                    <td>{sub.studentName}</td>
-                                    <td>{sub.studentCode}</td>
-                                    <td>
-                                        <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" className="professor-submission-link">
-                                            {sub.fileName}
-                                        </a>
-                                    </td>
-                                    <td>{new Date(sub.submittedAt).toLocaleString()}</td>
-                                    <td>
-                                        <input 
-                                            type="number" 
-                                            className="professor-grade-input"
-                                            defaultValue={sub.grade || ''}
-                                            placeholder="Grade"
-                                            min="0"
-                                            max={selectedAssignmentForSub.maxScore}
-                                            id={`grade-${sub.id}`}
-                                        />
-                                        <span>/{selectedAssignmentForSub.maxScore}</span>
-                                    </td>
-                                    <td>
-                                        <button 
-                                            className="professor-save-grade-button"
-                                            onClick={async () => {
-                                                const gradeInput = document.getElementById(`grade-${sub.id}`);
-                                                const newGrade = parseInt(gradeInput.value);
-                                                if (!isNaN(newGrade)) {
-                                                    try {
-                                                        await updateDoc(doc(db, "lms_submissions", sub.id), {
-                                                            grade: newGrade,
-                                                            gradedAt: new Date().toISOString(),
-                                                            gradedBy: auth.currentUser?.uid
-                                                        });
-                                                        showNotification(`Grade saved for ${sub.studentName}`, 'success');
-                                                    } catch (error) {
-                                                        console.error("Error saving grade:", error);
-                                                        showNotification('Error saving grade', 'error');
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            Save Grade
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-
-            <div className="professor-modal-actions">
-                <button className="professor-cancel-button" onClick={() => setShowSubmissionsModal(false)}>Close</button>
-            </div>
-        </div>
-    </div>
-)}
+                </div>
+            )}
         </div>
     );
 }

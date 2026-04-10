@@ -3213,3 +3213,608 @@ body.digital-id-open .navbar-container {
         font-size: 11px;
     }
 }
+.flex-align-center {
+    display: flex;
+    align-items: center;
+}
+
+.margin-right-2 {
+    margin-right: 8px;
+}
+
+.text-primary {
+    color: #4a90e2;
+}
+
+.professor-course-attendance-rate {
+    background: #f8fafd;
+    border-radius: 12px;
+    padding: 12px;
+    margin: 12px 0;
+    border: 1px solid #e2e8f0;
+}
+
+.attendance-rate-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #718096;
+    margin-bottom: 8px;
+}
+
+.attendance-rate-value {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.attendance-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.attendance-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.attendance-status-text {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.professor-stat-icon.blue {
+    color: #4a90e2;
+    background: linear-gradient(135deg, #4a90e220, #357abd20);
+    padding: 10px;
+    border-radius: 12px;
+}
+
+.professor-stat-icon.green {
+    color: #28a745;
+    background: linear-gradient(135deg, #28a74520, #1e7e3420);
+    padding: 10px;
+    border-radius: 12px;
+}
+
+.professor-stat-icon.purple {
+    color: #764ba2;
+    background: linear-gradient(135deg, #764ba220, #667eea20);
+    padding: 10px;
+    border-radius: 12px;
+}
+
+.professor-stat-icon.orange {
+    color: #fd7e14;
+    background: linear-gradient(135deg, #fd7e1420, #e66a0e20);
+    padding: 10px;
+    border-radius: 12px;
+}
+.professor-attendance-cell {
+    min-width: 100px;
+}
+
+.attendance-rate-text {
+    font-size: 16px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.mini-attendance-bar {
+    width: 100%;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.mini-attendance-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+.professor-today-attendance {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.present-badge {
+    background: #28a74520;
+    color: #28a745;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.late-badge {
+    background: #fd7e1420;
+    color: #fd7e14;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.absent-badge {
+    background: #dc354520;
+    color: #dc3545;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+}
+.course-attendance-preview {
+    font-size: 12px;
+    margin-top: 5px;
+    color: #718096;
+}
+
+.course-attendance-preview strong {
+    font-size: 14px;
+}
+.professor-analytics-container {
+    padding: 20px;
+    background: #f8fafd;
+    min-height: calc(100vh - 80px);
+}
+
+.professor-analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    background: white;
+    padding: 20px 25px;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.professor-analytics-header h2 {
+    font-size: 24px;
+    color: #1a202c;
+    margin-bottom: 5px;
+}
+
+.professor-analytics-header p {
+    color: #718096;
+    font-size: 14px;
+}
+.professor-analytics-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.analytics-stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+}
+
+.analytics-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.analytics-stat-card .stat-icon {
+    width: 55px;
+    height: 55px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.analytics-stat-card .stat-icon.blue {
+    background: linear-gradient(135deg, #667eea20, #764ba220);
+    color: #667eea;
+}
+
+.analytics-stat-card .stat-icon.green {
+    background: linear-gradient(135deg, #43e97b20, #38f9d720);
+    color: #28a745;
+}
+
+.analytics-stat-card .stat-icon.purple {
+    background: linear-gradient(135deg, #f093fb20, #f5576c20);
+    color: #f5576c;
+}
+
+.analytics-stat-card .stat-icon.orange {
+    background: linear-gradient(135deg, #ffecd220, #fcb69f20);
+    color: #fd7e14;
+}
+
+.analytics-stat-card .stat-info {
+    flex: 1;
+}
+
+.analytics-stat-card .stat-label {
+    font-size: 13px;
+    color: #718096;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.analytics-stat-card .stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1a202c;
+}
+.professor-analytics-table-container {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+    padding: 20px;
+}
+
+.professor-analytics-table-container h3 {
+    font-size: 18px;
+    color: #1a202c;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.professor-analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.professor-analytics-table th {
+    text-align: left;
+    padding: 12px 15px;
+    background: #f8fafd;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.professor-analytics-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #2d3748;
+    font-size: 14px;
+}
+
+.professor-analytics-table tr:hover {
+    background: #f8fafd;
+}
+
+.professor-analytics-table .course-code {
+    font-family: monospace;
+    font-weight: 600;
+    color: #4a90e2;
+}
+
+.professor-analytics-table .course-name {
+    font-weight: 500;
+}
+
+.professor-analytics-table .attendance-cell {
+    min-width: 120px;
+}
+
+.professor-analytics-table .attendance-rate {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.professor-analytics-table .attendance-bar {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.professor-analytics-table .attendance-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.professor-analytics-table .present-cell {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.professor-analytics-table .late-cell {
+    color: #fd7e14;
+    font-weight: 500;
+}
+
+.professor-analytics-table .absent-cell {
+    color: #dc3545;
+    font-weight: 500;
+}
+.professor-risk-distribution {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.professor-risk-distribution .risk-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.professor-risk-distribution .risk-header h3 {
+    font-size: 18px;
+    color: #1a202c;
+    margin: 0;
+}
+
+.professor-risk-distribution .risk-header svg {
+    color: #fd7e14;
+}
+
+.professor-risk-distribution .risk-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.professor-risk-distribution .risk-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.professor-risk-distribution .risk-label {
+    width: 120px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.professor-risk-distribution .risk-bar-container {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.professor-risk-distribution .risk-bar {
+    flex: 1;
+    height: 24px;
+    background: #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.professor-risk-distribution .excellent-bar {
+    background: linear-gradient(90deg, #28a745, #34ce57);
+}
+
+.professor-risk-distribution .good-bar {
+    background: linear-gradient(90deg, #ffc107, #ffda6a);
+}
+
+.professor-risk-distribution .risk-bar-fill {
+    background: linear-gradient(90deg, #fd7e14, #ffa64a);
+}
+
+.professor-risk-distribution .critical-bar {
+    background: linear-gradient(90deg, #dc3545, #ef6b7a);
+}
+
+.professor-risk-distribution .risk-percent {
+    font-weight: bold;
+    font-size: 14px;
+    min-width: 45px;
+    color: #2d3748;
+}
+
+.professor-risk-distribution .risk-count {
+    font-size: 12px;
+    color: #718096;
+    min-width: 80px;
+}
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.excellent {
+    background: #28a74520;
+    color: #28a745;
+}
+
+.status-badge.good {
+    background: #ffc10720;
+    color: #d4a000;
+}
+
+.status-badge.at-risk {
+    background: #fd7e1420;
+    color: #fd7e14;
+}
+
+.status-badge.critical {
+    background: #dc354520;
+    color: #dc3545;
+}
+
+.loading-cell, .no-data-cell {
+    text-align: center;
+    padding: 40px;
+    color: #718096;
+}
+@keyframes slideIn {
+    from {
+        width: 0;
+    }
+    to {
+        width: var(--target-width);
+    }
+}
+
+.attendance-fill, .attendance-progress-fill, .mini-attendance-fill {
+    animation: slideIn 0.5s ease;
+}
+
+@media (max-width: 1200px) {
+    .professor-analytics-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .professor-analytics-table th,
+    .professor-analytics-table td {
+        padding: 10px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .professor-analytics-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .professor-analytics-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .professor-risk-distribution .risk-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .professor-risk-distribution .risk-bar-container {
+        width: 100%;
+    }
+    
+    .professor-today-attendance {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+
+@media print {
+    .professor-sidebar-wrapper,
+    .professor-content-header,
+    .professor-export-button,
+    .professor-modal-overlay,
+    .professor-notifications-container {
+        display: none !important;
+    }
+    
+    .professor-analytics-container {
+        padding: 0;
+        background: white;
+    }
+    
+    .professor-analytics-table-container,
+    .professor-risk-distribution,
+    .analytics-stat-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .professor-analytics-table th {
+        background: #f0f0f0;
+    }
+}
+.attendance-cell {
+    position: relative;
+}
+
+.attendance-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a202c;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.attendance-cell:hover .attendance-tooltip {
+    display: block;
+}
+.professor-course-select-card .course-attendance-preview {
+    font-size: 11px;
+    margin-top: 8px;
+    padding-top: 5px;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.professor-lms-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8fafd;
+    border-radius: 12px;
+    color: #718096;
+}
+
+.professor-lms-empty button {
+    margin-top: 15px;
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.professor-under-development {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 16px;
+    margin: 20px;
+}
+
+.professor-under-development h2 {
+    margin-top: 20px;
+    color: #2d3748;
+}
+
+.professor-under-development p {
+    color: #718096;
+}
+@media (max-width: 1200px) {
+    .professor-courses-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .professor-courses-grid {
+        grid-template-columns: 1fr;
+    }
+}

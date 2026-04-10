@@ -16,7 +16,9 @@ const Navbar = () => {
   }, []);
   const isDashboard = location.pathname.startsWith('/AdminDashboard') || 
                       location.pathname.startsWith('/ProfessorDashboard') || 
-                      location.pathname.startsWith('/StudentDashboard');
+                      location.pathname.startsWith('/StudentDashboard')||
+                      location.pathname.startsWith('/login');
+
 
   return (
     <nav className={`navbar-container ${isScrolled ? 'scrolled' : ''}`}>

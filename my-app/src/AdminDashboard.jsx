@@ -5,7 +5,8 @@ import {
     Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
     Download, Shield, Building, X, Menu, Mail, Phone, Calendar,
     BookMarked, Clock, Hash, DoorOpen, UserCheck, GraduationCap,
-    Star, CheckCircle, Send, MessageSquare, Inbox
+    Star, CheckCircle, Send, MessageSquare, Inbox, PieChart,
+    Activity, AlertTriangle, UserMinus, BarChart3, FileText
 } from 'lucide-react';
 import axios from 'axios';
 import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc, addDoc, orderBy, serverTimestamp } from 'firebase/firestore';
@@ -27,16 +28,20 @@ const AdminDashboard = () => {
     const [messages, setMessages] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     
-    // Real-time attendance data state
-    const [attendanceData, setAttendanceData] = useState({
+    // Cumulative attendance stats state
+    const [cumulativeAttendanceStats, setCumulativeAttendanceStats] = useState({
         courses: [],
-        overallStats: {
+        overall: {
             totalCourses: 0,
-            totalRecords: 0,
+            totalStudents: 0,
+            totalSessions: 0,
+            avgAttendanceRate: 0,
             totalPresent: 0,
-            overallAttendanceRate: 0
+            totalLate: 0,
+            totalAbsent: 0
         }
     });
+    const [attendanceLoading, setAttendanceLoading] = useState(true);
 
     const [adminData, setAdminData] = useState({ name: 'System Admin', code: 'ADM-001' });
     const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
@@ -68,7 +73,6 @@ const AdminDashboard = () => {
         currentPassword: '', newPassword: '', confirmPassword: ''
     });
 
-    // إخفاء الناف بار عند فتح Digital ID Modal
     useEffect(() => {
         const navbar = document.querySelector('.navbar-container');
         
@@ -99,7 +103,6 @@ const AdminDashboard = () => {
         };
     }, [isDigitalIdModalOpen]);
 
-    // Load users
     useEffect(() => {
         const q = query(collection(db, "users"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -120,7 +123,6 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, []);
 
-    // Load courses
     useEffect(() => {
         const q = query(collection(db, "courses"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -133,7 +135,6 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, []);
 
-    // Load messages for admin
     useEffect(() => {
         const messagesRef = collection(db, "messages");
         const q = query(messagesRef, orderBy("createdAt", "desc"));
@@ -153,10 +154,36 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, []);
 
-    // Real-time attendance data subscription
     useEffect(() => {
+        setAttendanceLoading(true);
         const unsubscribe = subscribeToAllCoursesAttendance((data) => {
-            setAttendanceData(data);
+            if (data && data.courses) {
+                // Transform data to match our state structure
+                const transformedData = {
+                    courses: data.courses.map(course => ({
+                        courseId: course.courseId,
+                        courseName: course.courseName,
+                        courseCode: course.courseId,
+                        attendanceRate: course.attendanceRate || 0,
+                        totalRecords: course.totalRecords || 0,
+                        presentCount: course.presentCount || 0,
+                        lateCount: course.lateCount || 0,
+                        absentCount: course.absentCount || 0,
+                        totalStudents: course.totalStudents || 0
+                    })),
+                    overall: {
+                        totalCourses: data.overallStats?.totalCourses || 0,
+                        totalStudents: data.courses.reduce((sum, c) => sum + (c.totalStudents || 0), 0),
+                        totalSessions: data.courses.reduce((sum, c) => sum + (c.totalRecords || 0), 0),
+                        avgAttendanceRate: data.overallStats?.overallAttendanceRate || 0,
+                        totalPresent: data.overallStats?.totalPresent || 0,
+                        totalLate: data.courses.reduce((sum, c) => sum + (c.lateCount || 0), 0),
+                        totalAbsent: data.courses.reduce((sum, c) => sum + (c.absentCount || 0), 0)
+                    }
+                };
+                setCumulativeAttendanceStats(transformedData);
+            }
+            setAttendanceLoading(false);
         });
         return () => unsubscribe();
     }, []);
@@ -204,6 +231,57 @@ const AdminDashboard = () => {
     }, [courses, searchQuery]);
 
     const studentUsers = users.filter(u => u.role === 'student');
+
+    // Helper function to get attendance rate for a course
+    const getCourseAttendanceRate = (courseId) => {
+        const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === courseId);
+        return courseStats?.attendanceRate || 0;
+    };
+    const getAttendanceColor = (rate) => {
+        if (rate >= 85) return '#28a745';
+        if (rate >= 70) return '#ffc107';
+        if (rate >= 50) return '#fd7e14';
+        return '#dc3545';
+    };
+    const getAttendanceStatus = (rate) => {
+        if (rate >= 85) return 'Excellent';
+        if (rate >= 70) return 'Good';
+        if (rate >= 50) return 'At Risk';
+        return 'Critical';
+    };
+      const exportAttendanceReport = () => {
+        if (cumulativeAttendanceStats.courses.length === 0) {
+            alert("No attendance data available to export");
+            return;
+        }
+        
+        const reportData = cumulativeAttendanceStats.courses.map(course => ({
+            'Course Code': course.courseCode,
+            'Course Name': course.courseName,
+            'Attendance Rate': `${course.attendanceRate}%`,
+            'Status': getAttendanceStatus(course.attendanceRate),
+            'Total Sessions': course.totalRecords,
+            'Present': course.presentCount,
+            'Late': course.lateCount,
+            'Absent': course.absentCount,
+            'Total Students': course.totalStudents
+        }));
+        
+        const headers = Object.keys(reportData[0]);
+        const csvRows = [
+            headers.join(','),
+            ...reportData.map(row => headers.map(h => JSON.stringify(row[h] || '')).join(','))
+        ];
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `attendance_report_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        alert("Report exported successfully!");
+    };
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -504,6 +582,10 @@ const AdminDashboard = () => {
                         <MessageSquare size={20} />
                         <span>Messages</span>
                     </button>
+                    <button className={`nav-button ${activeTab === 'Attendance Analytics' ? 'active' : ''}`} onClick={() => setActiveTab('Attendance Analytics')}>
+                        <BarChart3 size={20} />
+                        <span>Attendance Analytics</span>
+                    </button>
                 </nav>
 
                 <div className="sidebar-footer">
@@ -578,6 +660,38 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
+                            {/* Attendance Overview Stats Cards */}
+                            <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '30px' }}>
+                                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                                    <div className="stat-icon"><TrendingUp size={24} /></div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Avg Attendance Rate</span>
+                                        <span className="stat-value">{cumulativeAttendanceStats.overall.avgAttendanceRate || 0}%</span>
+                                    </div>
+                                </div>
+                                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
+                                    <div className="stat-icon"><Users size={24} /></div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Total Students</span>
+                                        <span className="stat-value">{cumulativeAttendanceStats.overall.totalStudents || 0}</span>
+                                    </div>
+                                </div>
+                                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
+                                    <div className="stat-icon"><Activity size={24} /></div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Total Sessions</span>
+                                        <span className="stat-value">{cumulativeAttendanceStats.overall.totalSessions || 0}</span>
+                                    </div>
+                                </div>
+                                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }}>
+                                    <div className="stat-icon"><CheckCircle size={24} /></div>
+                                    <div className="stat-info">
+                                        <span className="stat-label">Total Present</span>
+                                        <span className="stat-value">{cumulativeAttendanceStats.overall.totalPresent || 0}</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="middle-row-grid">
                                 <div className="chart-card-container">
                                     <div className="card-header">
@@ -620,6 +734,48 @@ const AdminDashboard = () => {
                                         )}
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Top Courses by Attendance */}
+                            <div className="chart-card-container" style={{ marginBottom: '30px' }}>
+                                <div className="card-header">
+                                    <PieChart size={20} />
+                                    <h3>Course Attendance Rankings</h3>
+                                </div>
+                                {attendanceLoading ? (
+                                    <div className="loading-spinner">Loading attendance data...</div>
+                                ) : cumulativeAttendanceStats.courses.length === 0 ? (
+                                    <p className="no-data-message">No attendance data available yet</p>
+                                ) : (
+                                    <div className="courses-attendance-list">
+                                        {[...cumulativeAttendanceStats.courses]
+                                            .sort((a, b) => b.attendanceRate - a.attendanceRate)
+                                            .slice(0, 5)
+                                            .map((course, idx) => (
+                                                <div className="attendance-item" key={course.courseId}>
+                                                    <div className="attendance-rank">{idx + 1}</div>
+                                                    <div className="attendance-course-info">
+                                                        <div className="attendance-course-name">{course.courseName}</div>
+                                                        <div className="attendance-course-code">{course.courseCode}</div>
+                                                    </div>
+                                                    <div className="attendance-stats">
+                                                        <div className="attendance-percent" style={{ color: getAttendanceColor(course.attendanceRate) }}>
+                                                            {course.attendanceRate}%
+                                                        </div>
+                                                        <div className="attendance-status" style={{ color: getAttendanceColor(course.attendanceRate) }}>
+                                                            {getAttendanceStatus(course.attendanceRate)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="attendance-bar-container">
+                                                        <div 
+                                                            className="attendance-bar-fill" 
+                                                            style={{ width: `${course.attendanceRate}%`, backgroundColor: getAttendanceColor(course.attendanceRate) }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="tables-row-grid">
@@ -700,15 +856,29 @@ const AdminDashboard = () => {
                                                     <th>Code</th>
                                                     <th>Course Name</th>
                                                     <th>Instructor</th>
+                                                    <th>Attendance</th>
                                                     <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredCourses.slice(0, 4).length === 0 ? <tr><td colSpan="4" className="no-data-message">No data</td></tr> : filteredCourses.slice(0, 4).map(c => (
+                                                {filteredCourses.slice(0, 4).length === 0 ? <tr><td colSpan="5" className="no-data-message">No data</td></tr> : filteredCourses.slice(0, 4).map(c => (
                                                     <tr key={c.id}>
                                                         <td className="text-muted">{c.courseId}</td>
                                                         <td className="text-primary text-bold">{c.courseName}</td>
                                                         <td>{c.instructorName}</td>
+                                                        <td>
+                                                            <div className="attendance-cell">
+                                                                <span className="attendance-percent-small" style={{ color: getAttendanceColor(getCourseAttendanceRate(c.id)) }}>
+                                                                    {getCourseAttendanceRate(c.id)}%
+                                                                </span>
+                                                                <div className="mini-attendance-bar">
+                                                                    <div 
+                                                                        className="mini-attendance-fill"
+                                                                        style={{ width: `${getCourseAttendanceRate(c.id)}%`, backgroundColor: getAttendanceColor(getCourseAttendanceRate(c.id)) }}
+                                                                    ></div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
                                                         <td className="action-buttons">
                                                             <button className="icon-button view-button" onClick={() => handleView(c)} title="View Details">
                                                                 <Eye size={16}/>
@@ -830,32 +1000,52 @@ const AdminDashboard = () => {
                                             <th>Time</th>
                                             <th>Room</th>
                                             <th>Capacity</th>
+                                            <th>Attendance Rate</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredCourses.length === 0 ? <tr><td colSpan="8" className="no-data-message">No data</td></tr> : filteredCourses.map(c => (
-                                            <tr key={c.id}>
-                                                <td className="text-muted">{c.courseId}</td>
-                                                <td className="text-primary text-bold">{c.courseName}</td>
-                                                <td>{c.instructorName}</td>
-                                                <td><span className="day-badge">{c.SelectDays}</span></td>
-                                                <td>{c.Time}</td>
-                                                <td>{c.RoomNumber}</td>
-                                                <td>{c.capacity}</td>
-                                                <td className="action-buttons">
-                                                    <button className="icon-button view-button" onClick={() => handleView(c)} title="View Details">
-                                                        <Eye size={16}/>
-                                                    </button>
-                                                    <button className="icon-button edit-button" onClick={() => handleEdit(c)} title="Edit">
-                                                        <Edit size={16}/>
-                                                    </button>
-                                                    <button className="icon-button delete-button" onClick={() => handleDelete('courses', c.id)} title="Delete">
-                                                        <Trash2 size={16}/>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {filteredCourses.length === 0 ? <tr><td colSpan="9" className="no-data-message">No data</td></tr> : filteredCourses.map(c => {
+                                            const attendanceRate = getCourseAttendanceRate(c.id);
+                                            return (
+                                                <tr key={c.id}>
+                                                    <td className="text-muted">{c.courseId}</td>
+                                                    <td className="text-primary text-bold">{c.courseName}</td>
+                                                    <td>{c.instructorName}</td>
+                                                    <td><span className="day-badge">{c.SelectDays}</span></td>
+                                                    <td>{c.Time}</td>
+                                                    <td>{c.RoomNumber}</td>
+                                                    <td>{c.capacity}</td>
+                                                    <td>
+                                                        <div className="attendance-cell">
+                                                            <span className="attendance-percent-small" style={{ color: getAttendanceColor(attendanceRate), fontWeight: 'bold' }}>
+                                                                {attendanceRate}%
+                                                            </span>
+                                                            <div className="mini-attendance-bar">
+                                                                <div 
+                                                                    className="mini-attendance-fill"
+                                                                    style={{ width: `${attendanceRate}%`, backgroundColor: getAttendanceColor(attendanceRate) }}
+                                                                ></div>
+                                                            </div>
+                                                            <span className="attendance-status-text" style={{ color: getAttendanceColor(attendanceRate), fontSize: '11px' }}>
+                                                                {getAttendanceStatus(attendanceRate)}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="action-buttons">
+                                                        <button className="icon-button view-button" onClick={() => handleView(c)} title="View Details">
+                                                            <Eye size={16}/>
+                                                        </button>
+                                                        <button className="icon-button edit-button" onClick={() => handleEdit(c)} title="Edit">
+                                                            <Edit size={16}/>
+                                                        </button>
+                                                        <button className="icon-button delete-button" onClick={() => handleDelete('courses', c.id)} title="Delete">
+                                                            <Trash2 size={16}/>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -944,6 +1134,189 @@ const AdminDashboard = () => {
                                             ))
                                         )}
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'Attendance Analytics' && (
+                        <div className="attendance-analytics-container">
+                            <div className="analytics-header">
+                                <div className="flex-align-center">
+                                    <BarChart3 size={28} className="text-primary margin-right-2" />
+                                    <div>
+                                        <h2>Attendance Analytics</h2>
+                                        <p>Comprehensive attendance report for all courses</p>
+                                    </div>
+                                </div>
+                                <button className="export-report-button" onClick={exportAttendanceReport}>
+                                    <Download size={18} />
+                                    Export Report
+                                </button>
+                            </div>
+
+                            {/* Summary Cards */}
+                            <div className="analytics-summary-grid">
+                                <div className="summary-card">
+                                    <div className="summary-icon blue"><TrendingUp size={24} /></div>
+                                    <div className="summary-info">
+                                        <span className="summary-label">Overall Attendance</span>
+                                        <span className="summary-value">{cumulativeAttendanceStats.overall.avgAttendanceRate || 0}%</span>
+                                    </div>
+                                </div>
+                                <div className="summary-card">
+                                    <div className="summary-icon green"><BookOpen size={24} /></div>
+                                    <div className="summary-info">
+                                        <span className="summary-label">Total Courses</span>
+                                        <span className="summary-value">{cumulativeAttendanceStats.overall.totalCourses || 0}</span>
+                                    </div>
+                                </div>
+                                <div className="summary-card">
+                                    <div className="summary-icon purple"><Users size={24} /></div>
+                                    <div className="summary-info">
+                                        <span className="summary-label">Total Students</span>
+                                        <span className="summary-value">{cumulativeAttendanceStats.overall.totalStudents || 0}</span>
+                                    </div>
+                                </div>
+                                <div className="summary-card">
+                                    <div className="summary-icon orange"><Activity size={24} /></div>
+                                    <div className="summary-info">
+                                        <span className="summary-label">Total Sessions</span>
+                                        <span className="summary-value">{cumulativeAttendanceStats.overall.totalSessions || 0}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Courses Attendance Table */}
+                            <div className="analytics-table-container">
+                                <div className="table-header">
+                                    <h3>Courses Attendance Details</h3>
+                                    <div className="legend">
+                                        <span className="legend-dot excellent"></span>
+                                        <span>Excellent (≥85%)</span>
+                                        <span className="legend-dot good"></span>
+                                        <span>Good (70-84%)</span>
+                                        <span className="legend-dot risk"></span>
+                                        <span>At Risk (50-69%)</span>
+                                        <span className="legend-dot critical"></span>
+                                        <span>Critical (&lt;50%)</span>
+                                    </div>
+                                </div>
+                                <div className="table-responsive">
+                                    <table className="analytics-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Course Code</th>
+                                                <th>Course Name</th>
+                                                <th>Instructor</th>
+                                                <th>Attendance Rate</th>
+                                                <th>Status</th>
+                                                <th>Sessions</th>
+                                                <th>Present</th>
+                                                <th>Late</th>
+                                                <th>Absent</th>
+                                                <th>Students</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {attendanceLoading ? (
+                                                <tr><td colSpan="11" className="loading-cell">Loading attendance data...</td></tr>
+                                            ) : cumulativeAttendanceStats.courses.length === 0 ? (
+                                                <tr><td colSpan="11" className="no-data-cell">No attendance data available</td></tr>
+                                            ) : (
+                                                cumulativeAttendanceStats.courses.map((course, idx) => {
+                                                    const rate = course.attendanceRate;
+                                                    const status = getAttendanceStatus(rate);
+                                                    const color = getAttendanceColor(rate);
+                                                    const courseDetails = courses.find(c => c.id === course.courseId);
+                                                    
+                                                    return (
+                                                        <tr key={course.courseId} className="course-row">
+                                                            <td>{idx + 1}</td>
+                                                            <td className="course-code">{course.courseCode}</td>
+                                                            <td className="course-name">{course.courseName}</td>
+                                                            <td>{courseDetails?.instructorName || 'N/A'}</td>
+                                                            <td>
+                                                                <div className="attendance-cell">
+                                                                    <span className="attendance-rate" style={{ color: color, fontWeight: 'bold' }}>
+                                                                        {rate}%
+                                                                    </span>
+                                                                    <div className="attendance-bar">
+                                                                        <div className="attendance-fill" style={{ width: `${rate}%`, backgroundColor: color }}></div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span className={`status-badge ${status.toLowerCase().replace(' ', '-')}`} style={{ backgroundColor: color + '20', color: color }}>
+                                                                    {status}
+                                                                </span>
+                                                            </td>
+                                                            <td>{course.totalRecords || 0}</td>
+                                                            <td className="present-cell">{course.presentCount || 0}</td>
+                                                            <td className="late-cell">{course.lateCount || 0}</td>
+                                                            <td className="absent-cell">{course.absentCount || 0}</td>
+                                                            <td>{course.totalStudents || 0}</td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Risk Distribution */}
+                            <div className="risk-distribution">
+                                <div className="risk-header">
+                                    <AlertTriangle size={20} />
+                                    <h3>Risk Distribution</h3>
+                                </div>
+                                <div className="risk-stats">
+                                    {(() => {
+                                        const excellent = cumulativeAttendanceStats.courses.filter(c => c.attendanceRate >= 85).length;
+                                        const good = cumulativeAttendanceStats.courses.filter(c => c.attendanceRate >= 70 && c.attendanceRate < 85).length;
+                                        const risk = cumulativeAttendanceStats.courses.filter(c => c.attendanceRate >= 50 && c.attendanceRate < 70).length;
+                                        const critical = cumulativeAttendanceStats.courses.filter(c => c.attendanceRate < 50).length;
+                                        const total = cumulativeAttendanceStats.courses.length || 1;
+                                        
+                                        return (
+                                            <>
+                                                <div className="risk-item">
+                                                    <div className="risk-label">Excellent</div>
+                                                    <div className="risk-bar-container">
+                                                        <div className="risk-bar excellent-bar" style={{ width: `${(excellent / total) * 100}%` }}></div>
+                                                        <span className="risk-percent">{Math.round((excellent / total) * 100)}%</span>
+                                                    </div>
+                                                    <div className="risk-count">{excellent} courses</div>
+                                                </div>
+                                                <div className="risk-item">
+                                                    <div className="risk-label">Good</div>
+                                                    <div className="risk-bar-container">
+                                                        <div className="risk-bar good-bar" style={{ width: `${(good / total) * 100}%` }}></div>
+                                                        <span className="risk-percent">{Math.round((good / total) * 100)}%</span>
+                                                    </div>
+                                                    <div className="risk-count">{good} courses</div>
+                                                </div>
+                                                <div className="risk-item">
+                                                    <div className="risk-label">At Risk</div>
+                                                    <div className="risk-bar-container">
+                                                        <div className="risk-bar risk-bar-fill" style={{ width: `${(risk / total) * 100}%`}}></div>
+                                                        <span className="risk-percent">{Math.round((risk / total) * 100)}%</span>
+                                                    </div>
+                                                    <div className="risk-count">{risk} courses</div>
+                                                </div>
+                                                <div className="risk-item">
+                                                    <div className="risk-label">Critical</div>
+                                                    <div className="risk-bar-container">
+                                                        <div className="risk-bar critical-bar" style={{ width: `${(critical / total) * 100}%` }}></div>
+                                                        <span className="risk-percent">{Math.round((critical / total) * 100)}%</span>
+                                                    </div>
+                                                    <div className="risk-count">{critical} courses</div>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -1185,6 +1558,26 @@ const AdminDashboard = () => {
                                     <div className="view-item view-item-full-width">
                                         <div className="view-label"><Users size={16} /> Capacity</div>
                                         <div className="view-value">{selectedItem.capacity} Students</div>
+                                    </div>
+                                    {/* Attendance Stats in View Modal */}
+                                    <div className="view-item view-item-full-width">
+                                        <div className="view-label"><Activity size={16} /> Attendance Rate</div>
+                                        <div className="view-value">
+                                            <div className="attendance-detail">
+                                                <span className="attendance-percent-large" style={{ color: getAttendanceColor(getCourseAttendanceRate(selectedItem.id)), fontSize: '24px', fontWeight: 'bold' }}>
+                                                    {getCourseAttendanceRate(selectedItem.id)}%
+                                                </span>
+                                                <div className="attendance-status-large" style={{ color: getAttendanceColor(getCourseAttendanceRate(selectedItem.id)) }}>
+                                                    {getAttendanceStatus(getCourseAttendanceRate(selectedItem.id))}
+                                                </div>
+                                                <div className="attendance-bar-large" style={{ marginTop: '10px' }}>
+                                                    <div 
+                                                        className="attendance-bar-fill-large"
+                                                        style={{ width: `${getCourseAttendanceRate(selectedItem.id)}%`, backgroundColor: getAttendanceColor(getCourseAttendanceRate(selectedItem.id)), height: '8px', borderRadius: '4px' }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

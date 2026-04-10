@@ -64,6 +64,36 @@ export default function ProfessorDashboard() {
             document.body.classList.remove('digital-id-open');
         };
     }, [isDigitalIdModalOpen]);
+ const BASE_URL = "http://localhost:3001"; // تأكد إن ده بورت الباك-إند بتاعك
+
+async function enrollStudent(data) {
+  const response = await fetch(`${BASE_URL}/api/enroll-student`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Enrollment failed");
+  return response.json();
+}
+
+async function unenrollStudent(data) {
+  const response = await fetch(`${BASE_URL}/api/unenroll-student`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Unenrollment failed");
+  return response.json();
+}
+
+async function getCourseStudents(courseId) {
+  const response = await fetch(`${BASE_URL}/api/course-students/${courseId}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) throw new Error("Failed to fetch students");
+  return response.json();
+}
 
     const openDigitalID = () => {
         setIsDigitalIdModalOpen(true);
@@ -103,83 +133,85 @@ export default function ProfessorDashboard() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const fetchEnrolledStudents = async (courseId, courseName) => {
-        setIsLoadingStudents(true);
-        try {
-            const q = query(
-                collection(db, "course_enrollments"), 
-                where("courseId", "==", courseId),
-                where("status", "==", "active")
-            );
-            const snapshot = await getDocs(q);
-            let students = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            for (let student of students) {
-                const attendanceQuery = query(
-                    collection(db, "attendance_records"),
-                    where("courseId", "==", courseId),
-                    where("studentId", "==", student.studentId)
-                );
-                const attendanceSnapshot = await getDocs(attendanceQuery);
-                const attendanceRecords = attendanceSnapshot.docs.map(doc => doc.data());
-                const totalClasses = attendanceRecords.length || 1;
-                const presentClasses = attendanceRecords.filter(r => r.status === 'present').length;
-                const attendanceRate = (presentClasses / totalClasses) * 100;
-                const gradesQuery = query(
-                    collection(db, "student_grades"),
-                    where("courseId", "==", courseId),
-                    where("studentId", "==", student.studentId)
-                );
-                const gradesSnapshot = await getDocs(gradesQuery);
-                const grades = gradesSnapshot.docs.map(doc => doc.data());
-                const totalScore = grades.reduce((sum, g) => sum + (g.score || 0), 0);
-                const averageGrade = grades.length > 0 ? (totalScore / grades.length) : 0;
+    setIsLoadingStudents(true);
+    try {
+        // 1. نداء الـ API اللي إنت عملته في الباك لآخذ بيانات الطلاب
+       // تأكد من البورت 3001 ومن كلمة /api/
+        const response = await fetch(`http://localhost:3001/api/course-students/${courseId}`);
         
-                let riskScore = 0;
-                
-                
-                if (attendanceRate < 50) riskScore += 40;
-                else if (attendanceRate < 70) riskScore += 25;
-                else if (attendanceRate < 85) riskScore += 10;
-                else riskScore += 0;
-
-                if (averageGrade < 50) riskScore += 40;
-                else if (averageGrade < 65) riskScore += 25;
-                else if (averageGrade < 75) riskScore += 10;
-                else riskScore += 0;
-                const lateCount = attendanceRecords.filter(r => r.status === 'late').length;
-                if (lateCount > 10) riskScore += 20;
-                else if (lateCount > 5) riskScore += 15;
-                else if (lateCount > 2) riskScore += 10;
-                else if (lateCount > 0) riskScore += 5;
-                
-                student.attendanceRate = Math.round(attendanceRate);
-                student.averageGrade = Math.round(averageGrade);
-                student.riskScore = riskScore;
-                student.lateCount = lateCount;
-                student.totalClasses = totalClasses;
-                student.presentCount = presentClasses;
-                
-                if (riskScore >= 70) student.riskLevel = 'high';
-                else if (riskScore >= 40) student.riskLevel = 'medium';
-                else student.riskLevel = 'low';
-            }
-            
-            setEnrolledStudents(prev => ({
-                ...prev,
-                [courseId]: students
-            }));
-            
-            return students;
-        } catch (error) {
-            console.error("Error fetching enrolled students:", error);
-            showNotification('Error loading students', 'error');
-            return [];
-        } finally {
-            setIsLoadingStudents(false);
+        // لو السيرفر رجع صفحة HTML (Error)، السطر ده هيمسكها
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new TypeError("الباك إند رجع HTML مش JSON! تأكد من المسار في السيرفر.");
         }
-    };
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch students from server");
+        }
+
+        const students = await response.json();
+
+        // 2. معالجة البيانات وحساب الـ Risk Score (نفس اللوجيك بتاعك القديم)
+        const processedStudents = students.map(student => {
+            // ملاحظة: تأكد إن الباك-إند بيرجع attendanceRecords و grades لكل طالب
+            // لو الباك بيرجع البيانات دي جاهزة، تقدر تشيل الحسابات دي
+            
+            const attendance = student.attendanceRecords || [];
+            const grades = student.grades || [];
+            
+            const totalClasses = attendance.length || 1;
+            const presentClasses = attendance.filter(r => r.status === 'present').length;
+            const lateCount = attendance.filter(r => r.status === 'late').length;
+            const attendanceRate = (presentClasses / totalClasses) * 100;
+            
+            const totalScore = grades.reduce((sum, g) => sum + (g.score || 0), 0);
+            const averageGrade = grades.length > 0 ? (totalScore / grades.length) : 0;
+
+            let riskScore = 0;
+            
+            // حسابات الـ Risk Score (Attendance)
+            if (attendanceRate < 50) riskScore += 40;
+            else if (attendanceRate < 70) riskScore += 25;
+            else if (attendanceRate < 85) riskScore += 10;
+
+            // حسابات الـ Risk Score (Grades)
+            if (averageGrade < 50) riskScore += 40;
+            else if (averageGrade < 65) riskScore += 25;
+            else if (averageGrade < 75) riskScore += 10;
+
+            // حسابات الـ Risk Score (Lateness)
+            if (lateCount > 10) riskScore += 20;
+            else if (lateCount > 5) riskScore += 15;
+            else if (lateCount > 2) riskScore += 10;
+            else if (lateCount > 0) riskScore += 5;
+
+            return {
+                ...student,
+                attendanceRate: Math.round(attendanceRate),
+                averageGrade: Math.round(averageGrade),
+                riskScore: riskScore,
+                lateCount: lateCount,
+                totalClasses: totalClasses,
+                presentCount: presentClasses,
+                riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low'
+            };
+        });
+
+        // 3. تحديث الـ State
+        setEnrolledStudents(prev => ({
+            ...prev,
+            [courseId]: processedStudents
+        }));
+
+        return processedStudents;
+    } catch (error) {
+        console.error("Error fetching enrolled students:", error);
+        showNotification('حدث خطأ أثناء تحميل الطلاب', 'error');
+        return [];
+    } finally {
+        setIsLoadingStudents(false);
+    }
+};
     const viewCourseStudents = async (course) => {
         setSelectedCourseForStudents(course);
         setStudentSearchQuery('');
@@ -195,27 +227,37 @@ export default function ProfessorDashboard() {
         setShowStudentsModal(true);
     };
 
-    const removeStudentFromCourse = async (enrollmentId, courseId, studentName) => {
-        if (!window.confirm(`Are you sure you want to remove ${studentName} from this course?`)) return;
-        
-        try {
-            await updateDoc(doc(db, "course_enrollments", enrollmentId), {
-                status: "dropped",
-                droppedAt: new Date().toISOString(),
-                droppedBy: auth.currentUser?.uid
-            });
-            
-            setEnrolledStudents(prev => ({
-                ...prev,
-                [courseId]: prev[courseId].filter(s => s.id !== enrollmentId)
-            }));
-            
-            showNotification(`${studentName} removed from course`, 'success');
-        } catch (error) {
-            console.error("Error removing student:", error);
-            showNotification('Error removing student', 'error');
+  const removeStudentFromCourse = async (enrollmentId, courseId, studentName) => {
+    if (!window.confirm(`Are you sure you want to remove ${studentName} from this course?`)) return;
+    
+    try {
+        // نداء الـ API اللي إنت عملته (unenroll-student)
+        const response = await fetch("/api/unenroll-student", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                enrollmentId: enrollmentId 
+                // ملحوظة: لو الباك محتاج studentId أو courseId برضه ضيفهم هنا
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Unenrollment failed");
         }
-    };
+
+        // تحديث الـ UI محلياً بعد نجاح الـ Request
+        setEnrolledStudents(prev => ({
+            ...prev,
+            [courseId]: prev[courseId].filter(s => s.id !== enrollmentId)
+        }));
+        
+        showNotification(`${studentName} removed from course`, 'success');
+    } catch (error) {
+        console.error("Error removing student:", error);
+        showNotification(error.message || 'Error removing student', 'error');
+    }
+};
     const getFilteredAndSortedStudents = () => {
         if (!selectedCourseForStudents) return [];
         

@@ -223,6 +223,7 @@ const handleAssignmentSubmit = async () => {
             assignmentTitle: selectedAssignment.title,
             courseId: selectedCourseForLMS.id,
             studentId: user.uid,
+            studentCode: studentData.id,
             studentName: studentData.name,
             fileUrl: uploadData.secure_url,
             fileName: submissionFile.name,

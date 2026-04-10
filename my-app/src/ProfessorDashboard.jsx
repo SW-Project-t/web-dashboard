@@ -50,6 +50,22 @@ export default function ProfessorDashboard() {
     const [sortBy, setSortBy] = useState('name'); // name, code, risk, attendance
     const [sortOrder, setSortOrder] = useState('asc');
 
+    const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
+    const [currentSubmissions, setCurrentSubmissions] = useState([]);
+    const [selectedAssignmentForSub, setSelectedAssignmentForSub] = useState(null);
+    
+    const fetchAssignmentSubmissions = async (assignmentId) => {
+    try {
+        const q = query(collection(db, "lms_submissions"), where("assignmentId", "==", assignmentId));
+        const snapshot = await getDocs(q);
+        const submissions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setCurrentSubmissions(submissions);
+    } catch (error) {
+        console.error("Error fetching submissions:", error);
+        setCurrentSubmissions([]);
+    }
+};
+
     useEffect(() => {
         const event = isDigitalIdModalOpen ? 'openDigitalID' : 'closeDigitalID';
         window.dispatchEvent(new Event(event));
@@ -347,16 +363,25 @@ async function getCourseStudents(courseId) {
     };
 
     const fetchLMSAssignments = async (courseId) => {
-        try {
-            const q = query(collection(db, "lms_assignments"), where("courseId", "==", courseId));
-            const snapshot = await getDocs(q);
-            const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setLmsAssignments(assignments);
-        } catch (error) {
-            console.error("Error fetching assignments:", error);
-            setLmsAssignments([]);
+    try {
+        const q = query(collection(db, "lms_assignments"), where("courseId", "==", courseId));
+        const snapshot = await getDocs(q);
+        const assignments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        for (let assignment of assignments) {
+            const submissionsQuery = query(
+                collection(db, "lms_submissions"),
+                where("assignmentId", "==", assignment.id)
+            );
+            const submissionsSnap = await getDocs(submissionsQuery);
+            assignment.submissionsCount = submissionsSnap.size;
         }
-    };
+        
+        setLmsAssignments(assignments);
+    } catch (error) {
+        console.error("Error fetching assignments:", error);
+        setLmsAssignments([]);
+    }
+};
 
     const fetchLMSQuizzes = async (courseId) => {
         try {
@@ -1686,7 +1711,16 @@ async function getCourseStudents(courseId) {
                                                                 </div>
                                                             </div>
                                                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                                                <button className="professor-secondary-button">View Submissions</button>
+                                                                <button
+                                                                    className="professor-secondary-button"
+                                                                    onClick={() => {
+                                                                        setSelectedAssignmentForSub(assignment);
+                                                                        fetchAssignmentSubmissions(assignment.id);
+                                                                        setShowSubmissionsModal(true);
+                                                                    }}
+                                                                >
+                                                                    View Submissions
+                                                                </button>
                                                                 <button 
                                                                     className="professor-icon-button delete"
                                                                     onClick={() => deleteLMSAssignment(assignment.id)}
@@ -2172,6 +2206,94 @@ async function getCourseStudents(courseId) {
                     </div>
                 </div>
             )}
+            {/* Submissions Modal */}
+{showSubmissionsModal && selectedAssignmentForSub && (
+    <div className="professor-modal-overlay" onClick={() => setShowSubmissionsModal(false)}>
+        <div className="professor-modal-container large" onClick={e => e.stopPropagation()}>
+            <div className="professor-modal-header">
+                <h2>Submissions - {selectedAssignmentForSub.title}</h2>
+                <button className="professor-close-modal-button" onClick={() => setShowSubmissionsModal(false)}>
+                    <X size={20} />
+                </button>
+            </div>
+
+            <div className="professor-submissions-list">
+                {currentSubmissions.length === 0 ? (
+                    <div className="professor-lms-empty">
+                        <p>No submissions yet for this assignment.</p>
+                    </div>
+                ) : (
+                    <table className="professor-submissions-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Student ID</th>
+                                <th>Submitted File</th>
+                                <th>Submission Date</th>
+                                <th>Grade</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentSubmissions.map(sub => (
+                                <tr key={sub.id}>
+                                    <td>{sub.studentName}</td>
+                                    <td>{sub.studentCode}</td>
+                                    <td>
+                                        <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" className="professor-submission-link">
+                                            {sub.fileName}
+                                        </a>
+                                    </td>
+                                    <td>{new Date(sub.submittedAt).toLocaleString()}</td>
+                                    <td>
+                                        <input 
+                                            type="number" 
+                                            className="professor-grade-input"
+                                            defaultValue={sub.grade || ''}
+                                            placeholder="Grade"
+                                            min="0"
+                                            max={selectedAssignmentForSub.maxScore}
+                                            id={`grade-${sub.id}`}
+                                        />
+                                        <span>/{selectedAssignmentForSub.maxScore}</span>
+                                    </td>
+                                    <td>
+                                        <button 
+                                            className="professor-save-grade-button"
+                                            onClick={async () => {
+                                                const gradeInput = document.getElementById(`grade-${sub.id}`);
+                                                const newGrade = parseInt(gradeInput.value);
+                                                if (!isNaN(newGrade)) {
+                                                    try {
+                                                        await updateDoc(doc(db, "lms_submissions", sub.id), {
+                                                            grade: newGrade,
+                                                            gradedAt: new Date().toISOString(),
+                                                            gradedBy: auth.currentUser?.uid
+                                                        });
+                                                        showNotification(`Grade saved for ${sub.studentName}`, 'success');
+                                                    } catch (error) {
+                                                        console.error("Error saving grade:", error);
+                                                        showNotification('Error saving grade', 'error');
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            Save Grade
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
+            <div className="professor-modal-actions">
+                <button className="professor-cancel-button" onClick={() => setShowSubmissionsModal(false)}>Close</button>
+            </div>
+        </div>
+    </div>
+)}
         </div>
     );
 }

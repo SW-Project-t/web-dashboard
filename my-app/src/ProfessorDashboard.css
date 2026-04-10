@@ -3023,3 +3023,193 @@ body.digital-id-open .navbar-container {
         background: rgba(74, 144, 226, 0.2);
     }
 }
+
+
+/* ============================================ */
+/* Professor Submissions Table */
+/* ============================================ */
+
+/* Submissions Modal - Large */
+.professor-modal-container.large {
+    max-width: 1100px;
+    width: 95%;
+    overflow-x: auto;
+}
+
+.professor-submissions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Inter', sans-serif;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.professor-submissions-table thead tr {
+    background: linear-gradient(135deg, #4a90e2, #2b6cb0);
+}
+
+.professor-submissions-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+.professor-submissions-table td {
+    padding: 14px 12px;
+    font-size: 14px;
+    color: #2d3748;
+    border-bottom: 1px solid #edf2f7;
+    vertical-align: middle;
+    background: white;
+}
+
+.professor-submissions-table tr:hover td {
+    background: #f0f7ff;
+}
+
+.professor-submissions-table td:first-child {
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.professor-submissions-table td:nth-child(2) {
+    color: #4a90e2;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.professor-submission-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #4a90e2;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 13px;
+    background: #e6f0fa;
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: all 0.3s;
+}
+
+.professor-submission-link:hover {
+    background: #4a90e2;
+    color: white;
+    text-decoration: none;
+    transform: translateX(3px);
+}
+
+.professor-grade-input {
+    width: 80px;
+    padding: 8px 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s;
+    background: #f8fafd;
+    color: #1a202c !important; 
+}
+
+.professor-grade-input::-webkit-inner-spin-button,
+.professor-grade-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.professor-grade-input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.professor-grade-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+.professor-grade-input + span {
+    margin-left: 5px;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.professor-save-grade-button {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.professor-save-grade-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.professor-submissions-list {
+    max-height: 500px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    border-radius: 16px;
+    border: 1px solid #edf2f7;
+}
+
+.professor-submissions-list::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.professor-submissions-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.professor-submissions-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #7ba8e0, #4a90e2);
+    border-radius: 10px;
+}
+
+.professor-submissions-list .professor-lms-empty {
+    padding: 60px;
+    text-align: center;
+    background: #f8fafd;
+}
+
+@media (max-width: 768px) {
+    .professor-submissions-table th,
+    .professor-submissions-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+    
+    .professor-submission-link {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    .professor-grade-input {
+        width: 65px;
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+    
+    .professor-save-grade-button {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}

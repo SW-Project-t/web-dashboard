@@ -12,6 +12,7 @@ import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc, addDo
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, db } from './firebase'; 
 import './AdminDashboard.css';
+import { subscribeToAllCoursesAttendance } from './services/firebaseAttendanceService';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -25,6 +26,17 @@ const AdminDashboard = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [messages, setMessages] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    
+    // Real-time attendance data state
+    const [attendanceData, setAttendanceData] = useState({
+        courses: [],
+        overallStats: {
+            totalCourses: 0,
+            totalRecords: 0,
+            totalPresent: 0,
+            overallAttendanceRate: 0
+        }
+    });
 
     const [adminData, setAdminData] = useState({ name: 'System Admin', code: 'ADM-001' });
     const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
@@ -137,6 +149,14 @@ const AdminDashboard = () => {
             });
             setMessages(messagesArray);
             setUnreadCount(unread);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Real-time attendance data subscription
+    useEffect(() => {
+        const unsubscribe = subscribeToAllCoursesAttendance((data) => {
+            setAttendanceData(data);
         });
         return () => unsubscribe();
     }, []);

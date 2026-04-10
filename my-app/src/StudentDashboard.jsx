@@ -13,6 +13,11 @@ import { auth, db } from './firebase';
 import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot, addDoc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { attendanceAPI } from './services/api';
+import firebaseAttendanceService, { 
+    subscribeToStudentAttendance, 
+    getStudentOverallAttendance,
+    getAttendanceRiskLevel 
+} from './services/firebaseAttendanceService';
 
 const STORAGE_KEYS = {
     USER: 'yallaclass_user',
@@ -286,6 +291,9 @@ export default function StudentDashboard() {
         return () => unsubscribe();
     }, []);
 
+    // Real-time attendance subscription ref
+    const [attendanceUnsubscribe, setAttendanceUnsubscribe] = useState(null);
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -311,6 +319,9 @@ export default function StudentDashboard() {
                         
                         await loadStudentCourses(user.uid);
                         await loadAvailableCourses();
+                        
+                        // Set up real-time attendance subscription
+                        setupRealTimeAttendance(user.uid);
 
                         const currentRisk = userData.riskLevel || "Low Risk"; 
                         if (currentRisk === "High Risk" || currentRisk === "Medium Risk") {
@@ -324,11 +335,67 @@ export default function StudentDashboard() {
                     console.error("Error fetching student data:", error);
                 }
             } else {
+                // Cleanup attendance subscription on logout
+                if (attendanceUnsubscribe) {
+                    attendanceUnsubscribe();
+                }
                 navigate('/');
             }
         });
         return () => unsubscribe();
     }, [navigate]);
+
+    // Set up real-time attendance tracking from Firebase
+    const setupRealTimeAttendance = (userId) => {
+        // Unsubscribe from previous subscription if exists
+        if (attendanceUnsubscribe) {
+            attendanceUnsubscribe();
+        }
+
+        const unsubscribe = subscribeToStudentAttendance(userId, (coursesWithAttendance) => {
+            if (coursesWithAttendance.length > 0) {
+                // Update courses with real Firebase attendance data
+                setCourses(prevCourses => {
+                    return prevCourses.map(course => {
+                        const firebaseCourse = coursesWithAttendance.find(fc => fc.id === course.id);
+                        if (firebaseCourse) {
+                            return {
+                                ...course,
+                                attendanceRate: firebaseCourse.attendanceRate,
+                                absenceRate: firebaseCourse.absenceRate,
+                                presentCount: firebaseCourse.presentCount,
+                                absentCount: firebaseCourse.absentCount,
+                                lateCount: firebaseCourse.lateCount,
+                                totalSessions: firebaseCourse.totalRecords,
+                                attendanceRecords: firebaseCourse.records || []
+                            };
+                        }
+                        return course;
+                    });
+                });
+
+                // Update overall attendance from Firebase data
+                const totalPresent = coursesWithAttendance.reduce((sum, c) => sum + c.presentCount, 0);
+                const totalRecords = coursesWithAttendance.reduce((sum, c) => sum + c.totalRecords, 0);
+                const overallRate = totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0;
+                setStudentData(prev => ({
+                    ...prev,
+                    overallAttendance: overallRate
+                }));
+            }
+        });
+
+        setAttendanceUnsubscribe(() => unsubscribe);
+    };
+
+    // Cleanup subscription on unmount
+    useEffect(() => {
+        return () => {
+            if (attendanceUnsubscribe) {
+                attendanceUnsubscribe();
+            }
+        };
+    }, []);
 
     // ========== ATTENDANCE TRACKING FUNCTIONS ==========
     const fetchStudentCoursesWithAttendance = async () => {

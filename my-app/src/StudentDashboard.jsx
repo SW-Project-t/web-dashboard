@@ -7,11 +7,12 @@ import {
     Download, Shield, Building, X, Menu, User, Calendar,
     Clock, MapPin, CheckCircle, AlertCircle, AlertTriangle,
     BookPlus, GraduationCap, FileText, Video, MessageSquare, Award, Zap, Upload,
-    Mail, Inbox
+    Mail, Inbox, UserCheck, Send
 } from 'lucide-react';
 
 import { auth, db } from './firebase';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot, serverTimestamp, addDoc } from 'firebase/firestore';import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot, serverTimestamp, addDoc } from 'firebase/firestore';
+import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { attendanceAPI } from './services/api';
 import firebaseAttendanceService, { 
     subscribeToStudentAttendance, 
@@ -88,12 +89,19 @@ export default function StudentDashboard() {
     const [selectedRiskCourse, setSelectedRiskCourse] = useState(null);
     const [loading, setLoading] = useState(false);
     
-    // ========== رسائل جديدة ==========
+    // Messages States
     const [studentMessages, setStudentMessages] = useState([]);
     const [unreadMessageCount, setUnreadMessageCount] = useState(0);
     const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
-    // =================================
+    const [isMessageToAdminModalOpen, setIsMessageToAdminModalOpen] = useState(false);
+    const [isMessageToProfessorModalOpen, setIsMessageToProfessorModalOpen] = useState(false);
+    const [messageToAdminText, setMessageToAdminText] = useState('');
+    const [messageToAdminSubject, setMessageToAdminSubject] = useState('');
+    const [messageToProfessorText, setMessageToProfessorText] = useState('');
+    const [messageToProfessorSubject, setMessageToProfessorSubject] = useState('');
+    const [selectedProfessor, setSelectedProfessor] = useState(null);
+    const [professorsList, setProfessorsList] = useState([]);
     
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '',
@@ -151,6 +159,26 @@ export default function StudentDashboard() {
         return () => unsubscribe();
     }, []);
 
+    // ========== جلب الأساتذة من الكورسات ==========
+    useEffect(() => {
+        if (courses.length > 0) {
+            const profsArray = [];
+            courses.forEach(course => {
+                if (course.instructor && course.instructor !== 'TBA' && course.instructor !== 'Loading...') {
+                    if (!profsArray.find(p => p.id === course.id)) {
+                        profsArray.push({
+                            id: course.id,
+                            name: course.instructor,
+                            courseName: course.name,
+                            courseId: course.id
+                        });
+                    }
+                }
+            });
+            setProfessorsList(profsArray);
+        }
+    }, [courses]);
+
     // ========== وظائف الرسائل ==========
     const markMessageAsRead = async (messageId) => {
         try {
@@ -162,14 +190,71 @@ export default function StudentDashboard() {
         }
     };
 
-    const openMessagesModal = () => {
-        setIsMessagesModalOpen(true);
-        // تحديث جميع الرسائل كمقروءة
-        studentMessages.forEach(msg => {
-            if (!msg.read) {
-                markMessageAsRead(msg.id);
-            }
-        });
+    const handleSendMessageToAdmin = async () => {
+        if (!messageToAdminText.trim()) {
+            showNotification("Please enter a message", 'error');
+            return;
+        }
+
+        try {
+            const messageData = {
+                from: 'student',
+                fromId: auth.currentUser?.uid,
+                fromName: studentData.name,
+                to: 'admin',
+                toId: 'admin',
+                toName: 'System Admin',
+                subject: messageToAdminSubject.trim() || 'No Subject',
+                message: messageToAdminText.trim(),
+                createdAt: serverTimestamp(),
+                read: false,
+                adminRead: false
+            };
+
+            await addDoc(collection(db, "messages"), messageData);
+            
+            showNotification("Message sent to Admin successfully!", 'success');
+            setIsMessageToAdminModalOpen(false);
+            setMessageToAdminText('');
+            setMessageToAdminSubject('');
+        } catch (error) {
+            console.error("Error sending message:", error);
+            showNotification("Failed to send message", 'error');
+        }
+    };
+
+    const handleSendMessageToProfessor = async () => {
+        if (!selectedProfessor || !messageToProfessorText.trim()) {
+            showNotification("Please select a professor and enter a message", 'error');
+            return;
+        }
+
+        try {
+            const messageData = {
+                from: 'student',
+                fromId: auth.currentUser?.uid,
+                fromName: studentData.name,
+                to: 'professor',
+                toId: selectedProfessor.id,
+                toName: selectedProfessor.name,
+                subject: messageToProfessorSubject.trim() || 'No Subject',
+                message: messageToProfessorText.trim(),
+                createdAt: serverTimestamp(),
+                read: false,
+                adminRead: true
+            };
+
+            await addDoc(collection(db, "messages"), messageData);
+            
+            showNotification(`Message sent to Professor ${selectedProfessor.name} successfully!`, 'success');
+            setIsMessageToProfessorModalOpen(false);
+            setSelectedProfessor(null);
+            setMessageToProfessorText('');
+            setMessageToProfessorSubject('');
+        } catch (error) {
+            console.error("Error sending message:", error);
+            showNotification("Failed to send message", 'error');
+        }
     };
 
     const getMessageSenderIcon = (from) => {
@@ -1049,6 +1134,13 @@ export default function StudentDashboard() {
                         <GraduationCap size={20} />
                         <span>L.M.S.</span>
                     </button>
+                    <button 
+                        className={`student-nav-button ${activeTab === 'Messages' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Messages')}
+                    >
+                        <MessageSquare size={20} />
+                        <span>Messages</span>
+                    </button>
                 </nav>
 
                 <div className="student-sidebar-footer">
@@ -1085,7 +1177,7 @@ export default function StudentDashboard() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button className="student-notification-button" onClick={openMessagesModal}>
+                        <button className="student-notification-button" onClick={() => setIsMessagesModalOpen(true)}>
                             <Bell size={20} />
                             {unreadMessageCount > 0 && (
                                 <span className="student-notification-badge">{unreadMessageCount}</span>
@@ -1792,10 +1884,95 @@ export default function StudentDashboard() {
                             )}
                         </div>
                     )}
+
+                    {activeTab === 'Messages' && (
+                        <div className="student-messages-container">
+                            <div className="student-messages-header">
+                                <div className="student-messages-title">
+                                    <MessageSquare size={40} />
+                                    <div>
+                                        <h2>Message Center</h2>
+                                        <p>Send messages to Admin or your Professors</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="student-messages-stats">
+                                <div className="student-messages-stat-card">
+                                    <div className="student-messages-stat-icon"><Inbox size={24} /></div>
+                                    <div className="student-messages-stat-value">{unreadMessageCount}</div>
+                                    <div className="student-messages-stat-label">Unread Messages</div>
+                                </div>
+                                <div className="student-messages-stat-card">
+                                    <div className="student-messages-stat-icon"><Users size={24} /></div>
+                                    <div className="student-messages-stat-value">{courses.length}</div>
+                                    <div className="student-messages-stat-label">Your Courses</div>
+                                </div>
+                            </div>
+
+                            <div className="student-messages-actions-grid">
+                             <div className="student-message-action-card" onClick={() => setIsMessageToProfessorModalOpen(true)}>
+                                    <div className="student-message-action-icon professor">
+                                        <UserCheck size={32} />
+                                    </div>
+                                    <h3>Send to Professor</h3>
+                                    <p>Send questions or messages to your course professors</p>
+                                    <div className="student-message-action-footer">
+                                        <span>{professorsList.length} professors available →</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Inbox - All Messages */}
+                            <div className="student-inbox-section">
+                                <h4>
+                                    <Inbox size={18} />
+                                    All Messages ({unreadMessageCount} unread)
+                                </h4>
+                                <div className="student-messages-list">
+                                    {studentMessages.length === 0 ? (
+                                        <p className="student-no-data">No messages yet</p>
+                                    ) : (
+                                        studentMessages.map(msg => (
+                                            <div 
+                                                key={msg.id} 
+                                                className={`student-message-item ${!msg.read ? 'unread' : ''}`}
+                                                onClick={() => {
+                                                    if (!msg.read) markMessageAsRead(msg.id);
+                                                    setSelectedMessage(msg);
+                                                }}
+                                            >
+                                                <div className="student-message-avatar">
+                                                    {msg.from === 'admin' ? '👨‍💼' : msg.from === 'professor' ? '👨‍🏫' : '📧'}
+                                                </div>
+                                                <div className="student-message-content">
+                                                    <div className="student-message-header">
+                                                        <span className="student-message-sender">
+                                                            {msg.from === 'admin' ? `Admin (${msg.fromName || 'System'})` : 
+                                                             msg.from === 'professor' ? `Prof. ${msg.fromName || 'Professor'}` : 
+                                                             msg.fromName || 'Unknown'}
+                                                        </span>
+                                                        <span className="student-message-date">
+                                                            {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                                        </span>
+                                                    </div>
+                                                    {msg.subject && <span className="student-message-subject">{msg.subject}</span>}
+                                                    <p className="student-message-text">
+                                                        {msg.message.length > 100 ? msg.message.substring(0, 100) + '...' : msg.message}
+                                                    </p>
+                                                </div>
+                                                {!msg.read && <div className="student-unread-dot"></div>}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
 
-            {/* Modals - Keeping existing modals */}
+            {/* Modals */}
             {isRiskDetailsModalOpen && selectedRiskCourse && (
                 <div className="student-modal-overlay" onClick={() => setIsRiskDetailsModalOpen(false)}>
                     <div className="student-modal-container" onClick={e => e.stopPropagation()}>
@@ -2125,51 +2302,113 @@ export default function StudentDashboard() {
                 </div>
             )}
 
-            {/* Messages Modal */}
-            {isMessagesModalOpen && (
-                <div className="student-modal-overlay" onClick={() => setIsMessagesModalOpen(false)}>
-                    <div className="student-modal-container messages-modal" onClick={e => e.stopPropagation()}>
+            {/* Message to Admin Modal */}
+            {isMessageToAdminModalOpen && (
+                <div className="student-modal-overlay" onClick={() => setIsMessageToAdminModalOpen(false)}>
+                    <div className="student-modal-container small" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">
-                            <h2>Your Messages</h2>
-                            <button className="student-close-modal-button" onClick={() => setIsMessagesModalOpen(false)}>
+                            <h3>Send Message to Admin</h3>
+                            <button className="student-close-modal-button" onClick={() => setIsMessageToAdminModalOpen(false)}>
                                 <X size={20} />
                             </button>
                         </div>
                         
-                        <div className="student-messages-list">
-                            {studentMessages.length === 0 ? (
-                                <p className="student-no-data">No messages yet</p>
-                            ) : (
-                                studentMessages.map(msg => (
-                                    <div 
-                                        key={msg.id} 
-                                        className={`student-message-item ${!msg.read ? 'unread' : ''}`}
-                                        onClick={() => {
-                                            if (!msg.read) markMessageAsRead(msg.id);
-                                            setSelectedMessage(msg);
-                                        }}
-                                    >
-                                        <div className="student-message-avatar">
-                                            {getMessageSenderIcon(msg.from)}
-                                        </div>
-                                        <div className="student-message-content">
-                                            <div className="student-message-header">
-                                                <span className="student-message-sender">{getMessageSenderName(msg)}</span>
-                                                <span className="student-message-date">
-                                                    {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
-                                                </span>
-                                            </div>
-                                            {msg.subject && <span className="student-message-subject">{msg.subject}</span>}
-                                            <p className="student-message-text">{msg.message.length > 100 ? msg.message.substring(0, 100) + '...' : msg.message}</p>
-                                        </div>
-                                        {!msg.read && <div className="student-unread-dot"></div>}
-                                    </div>
-                                ))
-                            )}
+                        <div className="student-modal-form">
+                            <div className="student-form-group">
+                                <label>Subject (Optional)</label>
+                                <input
+                                    type="text"
+                                    className="student-form-input"
+                                    value={messageToAdminSubject}
+                                    onChange={(e) => setMessageToAdminSubject(e.target.value)}
+                                    placeholder="Enter subject"
+                                />
+                            </div>
+                            <div className="student-form-group">
+                                <label>Message</label>
+                                <textarea
+                                    className="student-form-input"
+                                    rows="5"
+                                    value={messageToAdminText}
+                                    onChange={(e) => setMessageToAdminText(e.target.value)}
+                                    placeholder="Type your message here..."
+                                />
+                            </div>
+                            <div className="student-modal-actions">
+                                <button className="student-cancel-button" onClick={() => setIsMessageToAdminModalOpen(false)}>Cancel</button>
+                                <button 
+                                    className="student-update-button"
+                                    onClick={handleSendMessageToAdmin}
+                                    disabled={!messageToAdminText.trim()}
+                                >
+                                    <Send size={16} /> Send to Admin
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Message to Professor Modal */}
+            {isMessageToProfessorModalOpen && (
+                <div className="student-modal-overlay" onClick={() => setIsMessageToProfessorModalOpen(false)}>
+                    <div className="student-modal-container small" onClick={e => e.stopPropagation()}>
+                        <div className="student-modal-header">
+                            <h3>Send Message to Professor</h3>
+                            <button className="student-close-modal-button" onClick={() => setIsMessageToProfessorModalOpen(false)}>
+                                <X size={20} />
+                            </button>
                         </div>
                         
-                        <div className="student-modal-actions">
-                            <button className="student-cancel-button" onClick={() => setIsMessagesModalOpen(false)}>Close</button>
+                        <div className="student-modal-form">
+                            <div className="student-form-group">
+                                <label>Select Professor / Course</label>
+                                <select
+                                    className="student-form-input"
+                                    value={selectedProfessor?.id || ''}
+                                    onChange={(e) => {
+                                        const prof = professorsList.find(p => p.id === e.target.value);
+                                        setSelectedProfessor(prof);
+                                    }}
+                                >
+                                    <option value="">Select Professor</option>
+                                    {professorsList.map(p => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name} - {p.courseName} ({p.courseId})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="student-form-group">
+                                <label>Subject (Optional)</label>
+                                <input
+                                    type="text"
+                                    className="student-form-input"
+                                    value={messageToProfessorSubject}
+                                    onChange={(e) => setMessageToProfessorSubject(e.target.value)}
+                                    placeholder="Enter subject"
+                                />
+                            </div>
+                            <div className="student-form-group">
+                                <label>Message</label>
+                                <textarea
+                                    className="student-form-input"
+                                    rows="5"
+                                    value={messageToProfessorText}
+                                    onChange={(e) => setMessageToProfessorText(e.target.value)}
+                                    placeholder="Type your message here..."
+                                />
+                            </div>
+                            <div className="student-modal-actions">
+                                <button className="student-cancel-button" onClick={() => setIsMessageToProfessorModalOpen(false)}>Cancel</button>
+                                <button 
+                                    className="student-update-button"
+                                    onClick={handleSendMessageToProfessor}
+                                    disabled={!selectedProfessor || !messageToProfessorText.trim()}
+                                >
+                                    <Send size={16} /> Send to Professor
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

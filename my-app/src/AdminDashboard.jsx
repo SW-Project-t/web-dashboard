@@ -35,7 +35,6 @@ const AdminDashboard = () => {
     const [selectedProfessor, setSelectedProfessor] = useState(null);
     const [messageToProfText, setMessageToProfText] = useState('');
     const [messageToProfSubject, setMessageToProfSubject] = useState('');
-    const [professors, setProfessors] = useState([]);
     
     // Cumulative attendance stats state
     const [cumulativeAttendanceStats, setCumulativeAttendanceStats] = useState({
@@ -83,22 +82,6 @@ const AdminDashboard = () => {
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '', newPassword: '', confirmPassword: ''
     });
-
-    // جلب الأساتذة
-    useEffect(() => {
-        const fetchProfessors = () => {
-            const q = query(collection(db, "users"), where("role", "==", "instructor"));
-            const unsubscribe = onSnapshot(q, (querySnapshot) => {
-                const profsArray = [];
-                querySnapshot.forEach((doc) => {
-                    profsArray.push({ id: doc.id, ...doc.data() });
-                });
-                setProfessors(profsArray);
-            });
-            return unsubscribe;
-        };
-        fetchProfessors();
-    }, []);
 
     // جلب الرسائل من الأساتذة
     useEffect(() => {
@@ -278,7 +261,9 @@ const AdminDashboard = () => {
         );
     }, [courses, searchQuery]);
 
+    // فلترة الطلاب والدكاترة من كل المستخدمين مباشرة
     const studentUsers = users.filter(u => u.role === 'student');
+    const instructorUsers = users.filter(u => u.role === 'instructor' || u.role?.toLowerCase() === 'professor');
 
     const getCourseAttendanceRate = (courseId) => {
         const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === courseId);
@@ -443,27 +428,44 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleAddCourseSubmit = async (e) => {
-        e.preventDefault();
-        const isFormValid = Object.values(newCourseData).every(value => value.trim() !== "");
-        if (!isFormValid) {
-            alert("Please fill in all fields.");
-            return;
-        }
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post('http://localhost:3001/admin/add-course', newCourseData, {
-                headers: { Authorization: `Bearer ${token}` }
+   const handleAddCourseSubmit = async (e) => {
+    e.preventDefault();
+    
+    // التحقق من صحة البيانات بشكل آمن
+    const isFormValid = Object.values(newCourseData).every(value => {
+        if (value === undefined || value === null) return false;
+        if (typeof value === 'string') return value.trim() !== "";
+        return value !== "";
+    });
+    
+    if (!isFormValid) {
+        alert("Please fill in all fields.");
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post('http://localhost:3001/admin/add-course', newCourseData, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.success) {
+            alert("Course added successfully!");
+            setIsAddCourseModalOpen(false);
+            setNewCourseData({ 
+                courseId: '', 
+                courseName: '', 
+                instructorName: '', 
+                SelectDays: '', 
+                Time: '', 
+                RoomNumber: '', 
+                capacity: '',
+                totalStudents: 0 
             });
-            if (response.data.success) {
-                alert("Course added successfully!");
-                setIsAddCourseModalOpen(false);
-                setNewCourseData({ courseId: '', courseName: '', instructorName: '', SelectDays: '', Time: '', RoomNumber: '', capacity: '',totalStudents:0 });
-            }
-        } catch (error) {
-            alert(error.response?.data?.error || "Failed to add course.");
         }
-    };
+    } catch (error) {
+        alert(error.response?.data?.error || "Failed to add course.");
+    }
+};
 
     const handleDelete = async (collectionName, id) => {
         if (window.confirm("Are you sure you want to delete this item?")) {
@@ -624,15 +626,6 @@ const AdminDashboard = () => {
     };
 
     const markMessageAsRead = async (messageId) => {
-        try {
-            const messageRef = doc(db, "messages", messageId);
-            await updateDoc(messageRef, { adminRead: true });
-        } catch (error) {
-            console.error("Error marking message as read:", error);
-        }
-    };
-
-    const markProfessorMessageAsRead = async (messageId) => {
         try {
             const messageRef = doc(db, "messages", messageId);
             await updateDoc(messageRef, { adminRead: true });
@@ -1200,127 +1193,111 @@ const AdminDashboard = () => {
                     )}
 
                     {activeTab === 'Messages' && (
-                        <div className="messages-container">
-                            <div className="messages-header">
-                                <div className="flex-align-center">
-                                    <MessageSquare size={24} className="text-primary margin-right-2" />
-                                    <h3>Message Center</h3>
-                                </div>
-                            </div>
-
-                            <div className="messages-grid">
-                                <div className="compose-message-card">
-                                    <h4>Quick Message to Student</h4>
-                                    <select 
-                                        className="form-input"
-                                        value={selectedStudent?.id || ''}
-                                        onChange={(e) => {
-                                            const student = studentUsers.find(s => s.id === e.target.value);
-                                            setSelectedStudent(student);
-                                        }}
-                                    >
-                                        <option value="">Select Student</option>
-                                        {studentUsers.map(s => (
-                                            <option key={s.id} value={s.id}>{s.fullName} ({s.code})</option>
-                                        ))}
-                                    </select>
-                                    <input 
-                                        type="text"
-                                        className="form-input"
-                                        placeholder="Subject (optional)"
-                                        value={messageSubject}
-                                        onChange={(e) => setMessageSubject(e.target.value)}
-                                    />
-                                    <textarea
-                                        className="form-input message-textarea"
-                                        placeholder="Type your message here..."
-                                        value={messageText}
-                                        onChange={(e) => setMessageText(e.target.value)}
-                                        rows="4"
-                                    />
-                                    <button 
-                                        className="submit-button send-message-btn"
-                                        onClick={handleSendMessage}
-                                        disabled={!selectedStudent || !messageText.trim()}
-                                    >
-                                        <Send size={16} /> Send Message
-                                    </button>
-                                </div>
-
-                                <div className="inbox-card">
-                                    <h4>
-                                        <Inbox size={18} />
-                                        Messages from Students ({unreadAdminMessages.length} unread)
-                                    </h4>
-                                    <div className="messages-list">
-                                        {adminMessages.length === 0 ? (
-                                            <p className="no-data-message">No messages from students</p>
-                                        ) : (
-                                            adminMessages.map(msg => (
-                                                <div 
-                                                    key={msg.id} 
-                                                    className={`message-item ${!msg.adminRead ? 'unread' : ''}`}
-                                                    onClick={() => markMessageAsRead(msg.id)}
-                                                >
-                                                    <div className="message-avatar">
-                                                        {msg.fromName?.charAt(0).toUpperCase() || 'S'}
-                                                    </div>
-                                                    <div className="message-content">
-                                                        <div className="message-header">
-                                                            <span className="message-sender">{msg.fromName || 'Student'}</span>
-                                                            <span className="message-date">
-                                                                {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
-                                                            </span>
-                                                        </div>
-                                                        {msg.subject && <span className="message-subject">{msg.subject}</span>}
-                                                        <p className="message-text">{msg.message}</p>
-                                                    </div>
-                                                    {!msg.adminRead && <div className="unread-dot"></div>}
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* قسم رسائل الأساتذة */}
-                            <div className="messages-grid" style={{ marginTop: '25px' }}>
-                                <div className="inbox-card">
-                                    <h4>
-                                        <Inbox size={18} />
-                                        Messages from Professors ({unreadProfessorCount} unread)
-                                    </h4>
-                                    <div className="messages-list">
-                                        {professorMessages.length === 0 ? (
-                                            <p className="no-data-message">No messages from professors</p>
-                                        ) : (
-                                            professorMessages.map(msg => (
-                                                <div 
-                                                    key={msg.id} 
-                                                    className={`message-item ${!msg.adminRead ? 'unread' : ''}`}
-                                                    onClick={() => markProfessorMessageAsRead(msg.id)}
-                                                >
-                                                    <div className="message-avatar">
-                                                        {msg.fromName?.charAt(0).toUpperCase() || 'P'}
-                                                    </div>
-                                                    <div className="message-content">
-                                                        <div className="message-header">
-                                                            <span className="message-sender">Prof. {msg.fromName || 'Professor'}</span>
-                                                            <span className="message-date">
-                                                                {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
-                                                            </span>
-                                                        </div>
-                                                        {msg.subject && <span className="message-subject">{msg.subject}</span>}
-                                                        <p className="message-text">{msg.message}</p>
-                                                    </div>
-                                                    {!msg.adminRead && <div className="unread-dot"></div>}
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
+                    <div className="admin-messages-container">
+                        <div className="admin-messages-header">
+                            <div className="admin-messages-title">
+                                <MessageSquare size={40} />
+                                <div>
+                                    <h2>Message Center</h2>
+                                    <p>Send messages to students or professors and view incoming messages</p>
                                 </div>
                             </div>
                         </div>
+
+                        <div className="admin-messages-stats">
+                            <div className="admin-messages-stat-card">
+                                <div className="admin-messages-stat-icon"><Inbox size={24} /></div>
+                                <div className="admin-messages-stat-value">{unreadAdminMessages.length}</div>
+                                <div className="admin-messages-stat-label">Unread from Students</div>
+                            </div>
+                            <div className="admin-messages-stat-card">
+                                <div className="admin-messages-stat-icon"><Inbox size={24} /></div>
+                                <div className="admin-messages-stat-value">{unreadProfessorCount}</div>
+                                <div className="admin-messages-stat-label">Unread from Professors</div>
+                            </div>
+                            <div className="admin-messages-stat-card">
+                                <div className="admin-messages-stat-icon"><Users size={24} /></div>
+                                <div className="admin-messages-stat-value">{studentUsers.length}</div>
+                                <div className="admin-messages-stat-label">Total Students</div>
+                            </div>
+                            <div className="admin-messages-stat-card">
+                                <div className="admin-messages-stat-icon"><UserCheck size={24} /></div>
+                                <div className="admin-messages-stat-value">{instructorUsers.length}</div>
+                                <div className="admin-messages-stat-label">Total Professors</div>
+                            </div>
+                        </div>
+
+                        {/* Two Cards Side by Side: Send to Student & Send to Professor */}
+                        <div className="admin-messages-actions-grid">
+                            {/* Card 1: Send Message to Student */}
+                            <div className="admin-message-action-card" onClick={() => {
+                                setSelectedStudent(null);
+                                setMessageText('');
+                                setMessageSubject('');
+                                setIsMessageModalOpen(true);
+                            }}>
+                                <div className="admin-message-action-icon student">
+                                    <GraduationCap size={32} />
+                                </div>
+                                <h3>Send to Student</h3>
+                                <p>Send announcements, reminders, or individual messages to your students</p>
+                                <div className="admin-message-action-footer">
+                                    <span>{studentUsers.length} students available →</span>
+                                </div>
+                            </div>
+
+                            {/* Card 2: Send Message to Professor */}
+                            <div className="admin-message-action-card" onClick={() => {
+                                setSelectedProfessor(null);
+                                setMessageToProfText('');
+                                setMessageToProfSubject('');
+                                setIsMessageToProfModalOpen(true);
+                            }}>
+                                <div className="admin-message-action-icon professor">
+                                    <UserCheck size={32} />
+                                </div>
+                                <h3>Send to Professor</h3>
+                                <p>Send important announcements, schedule changes, or respond to professor inquiries</p>
+                                <div className="admin-message-action-footer">
+                                    <span>{instructorUsers.length} professors available →</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="admin-inbox-section">
+                            <h4>
+                                <Inbox size={18} />
+                                Messages from Professors ({unreadAdminMessages.length} unread)
+                            </h4>
+                            <div className="admin-messages-list">
+                                {adminMessages.length === 0 ? (
+                                    <p className="admin-no-data">No messages from professors</p>
+                                ) : (
+                                    adminMessages.map(msg => (
+                                        <div 
+                                            key={msg.id} 
+                                            className={`admin-message-item ${!msg.adminRead ? 'unread' : ''}`}
+                                            onClick={() => markMessageAsRead(msg.id)}
+                                        >
+                                            <div className="admin-message-avatar">
+                                                {msg.fromName?.charAt(0).toUpperCase() || 'P'}
+                                            </div>
+                                            <div className="admin-message-content">
+                                                <div className="admin-message-header">
+                                                    <span className="admin-message-sender">{msg.fromName || 'Professor'}</span>
+                                                    <span className="admin-message-date">
+                                                        {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                                    </span>
+                                                </div>
+                                                {msg.subject && <span className="admin-message-subject">{msg.subject}</span>}
+                                                <p className="admin-message-text">{msg.message}</p>
+                                            </div>
+                                            {!msg.adminRead && <div className="admin-unread-dot"></div>}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
                     )}
 
                     {activeTab === 'Attendance Analytics' && (
@@ -1729,12 +1706,12 @@ const AdminDashboard = () => {
                                     className="form-input"
                                     value={selectedProfessor?.id || ''}
                                     onChange={(e) => {
-                                        const prof = professors.find(p => p.id === e.target.value);
+                                        const prof = instructorUsers.find(p => p.id === e.target.value);
                                         setSelectedProfessor(prof);
                                     }}
                                 >
                                     <option value="">Select Professor</option>
-                                    {professors.map(p => (
+                                    {instructorUsers.map(p => (
                                         <option key={p.id} value={p.id}>{p.fullName} ({p.code})</option>
                                     ))}
                                 </select>

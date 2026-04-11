@@ -20,6 +20,7 @@ import {
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { attendanceAPI } from './services/api';
 import { subscribeToAllCoursesAttendance } from './services/firebaseAttendanceService';
+
 const STORAGE_KEYS = {
     PROF_IMAGE: 'yallaclass_prof_image'
 };
@@ -102,6 +103,7 @@ export default function ProfessorDashboard() {
     const [adminMessages, setAdminMessages] = useState([]);
     const [studentMessages, setStudentMessages] = useState([]);
     const [unreadAdminCount, setUnreadAdminCount] = useState(0);
+    const [unreadStudentCount, setUnreadStudentCount] = useState(0);
     const [isMessageToAdminModalOpen, setIsMessageToAdminModalOpen] = useState(false);
     const [isMessageToStudentModalOpen, setIsMessageToStudentModalOpen] = useState(false);
     const [messageToAdminText, setMessageToAdminText] = useState('');
@@ -177,7 +179,38 @@ export default function ProfessorDashboard() {
         });
         
         return () => unsubscribeAdmin();
-    }, []);
+    }, [auth.currentUser?.uid]); // <-- تم التعديل هنا
+
+    // جلب رسائل الطلاب المرسلة للدكتور
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        const messagesRef = collection(db, "messages");
+        const qStudent = query(
+            messagesRef, 
+            where("to", "==", "professor"),
+            where("toId", "==", user.uid),
+            where("from", "==", "student"),
+            orderBy("createdAt", "desc")
+        );
+        
+        const unsubscribeStudent = onSnapshot(qStudent, (querySnapshot) => {
+            const messagesArray = [];
+            let unread = 0;
+            querySnapshot.forEach((doc) => {
+                const messageData = { id: doc.id, ...doc.data() };
+                messagesArray.push(messageData);
+                if (!messageData.read) {
+                    unread++;
+                }
+            });
+            setStudentMessages(messagesArray);
+            setUnreadStudentCount(unread);
+        });
+        
+        return () => unsubscribeStudent();
+    }, [auth.currentUser?.uid]); // <-- تم التعديل هنا
 
     // جلب الطلاب المسجلين في كورسات الأستاذ
     const fetchStudentsList = async () => {
@@ -281,7 +314,7 @@ export default function ProfessorDashboard() {
         };
 
         fetchProfessorCourses();
-    }, [auth.currentUser]);
+    }, [auth.currentUser?.uid]); // <-- تم التعديل هنا
     
     useEffect(() => {
         if (courses.length === 0) return;
@@ -879,6 +912,16 @@ export default function ProfessorDashboard() {
             console.error("Error marking message as read:", error);
         }
     };
+
+    const markStudentMessageAsRead = async (messageId) => {
+        try {
+            const messageRef = doc(db, "messages", messageId);
+            await updateDoc(messageRef, { read: true });
+            setUnreadStudentCount(prev => Math.max(0, prev - 1));
+        } catch (error) {
+            console.error("Error marking message as read:", error);
+        }
+    };
     // =======================================
 
     const handleLogout = () => {
@@ -1100,7 +1143,7 @@ export default function ProfessorDashboard() {
                 await addDoc(collection(db, "professorCourses"), {
                     ...courseToAdd,
                     userId: user.uid
-                });    
+                });   
                 showNotification(`Course ${newCourse.id} added successfully`);
             } catch (firestoreError) {
                 console.error("Firestore error:", firestoreError);
@@ -1271,12 +1314,12 @@ export default function ProfessorDashboard() {
                         <GraduationCap size={20} />
                         <span>L.M.S.</span>
                     </button>
-                    <button 
-                        className={`professor-nav-button ${activeTab === 'Messages' ? 'active' : ''}`} 
-                        onClick={() => setActiveTab('Messages')}
-                    >
-                        <MessageSquare size={20} />
-                        <span>Messages</span>
+                   <button 
+                       className={`professor-nav-button ${activeTab === 'Messages' ? 'active' : ''}`} 
+                       onClick={() => setActiveTab('Messages')}
+                    >  
+                       <MessageSquare size={20} />
+                       <span>Messages</span>
                     </button>
                 </nav>
 
@@ -1345,10 +1388,6 @@ export default function ProfessorDashboard() {
                                 <div className="professor-action-card-item professor-card-red" onClick={resetAllAttendance}>
                                     <Clock size={28} />
                                     <span>Reset Today</span>
-                                </div>
-                                <div className="professor-action-card-item professor-card-blue" onClick={() => setIsMessageToAdminModalOpen(true)}>
-                                    <Send size={28} />
-                                    <span>Message Admin</span>
                                 </div>
                             </div>
 
@@ -1833,81 +1872,126 @@ export default function ProfessorDashboard() {
                                     <MessageSquare size={40} />
                                     <div>
                                         <h2>Message Center</h2>
-                                        <p>View messages from Admin and communicate with students</p>
+                                        <p>View messages from Admin and Students, and send messages to Admin or Students</p>
                                     </div>
-                                </div>
-                                <button className="professor-primary-button" onClick={() => setIsMessageToAdminModalOpen(true)}>
-                                    <Send size={18} /> Message Admin
-                                </button>
-                            </div>
-
-                            <div className="professor-lms-stats">
-                                <div className="professor-lms-stat-card">
-                                    <div className="professor-lms-stat-icon"><Inbox size={24} /></div>
-                                    <div className="professor-lms-stat-value">{unreadAdminCount}</div>
-                                    <div className="professor-lms-stat-label">Unread from Admin</div>
-                                </div>
-                                <div className="professor-lms-stat-card">
-                                    <div className="professor-lms-stat-icon"><Users size={24} /></div>
-                                    <div className="professor-lms-stat-value">{studentsList.length}</div>
-                                    <div className="professor-lms-stat-label">Students to Contact</div>
                                 </div>
                             </div>
 
-                            <div className="professor-lms-cards">
-                                {/* رسائل من الأدمن */}
-                                <div className="professor-lms-card">
-                                    <div className="professor-lms-card-icon"><Mail size={28} /></div>
-                                    <h3>Messages from Admin</h3>
-                                    <p>Important announcements and communications from the system administrator</p>
-                                    <div className="professor-lms-card-footer">
-                                        <span className="professor-lms-card-count">{unreadAdminCount} unread</span>
-                                        <span className="professor-lms-card-link">View All →</span>
+                            {/* Stats Cards */}
+                            <div className="professor-messages-stats">
+                                <div className="professor-messages-stat-card">
+                                    <div className="professor-messages-stat-icon"><Inbox size={24} /></div>
+                                    <div className="professor-messages-stat-value">{unreadAdminCount}</div>
+                                    <div className="professor-messages-stat-label">Unread from Admin</div>
+                                </div>
+                                <div className="professor-messages-stat-card">
+                                    <div className="professor-messages-stat-icon"><Inbox size={24} /></div>
+                                    <div className="professor-messages-stat-value">{unreadStudentCount}</div>
+                                    <div className="professor-messages-stat-label">Unread from Students</div>
+                                </div>
+                                <div className="professor-messages-stat-card">
+                                    <div className="professor-messages-stat-icon"><Users size={24} /></div>
+                                    <div className="professor-messages-stat-value">{studentsList.length}</div>
+                                    <div className="professor-messages-stat-label">Total Students</div>
+                                </div>
+                            </div>
+
+                            {/* Two Cards Side by Side: Send to Admin & Send to Student */}
+                            <div className="professor-messages-actions-grid">
+                                {/* Card 1: Send Message to Admin */}
+                                <div className="professor-message-action-card" onClick={() => setIsMessageToAdminModalOpen(true)}>
+                                    <div className="professor-message-action-icon admin">
+                                        <Mail size={32} />
+                                    </div>
+                                    <h3>Send to Admin</h3>
+                                    <p>Send a message to the system administrator for support or inquiries</p>
+                                    <div className="professor-message-action-footer">
+                                        <span>Compose Message →</span>
                                     </div>
                                 </div>
 
-                                {/* رسائل للطلاب */}
-                                <div className="professor-lms-card" onClick={() => setIsMessageToStudentModalOpen(true)}>
-                                    <div className="professor-lms-card-icon"><Send size={28} /></div>
-                                    <h3>Send to Students</h3>
+                                {/* Card 2: Send Message to Student */}
+                                <div className="professor-message-action-card" onClick={() => setIsMessageToStudentModalOpen(true)}>
+                                    <div className="professor-message-action-icon student">
+                                        <Users size={32} />
+                                    </div>
+                                    <h3>Send to Student</h3>
                                     <p>Send announcements, reminders, or individual messages to your students</p>
-                                    <div className="professor-lms-card-footer">
-                                        <span className="professor-lms-card-count">{studentsList.length} students</span>
-                                        <span className="professor-lms-card-link">Send Message →</span>
+                                    <div className="professor-message-action-footer">
+                                        <span>{studentsList.length} students available →</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* قائمة الرسائل من الأدمن */}
-                            <div className="professor-analytics-table-container">
-                                <h3>Messages from Admin</h3>
-                                <div className="professor-table-responsive">
-                                    <table className="professor-analytics-table">
-                                        <thead>
-                                            <tr>
-                                                <th>From</th>
-                                                <th>Subject</th>
-                                                <th>Message</th>
-                                                <th>Date</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {adminMessages.length === 0 ? (
-                                                <tr><td colSpan="5" className="no-data-cell">No messages from Admin</td></tr>
-                                            ) : (
-                                                adminMessages.map(msg => (
-                                                    <tr key={msg.id} onClick={() => markAdminMessageAsRead(msg.id)} style={{ cursor: 'pointer', backgroundColor: !msg.read ? 'rgba(74, 144, 226, 0.1)' : 'transparent' }}>
-                                                        <td><strong>Admin</strong> ({msg.fromName})</td>
-                                                        <td>{msg.subject || 'No Subject'}</td>
-                                                        <td>{msg.message.length > 50 ? msg.message.substring(0, 50) + '...' : msg.message}</td>
-                                                        <td>{msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}</td>
-                                                        <td>{!msg.read ? <span className="status-badge at-risk">Unread</span> : <span className="status-badge good">Read</span>}</td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
+                            {/* Inbox - Messages from Admin */}
+                            <div className="professor-inbox-section">
+                                <h4>
+                                    <Inbox size={18} />
+                                    Messages from Admin ({unreadAdminCount} unread)
+                                </h4>
+                                <div className="professor-messages-list">
+                                    {adminMessages.length === 0 ? (
+                                        <p className="professor-no-data">No messages from Admin</p>
+                                    ) : (
+                                        adminMessages.map(msg => (
+                                            <div 
+                                                key={msg.id} 
+                                                className={`professor-message-item ${!msg.read ? 'unread' : ''}`}
+                                                onClick={() => markAdminMessageAsRead(msg.id)}
+                                            >
+                                                <div className="professor-message-avatar">
+                                                    {msg.fromName?.charAt(0).toUpperCase() || 'A'}
+                                                </div>
+                                                <div className="professor-message-content">
+                                                    <div className="professor-message-header">
+                                                        <span className="professor-message-sender">Admin ({msg.fromName || 'System'})</span>
+                                                        <span className="professor-message-date">
+                                                            {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                                        </span>
+                                                    </div>
+                                                    {msg.subject && <span className="professor-message-subject">{msg.subject}</span>}
+                                                    <p className="professor-message-text">{msg.message}</p>
+                                                </div>
+                                                {!msg.read && <div className="professor-unread-dot"></div>}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Inbox - Messages from Students */}
+                            <div className="professor-inbox-section">
+                                <h4>
+                                    <Inbox size={18} />
+                                    Messages from Students ({unreadStudentCount} unread)
+                                </h4>
+                                <div className="professor-messages-list">
+                                    {studentMessages.length === 0 ? (
+                                        <p className="professor-no-data">No messages from Students</p>
+                                    ) : (
+                                        studentMessages.map(msg => (
+                                            <div 
+                                                key={msg.id} 
+                                                className={`professor-message-item ${!msg.read ? 'unread' : ''}`}
+                                                onClick={() => markStudentMessageAsRead(msg.id)}
+                                            >
+                                                <div className="professor-message-avatar student-avatar">
+                                                    {msg.fromName?.charAt(0).toUpperCase() || 'S'}
+                                                </div>
+                                                <div className="professor-message-content">
+                                                    <div className="professor-message-header">
+                                                        <span className="professor-message-sender">Student: {msg.fromName || 'Student'}</span>
+                                                        <span className="professor-message-date">
+                                                            {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                                        </span>
+                                                    </div>
+                                                    {msg.subject && <span className="professor-message-subject">{msg.subject}</span>}
+                                                    <p className="professor-message-text">{msg.message}</p>
+                                                </div>
+                                                {!msg.read && <div className="professor-unread-dot"></div>}
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -2537,6 +2537,7 @@ body.digital-id-open .navbar-container {
     font-size: 16px;
     font-weight: bold;
     transition: all 0.3s ease;
+    color: #000;
 }
 
 .professor-sort-order-btn:hover {
@@ -2589,6 +2590,7 @@ body.digital-id-open .navbar-container {
 .professor-risk-range-filter button {
     padding: 6px 12px;
     background: white;
+    color: #000;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     cursor: pointer;
@@ -2836,7 +2838,6 @@ body.digital-id-open .navbar-container {
     font-size: 14px;
 }
 
-/* No Data Message */
 .professor-no-data {
     text-align: center;
     padding: 60px !important;
@@ -2844,7 +2845,6 @@ body.digital-id-open .navbar-container {
     font-size: 16px;
 }
 
-/* Action Buttons in Students Table */
 .professor-students-table .professor-actions-cell {
     display: flex;
     gap: 8px;
@@ -2854,7 +2854,7 @@ body.digital-id-open .navbar-container {
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    display: flex;
+    display: grid;
     align-items: center;
     justify-content: center;
     background: transparent;
@@ -3844,4 +3844,394 @@ body.digital-id-open .navbar-container {
 
 @keyframes professorSpin {
     to { transform: rotate(360deg); }
+}
+.professor-messages-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.professor-message-action-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.professor-message-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-color: #4a90e2;
+}
+
+.professor-message-action-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+}
+
+.professor-message-action-icon.admin {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.professor-message-action-icon.student {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.professor-message-action-card h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #2d3748;
+}
+
+.professor-message-action-card p {
+    font-size: 14px;
+    color: #718096;
+    margin-bottom: 15px;
+}
+
+.professor-message-action-footer {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #4a90e2;
+    font-weight: 500;
+}
+
+.professor-inbox-section {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-top: 20px;
+}
+
+.professor-inbox-section h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #2d3748;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 12px;
+}
+
+.professor-messages-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.professor-message-item {
+    display: flex;
+    gap: 12px;
+    padding: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.professor-message-item:hover {
+    background: #f7fafc;
+}
+
+.professor-message-item.unread {
+    background: rgba(74, 144, 226, 0.05);
+}
+
+.professor-message-avatar {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.professor-message-content {
+    flex: 1;
+}
+
+.professor-message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.professor-message-sender {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.professor-message-date {
+    font-size: 11px;
+    color: #a0aec0;
+}
+
+.professor-message-subject {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4a90e2;
+    margin-bottom: 5px;
+}
+
+.professor-message-text {
+    font-size: 13px;
+    color: #718096;
+    line-height: 1.4;
+}
+
+.professor-unread-dot {
+    width: 10px;
+    height: 10px;
+    background: #4a90e2;
+    border-radius: 50%;
+    position: absolute;
+    right: 15px;
+    top: 20px;
+}
+
+@media (max-width: 768px) {
+    .professor-messages-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* Professor Messages Stats */
+.professor-messages-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.professor-messages-stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.professor-messages-stat-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    color: white;
+}
+
+.professor-messages-stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.professor-messages-stat-label {
+    font-size: 13px;
+    color: #718096;
+    margin-top: 5px;
+}
+
+/* Two Cards Grid */
+.professor-messages-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.professor-message-action-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.professor-message-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-color: #4a90e2;
+}
+
+.professor-message-action-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+}
+
+.professor-message-action-icon.admin {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.professor-message-action-icon.student {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.professor-message-action-card h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #2d3748;
+}
+
+.professor-message-action-card p {
+    font-size: 14px;
+    color: #718096;
+    margin-bottom: 15px;
+}
+
+.professor-message-action-footer {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #4a90e2;
+    font-weight: 500;
+}
+
+/* Inbox Sections */
+.professor-inbox-section {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+
+.professor-inbox-section h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #2d3748;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 12px;
+}
+
+.professor-messages-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.professor-message-item {
+    display: flex;
+    gap: 12px;
+    padding: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.professor-message-item:hover {
+    background: #f7fafc;
+}
+
+.professor-message-item.unread {
+    background: rgba(74, 144, 226, 0.05);
+}
+
+.professor-message-avatar {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.professor-message-avatar.student-avatar {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.professor-message-content {
+    flex: 1;
+}
+
+.professor-message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.professor-message-sender {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.professor-message-date {
+    font-size: 11px;
+    color: #a0aec0;
+}
+
+.professor-message-subject {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4a90e2;
+    margin-bottom: 5px;
+}
+
+.professor-message-text {
+    font-size: 13px;
+    color: #718096;
+    line-height: 1.4;
+}
+
+.professor-unread-dot {
+    width: 10px;
+    height: 10px;
+    background: #4a90e2;
+    border-radius: 50%;
+    position: absolute;
+    right: 15px;
+    top: 20px;
+}
+
+.professor-no-data {
+    text-align: center;
+    padding: 40px;
+    color: #a0aec0;
+}
+
+@media (max-width: 900px) {
+    .professor-messages-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .professor-messages-actions-grid {
+        grid-template-columns: 1fr;
+    }
 }

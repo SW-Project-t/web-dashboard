@@ -94,6 +94,7 @@ export default function ProfessorDashboard() {
     const [newCourse, setNewCourse] = useState({
         id: '', name: '', schedule: '', room: '', students: '', capacity: ''
     });
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     const getAttendanceColor = (rate) => {
         if (rate >= 85) return '#28a745';
@@ -161,6 +162,7 @@ export default function ProfessorDashboard() {
                     name: data.fullName || "Dr. Anonymous",
                     code: data.code || "No Code"
                 });
+                setProfileImage(data.profileImage || null);
             }
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -776,24 +778,64 @@ export default function ProfessorDashboard() {
         }
     };
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfileImage(reader.result);
-                localStorage.setItem(STORAGE_KEYS.PROF_IMAGE, reader.result);
-                showNotification('Profile image updated successfully!');
-            };
-            reader.readAsDataURL(file);
+    const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setIsUploadingImage(true);
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const uploadData = await uploadRes.json();
+        
+        if (!uploadData.secure_url) {
+            throw new Error('Upload failed');
         }
-    };
+        
+        const user = auth.currentUser;
+        if (user) {
+            const userDocRef = doc(db, "users", user.uid);
+            await updateDoc(userDocRef, {
+                profileImage: uploadData.secure_url
+            });
+            
+            setProfileImage(uploadData.secure_url);
+            showNotification('Profile image updated successfully!', 'success');
+        }
+    } catch (error) {
+        console.error("Error uploading image:", error);
+        showNotification('Error uploading image', 'error');
+    } finally {
+        setIsUploadingImage(false);
+    }
+};
 
-    const removeProfileImage = () => {
-        setProfileImage(null);
-        localStorage.removeItem(STORAGE_KEYS.PROF_IMAGE);
-        showNotification('Profile image removed');
-    };
+    const removeProfileImage = async () => {
+    if (!window.confirm('Remove your profile image?')) return;
+    
+    try {
+        const user = auth.currentUser;
+        if (user) {
+            const userDocRef = doc(db, "users", user.uid);
+            await updateDoc(userDocRef, {
+                profileImage: null
+            });
+            
+            setProfileImage(null);
+            showNotification('Profile image removed', 'success');
+        }
+    } catch (error) {
+        console.error("Error removing image:", error);
+        showNotification('Error removing image', 'error');
+    }
+};
 
     const resetDailyAttendance = (courseId) => {
         setCourses(courses.map(c => 
@@ -991,12 +1033,25 @@ export default function ProfessorDashboard() {
             {/* Sidebar */}
             <aside className={`professor-sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
                 <div className="professor-profile-section">
-                    <div className="professor-profile-image-wrapper" onClick={() => document.getElementById('prof-profile-upload').click()}>
+                    <div
+                        className="professor-profile-image-wrapper"
+                        onClick={() => {
+                            if (!isUploadingImage) {
+                                document.getElementById('prof-profile-upload').click();
+                            }
+                        }}
+                        style={{ cursor: isUploadingImage ? 'not-allowed' : 'pointer', opacity: isUploadingImage ? 0.6 : 1 }}
+                    >
                         {profileImage ? (
                             <img src={profileImage} alt="Profile" className="professor-profile-image" />
                         ) : (
                             <div className="professor-profile-placeholder">
                                 {profData.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                            </div>
+                        )}
+                        {isUploadingImage && (
+                            <div className="professor-upload-overlay">
+                                <div className="professor-spinner"></div>
                             </div>
                         )}
                         <div className="professor-profile-status"></div>

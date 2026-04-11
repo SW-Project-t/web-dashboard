@@ -58,6 +58,8 @@ const AdminDashboard = () => {
     const [messageText, setMessageText] = useState('');
     const [messageSubject, setMessageSubject] = useState('');
 
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+
     const [newUserData, setNewUserData] = useState({
         fullName: '', email: '', password: '', role: '',
         academicYear: '', code: '', department: '', phoneNumber: '',
@@ -203,6 +205,7 @@ const AdminDashboard = () => {
                             name: data.fullName || "System Admin",
                             code: data.code || "ADM-001"
                         });
+                        setAdminProfileImage(data.profileImage || null);
                     }
                 } catch (error) {
                     console.error("Error fetching admin data:", error);
@@ -283,22 +286,64 @@ const AdminDashboard = () => {
         alert("Report exported successfully!");
     };
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setAdminProfileImage(reader.result);
-                localStorage.setItem('admin_profile_image', reader.result);
-            };
-            reader.readAsDataURL(file);
+   const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setIsUploadingImage(true);
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', 'Lms_uploads');
+        
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/dsxijrxup/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const uploadData = await uploadRes.json();
+        
+        if (!uploadData.secure_url) {
+            throw new Error('Upload failed');
         }
-    };
+        
+        const user = auth.currentUser;
+        if (user) {
+            const userDocRef = doc(db, "users", user.uid);
+            await updateDoc(userDocRef, {
+                profileImage: uploadData.secure_url
+            });
+            
+            setAdminProfileImage(uploadData.secure_url);
+            alert('Profile image updated successfully!');
+        }
+    } catch (error) {
+        console.error("Error uploading image:", error);
+        alert('Error uploading image');
+    } finally {
+        setIsUploadingImage(false);
+    }
+};
 
-    const removeProfileImage = () => {
-        setAdminProfileImage(null);
-        localStorage.removeItem('admin_profile_image');
-    };
+    const removeProfileImage = async () => {
+    if (!window.confirm('Remove your profile image?')) return;
+    
+    try {
+        const user = auth.currentUser;
+        if (user) {
+            const userDocRef = doc(db, "users", user.uid);
+            await updateDoc(userDocRef, {
+                profileImage: null
+            });
+            
+            setAdminProfileImage(null);
+            alert('Profile image removed');
+        }
+    } catch (error) {
+        console.error("Error removing image:", error);
+        alert('Error removing image');
+    }
+};
 
     const handleUserInputChange = (e) => {
         const { name, value } = e.target;
@@ -538,12 +583,25 @@ const AdminDashboard = () => {
         <div className="dashboard-container">
             <aside className={`sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
                 <div className="profile-section">
-                    <div className="profile-image-wrapper" onClick={() => document.getElementById('admin-profile-upload').click()}>
+                    <div
+                        className="profile-image-wrapper"
+                        onClick={() => {
+                            if (!isUploadingImage) {
+                                document.getElementById('admin-profile-upload').click();
+                            }
+                        }}
+                        style={{ cursor: isUploadingImage ? 'not-allowed' : 'pointer', opacity: isUploadingImage ? 0.6 : 1 }}
+                    >
                         {adminProfileImage ? (
                             <img src={adminProfileImage} alt="Admin" className="profile-image" />
                         ) : (
                             <div className="profile-image-placeholder">
                                 {adminData.name.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                        {isUploadingImage && (
+                            <div className="upload-overlay">
+                                <div className="spinner"></div>
                             </div>
                         )}
                         <div className="profile-status-indicator"></div>

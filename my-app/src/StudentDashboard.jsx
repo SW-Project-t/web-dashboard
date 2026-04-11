@@ -118,6 +118,8 @@ export default function StudentDashboard() {
     const [submissionFile, setSubmissionFile] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+
     // ========== LMS Functions ==========
     const fetchLMSMaterials = async (courseId) => {
         try {
@@ -313,7 +315,7 @@ export default function StudentDashboard() {
                             email: userData.email || user.email,
                             department: userData.department || "General",
                             academicYear: userData.academicYear || "Year 1",
-                            profileImage: localStorage.getItem('student_profile_image') || null,
+                            profileImage: userData.profileImage || null,
                             gpa: userData.gpa || 0
                         }));
                         
@@ -678,30 +680,68 @@ export default function StudentDashboard() {
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
     };
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setStudentData(prev => ({
-                    ...prev,
-                    profileImage: reader.result
-                }));
-                localStorage.setItem('student_profile_image', reader.result);
-                showNotification('Profile image updated successfully!');
-            };
-            reader.readAsDataURL(file);
+    const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return; 
+    setIsUploadingImage(true);
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const uploadData = await uploadRes.json();
+        
+        if (!uploadData.secure_url) {
+            throw new Error('Upload failed');
         }
-    };
-
-    const removeProfileImage = () => {
-        setStudentData(prev => ({
-            ...prev,
-            profileImage: null
-        }));
-        localStorage.removeItem('student_profile_image');
-        showNotification('Profile image removed');
-    };
+    
+        const user = auth.currentUser;
+        if (user) {
+            const userDocRef = doc(db, "users", user.uid);
+            await updateDoc(userDocRef, {
+                profileImage: uploadData.secure_url
+            });
+            setStudentData(prev => ({
+                ...prev,
+                profileImage: uploadData.secure_url
+            }));
+            
+            showNotification('Profile image updated successfully!', 'success');
+        }
+    } catch (error) {
+        console.error("Error uploading image:", error);
+        showNotification('Error uploading image', 'error');
+    } finally {
+        setIsUploadingImage(false);
+    }
+};
+    const removeProfileImage = async () => {
+    if (!window.confirm('Remove your profile image?')) return;
+    
+    try {
+        const user = auth.currentUser;
+        if (user) {
+            const userDocRef = doc(db, "users", user.uid);
+            await updateDoc(userDocRef, {
+                profileImage: null
+            });
+            
+            setStudentData(prev => ({
+                ...prev,
+                profileImage: null
+            }));
+            
+            showNotification('Profile image removed', 'success');
+        }
+    } catch (error) {
+        console.error("Error removing image:", error);
+        showNotification('Error removing image', 'error');
+    }
+};
 
     const handlePasswordInputChange = (e) => {
         const { name, value } = e.target;
@@ -896,7 +936,21 @@ export default function StudentDashboard() {
             )}
             <aside className={`student-sidebar-wrapper ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
                 <div className="student-profile-section">
-                    <div className="student-profile-image-wrapper" onClick={() => document.getElementById('student-profile-upload').click()}>
+                    <div
+                        className="student-profile-image-wrapper"
+                        onClick={() => {
+                            if (!isUploadingImage) {
+                                document.getElementById('student-profile-upload').click();
+                            }
+                        }}
+                        style={{ cursor: isUploadingImage ? 'not-allowed' : 'pointer', opacity: isUploadingImage ? 0.6 : 1 }}
+                    >
+                        {isUploadingImage && (
+                            <div className="student-upload-overlay">
+                                <div className="student-spinner"></div>
+                            </div>
+                        )}
+
                         {studentData.profileImage ? (
                             <img src={studentData.profileImage} alt="Student" className="student-profile-image" />
                         ) : (

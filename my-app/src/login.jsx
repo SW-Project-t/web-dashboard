@@ -8,7 +8,6 @@ import teamLogo from './assets/yallaclass_logo.jpg';
 import { FiMail, FiLock, FiEye, FiEyeOff , FiLogIn } from 'react-icons/fi';
 import ParticleBackground from './movingbackground';
 import { useNavigate } from 'react-router-dom';
-
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -17,12 +16,16 @@ function Login() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  const [isLoading, setIsLoading] = useState(false);
+
   
   const handleSignIn = async () => {
     if (email === "" || password === "") {
       alert("Please enter both email and password");
       return;
     }
+    setIsLoading(true)
     console.log("Checking API URL:", 'http://localhost:3001/verify-login');
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -53,6 +56,8 @@ function Login() {
       console.error("Full Error Details:", error);
       const errorMessage = error.response?.data?.message || error.message;
       alert("Login Failed: " + errorMessage);
+    } finally{
+      setIsLoading(false);
     }
   };
   return (
@@ -99,8 +104,16 @@ function Login() {
 
           <Link to="/forget-password" className="forgot_password">Forgot Password?</Link>
           
-          <button className='login_button' onClick={handleSignIn}>
-            Sign in <FiLogIn className="sign_in_icon" />
+          <button className='login_button' onClick={handleSignIn} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <span className="spinner"></span> Logging in...
+              </>
+            ) : (
+              <>
+                Sign in <FiLogIn className="sign_in_icon" />
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -6,12 +6,12 @@ import {
     Search, Bell, LogOut, Key, Plus, Edit, Trash2, Eye, 
     Download, Shield, Building, X, Menu, User, Calendar,
     Clock, MapPin, CheckCircle, AlertCircle, AlertTriangle,
-    BookPlus, GraduationCap, FileText, Video, MessageSquare, Award, Zap, Upload
+    BookPlus, GraduationCap, FileText, Video, MessageSquare, Award, Zap, Upload,
+    Mail, Inbox
 } from 'lucide-react';
 
 import { auth, db } from './firebase';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot, addDoc, deleteDoc } from 'firebase/firestore';
-import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot, serverTimestamp, addDoc } from 'firebase/firestore';import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { attendanceAPI } from './services/api';
 import firebaseAttendanceService, { 
     subscribeToStudentAttendance, 
@@ -87,10 +87,13 @@ export default function StudentDashboard() {
     const [isDigitalIdModalOpen, setIsDigitalIdModalOpen] = useState(false);
     const [selectedRiskCourse, setSelectedRiskCourse] = useState(null);
     const [loading, setLoading] = useState(false);
+    
+    // ========== رسائل جديدة ==========
     const [studentMessages, setStudentMessages] = useState([]);
     const [unreadMessageCount, setUnreadMessageCount] = useState(0);
     const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
+    // =================================
     
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '',
@@ -119,6 +122,68 @@ export default function StudentDashboard() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+    // ========== جلب الرسائل ==========
+    useEffect(() => {
+        if (!auth.currentUser) return;
+        
+        const messagesRef = collection(db, "messages");
+        const q = query(
+            messagesRef, 
+            where("toId", "==", auth.currentUser.uid),
+            orderBy("createdAt", "desc")
+        );
+        
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const messagesArray = [];
+            let unread = 0;
+            querySnapshot.forEach((doc) => {
+                const messageData = { id: doc.id, ...doc.data() };
+                messagesArray.push(messageData);
+                if (!messageData.read) {
+                    unread++;
+                }
+            });
+            setStudentMessages(messagesArray);
+            setUnreadMessageCount(unread);
+        });
+        
+        return () => unsubscribe();
+    }, []);
+
+    // ========== وظائف الرسائل ==========
+    const markMessageAsRead = async (messageId) => {
+        try {
+            const messageRef = doc(db, "messages", messageId);
+            await updateDoc(messageRef, { read: true });
+            setUnreadMessageCount(prev => Math.max(0, prev - 1));
+        } catch (error) {
+            console.error("Error marking message as read:", error);
+        }
+    };
+
+    const openMessagesModal = () => {
+        setIsMessagesModalOpen(true);
+        // تحديث جميع الرسائل كمقروءة
+        studentMessages.forEach(msg => {
+            if (!msg.read) {
+                markMessageAsRead(msg.id);
+            }
+        });
+    };
+
+    const getMessageSenderIcon = (from) => {
+        if (from === 'admin') return '👨‍💼';
+        if (from === 'professor') return '👨‍🏫';
+        return '📧';
+    };
+
+    const getMessageSenderName = (msg) => {
+        if (msg.from === 'admin') return `Admin (${msg.fromName || 'System'})`;
+        if (msg.from === 'professor') return `Prof. ${msg.fromName || 'Professor'}`;
+        return msg.fromName || 'Unknown';
+    };
+    // =================================
 
     // ========== LMS Functions ==========
     const fetchLMSMaterials = async (courseId) => {
@@ -265,33 +330,6 @@ export default function StudentDashboard() {
             document.body.classList.remove('digital-id-open');
         };
     }, [isDigitalIdModalOpen]);
-
-    useEffect(() => {
-        if (!auth.currentUser) return;
-        
-        const messagesRef = collection(db, "messages");
-        const q = query(
-            messagesRef, 
-            where("toId", "==", auth.currentUser.uid),
-            orderBy("createdAt", "desc")
-        );
-        
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const messagesArray = [];
-            let unread = 0;
-            querySnapshot.forEach((doc) => {
-                const messageData = { id: doc.id, ...doc.data() };
-                messagesArray.push(messageData);
-                if (!messageData.read) {
-                    unread++;
-                }
-            });
-            setStudentMessages(messagesArray);
-            setUnreadMessageCount(unread);
-        });
-        
-        return () => unsubscribe();
-    }, []);
 
     // Real-time attendance subscription ref
     const [attendanceUnsubscribe, setAttendanceUnsubscribe] = useState(null);
@@ -681,67 +719,68 @@ export default function StudentDashboard() {
     };
 
     const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return; 
-    setIsUploadingImage(true);
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-        
-        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
-            method: 'POST',
-            body: formData
-        });
-        const uploadData = await uploadRes.json();
-        
-        if (!uploadData.secure_url) {
-            throw new Error('Upload failed');
-        }
-    
-        const user = auth.currentUser;
-        if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            await updateDoc(userDocRef, {
-                profileImage: uploadData.secure_url
-            });
-            setStudentData(prev => ({
-                ...prev,
-                profileImage: uploadData.secure_url
-            }));
+        const file = e.target.files[0];
+        if (!file) return; 
+        setIsUploadingImage(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
             
-            showNotification('Profile image updated successfully!', 'success');
+            const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const uploadData = await uploadRes.json();
+            
+            if (!uploadData.secure_url) {
+                throw new Error('Upload failed');
+            }
+        
+            const user = auth.currentUser;
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, {
+                    profileImage: uploadData.secure_url
+                });
+                setStudentData(prev => ({
+                    ...prev,
+                    profileImage: uploadData.secure_url
+                }));
+                
+                showNotification('Profile image updated successfully!', 'success');
+            }
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            showNotification('Error uploading image', 'error');
+        } finally {
+            setIsUploadingImage(false);
         }
-    } catch (error) {
-        console.error("Error uploading image:", error);
-        showNotification('Error uploading image', 'error');
-    } finally {
-        setIsUploadingImage(false);
-    }
-};
+    };
+    
     const removeProfileImage = async () => {
-    if (!window.confirm('Remove your profile image?')) return;
-    
-    try {
-        const user = auth.currentUser;
-        if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            await updateDoc(userDocRef, {
-                profileImage: null
-            });
-            
-            setStudentData(prev => ({
-                ...prev,
-                profileImage: null
-            }));
-            
-            showNotification('Profile image removed', 'success');
+        if (!window.confirm('Remove your profile image?')) return;
+        
+        try {
+            const user = auth.currentUser;
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, {
+                    profileImage: null
+                });
+                
+                setStudentData(prev => ({
+                    ...prev,
+                    profileImage: null
+                }));
+                
+                showNotification('Profile image removed', 'success');
+            }
+        } catch (error) {
+            console.error("Error removing image:", error);
+            showNotification('Error removing image', 'error');
         }
-    } catch (error) {
-        console.error("Error removing image:", error);
-        showNotification('Error removing image', 'error');
-    }
-};
+    };
 
     const handlePasswordInputChange = (e) => {
         const { name, value } = e.target;
@@ -838,41 +877,6 @@ export default function StudentDashboard() {
     const viewAttendanceHistory = () => {
         setIsAttendanceModalOpen(true);
     };
-
-    const markMessageAsRead = async (messageId) => {
-        try {
-            const messageRef = doc(db, "messages", messageId);
-            await updateDoc(messageRef, { read: true });
-        } catch (error) {
-            console.error("Error marking message as read:", error);
-        }
-    };
-
-    const openMessagesModal = () => {
-        setIsMessagesModalOpen(true);
-        studentMessages.forEach(msg => {
-            if (!msg.read) {
-                markMessageAsRead(msg.id);
-            }
-        });
-        setUnreadMessageCount(0);
-    };
-
-    const filteredCourses = courses.filter(c => 
-        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        c.id?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const filteredAvailableCourses = availableCourses.filter(c => 
-        !courses.some(enrolled => enrolled.id === c.id) &&
-        (c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-         c.id?.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-    
-    const overallRiskScore = courses.length > 0 
-        ? Math.round(courses.reduce((sum, c) => sum + (c.riskScore || 0), 0) / courses.length)
-        : 0;
-    const overallRiskLevel = getRiskLevel(overallRiskScore);
     
     const updateRiskOnServer = async (uid, riskLevel) => {
         try {
@@ -924,6 +928,22 @@ export default function StudentDashboard() {
             navbar.style.display = 'flex';
         }
     };
+
+    const filteredCourses = courses.filter(c => 
+        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        c.id?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const filteredAvailableCourses = availableCourses.filter(c => 
+        !courses.some(enrolled => enrolled.id === c.id) &&
+        (c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+         c.id?.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+    
+    const overallRiskScore = courses.length > 0 
+        ? Math.round(courses.reduce((sum, c) => sum + (c.riskScore || 0), 0) / courses.length)
+        : 0;
+    const overallRiskLevel = getRiskLevel(overallRiskScore);
 
     return (
         <div className="student-dashboard-container">
@@ -2110,7 +2130,7 @@ export default function StudentDashboard() {
                 <div className="student-modal-overlay" onClick={() => setIsMessagesModalOpen(false)}>
                     <div className="student-modal-container messages-modal" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">
-                            <h2>Messages from Admin</h2>
+                            <h2>Your Messages</h2>
                             <button className="student-close-modal-button" onClick={() => setIsMessagesModalOpen(false)}>
                                 <X size={20} />
                             </button>
@@ -2130,11 +2150,11 @@ export default function StudentDashboard() {
                                         }}
                                     >
                                         <div className="student-message-avatar">
-                                            {msg.fromName?.charAt(0).toUpperCase() || 'A'}
+                                            {getMessageSenderIcon(msg.from)}
                                         </div>
                                         <div className="student-message-content">
                                             <div className="student-message-header">
-                                                <span className="student-message-sender">Admin</span>
+                                                <span className="student-message-sender">{getMessageSenderName(msg)}</span>
                                                 <span className="student-message-date">
                                                     {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
                                                 </span>
@@ -2169,7 +2189,7 @@ export default function StudentDashboard() {
                         <div className="student-message-detail">
                             <div className="student-message-detail-header">
                                 <div className="student-message-detail-sender">
-                                    <strong>From:</strong> Admin ({selectedMessage.fromName || 'System'})
+                                    <strong>From:</strong> {getMessageSenderName(selectedMessage)}
                                 </div>
                                 <div className="student-message-detail-date">
                                     <strong>Date:</strong> {selectedMessage.createdAt?.toDate ? new Date(selectedMessage.createdAt.toDate()).toLocaleString() : 'Just now'}

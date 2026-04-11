@@ -9,15 +9,17 @@ import {
     X, Shield, Building, Eye, GraduationCap, Video, 
     FileText, MessageSquare, Award, Upload, Share2, Zap,
     Filter, UserCheck, UserX, AlertTriangle, Star, Mail, Phone,
-    PieChart, Activity
+    PieChart, Activity, Inbox, Send
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
-import { doc, getDoc, updateDoc, getDocs, collection, setDoc, addDoc, where, query, deleteDoc } from 'firebase/firestore';
+import { 
+    doc, getDoc, updateDoc, getDocs, collection, setDoc, addDoc, 
+    where, query, deleteDoc, onSnapshot, orderBy, serverTimestamp 
+} from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { attendanceAPI } from './services/api';
 import { subscribeToAllCoursesAttendance } from './services/firebaseAttendanceService';
-
 const STORAGE_KEYS = {
     PROF_IMAGE: 'yallaclass_prof_image'
 };
@@ -96,6 +98,20 @@ export default function ProfessorDashboard() {
     });
     const [isUploadingImage, setIsUploadingImage] = useState(false);
 
+    // ========== رسائل جديدة ==========
+    const [adminMessages, setAdminMessages] = useState([]);
+    const [studentMessages, setStudentMessages] = useState([]);
+    const [unreadAdminCount, setUnreadAdminCount] = useState(0);
+    const [isMessageToAdminModalOpen, setIsMessageToAdminModalOpen] = useState(false);
+    const [isMessageToStudentModalOpen, setIsMessageToStudentModalOpen] = useState(false);
+    const [messageToAdminText, setMessageToAdminText] = useState('');
+    const [messageToAdminSubject, setMessageToAdminSubject] = useState('');
+    const [messageToStudentText, setMessageToStudentText] = useState('');
+    const [messageToStudentSubject, setMessageToStudentSubject] = useState('');
+    const [selectedStudentForMessage, setSelectedStudentForMessage] = useState(null);
+    const [studentsList, setStudentsList] = useState([]);
+    // =================================
+
     const getAttendanceColor = (rate) => {
         if (rate >= 85) return '#28a745';
         if (rate >= 70) return '#ffc107';
@@ -133,6 +149,57 @@ export default function ProfessorDashboard() {
         };
     }, [isDigitalIdModalOpen]);
 
+    // جلب الرسائل من الأدمن
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        const messagesRef = collection(db, "messages");
+        const qAdmin = query(
+            messagesRef, 
+            where("to", "==", "professor"),
+            where("toId", "==", user.uid),
+            orderBy("createdAt", "desc")
+        );
+        
+        const unsubscribeAdmin = onSnapshot(qAdmin, (querySnapshot) => {
+            const messagesArray = [];
+            let unread = 0;
+            querySnapshot.forEach((doc) => {
+                const messageData = { id: doc.id, ...doc.data() };
+                messagesArray.push(messageData);
+                if (!messageData.read) {
+                    unread++;
+                }
+            });
+            setAdminMessages(messagesArray);
+            setUnreadAdminCount(unread);
+        });
+        
+        return () => unsubscribeAdmin();
+    }, []);
+
+    // جلب الطلاب المسجلين في كورسات الأستاذ
+    const fetchStudentsList = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        try {
+            const response = await fetch(`http://localhost:3001/api/professor/${user.uid}/students`);
+            const data = await response.json();
+            if (data.success && data.students) {
+                setStudentsList(data.students);
+            }
+        } catch (error) {
+            console.error("Error fetching students:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchStudentsList();
+    }, [courses]);
+
+    // جلب كورسات الأدمن
     useEffect(() => {
         const fetchAdminCourses = async () => {
             const querySnapshot = await getDocs(collection(db, "courses"));
@@ -735,6 +802,85 @@ export default function ProfessorDashboard() {
         }
     };
 
+    // ========== دوال إرسال الرسائل ==========
+    const handleSendMessageToAdmin = async () => {
+        if (!messageToAdminText.trim()) {
+            showNotification("Please enter a message", 'error');
+            return;
+        }
+
+        try {
+            const messageData = {
+                from: 'professor',
+                fromId: auth.currentUser?.uid,
+                fromName: profData.name,
+                to: 'admin',
+                toId: 'admin',
+                toName: 'System Admin',
+                subject: messageToAdminSubject.trim() || 'No Subject',
+                message: messageToAdminText.trim(),
+                createdAt: serverTimestamp(),
+                read: false,
+                adminRead: false
+            };
+
+            await addDoc(collection(db, "messages"), messageData);
+            
+            showNotification("Message sent to Admin successfully!", 'success');
+            setIsMessageToAdminModalOpen(false);
+            setMessageToAdminText('');
+            setMessageToAdminSubject('');
+        } catch (error) {
+            console.error("Error sending message:", error);
+            showNotification("Failed to send message", 'error');
+        }
+    };
+
+    const handleSendMessageToStudent = async () => {
+        if (!selectedStudentForMessage || !messageToStudentText.trim()) {
+            showNotification("Please select a student and enter a message", 'error');
+            return;
+        }
+
+        try {
+            const messageData = {
+                from: 'professor',
+                fromId: auth.currentUser?.uid,
+                fromName: profData.name,
+                to: 'student',
+                toId: selectedStudentForMessage.id,
+                toName: selectedStudentForMessage.studentName,
+                subject: messageToStudentSubject.trim() || 'No Subject',
+                message: messageToStudentText.trim(),
+                createdAt: serverTimestamp(),
+                read: false,
+                adminRead: true
+            };
+
+            await addDoc(collection(db, "messages"), messageData);
+            
+            showNotification(`Message sent to ${selectedStudentForMessage.studentName} successfully!`, 'success');
+            setIsMessageToStudentModalOpen(false);
+            setSelectedStudentForMessage(null);
+            setMessageToStudentText('');
+            setMessageToStudentSubject('');
+        } catch (error) {
+            console.error("Error sending message:", error);
+            showNotification("Failed to send message", 'error');
+        }
+    };
+
+    const markAdminMessageAsRead = async (messageId) => {
+        try {
+            const messageRef = doc(db, "messages", messageId);
+            await updateDoc(messageRef, { read: true });
+            setUnreadAdminCount(prev => Math.max(0, prev - 1));
+        } catch (error) {
+            console.error("Error marking message as read:", error);
+        }
+    };
+    // =======================================
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         showNotification('Logging out...', 'success');
@@ -1125,6 +1271,13 @@ export default function ProfessorDashboard() {
                         <GraduationCap size={20} />
                         <span>L.M.S.</span>
                     </button>
+                    <button 
+                        className={`professor-nav-button ${activeTab === 'Messages' ? 'active' : ''}`} 
+                        onClick={() => setActiveTab('Messages')}
+                    >
+                        <MessageSquare size={20} />
+                        <span>Messages</span>
+                    </button>
                 </nav>
 
                 <div className="professor-sidebar-footer">
@@ -1192,6 +1345,10 @@ export default function ProfessorDashboard() {
                                 <div className="professor-action-card-item professor-card-red" onClick={resetAllAttendance}>
                                     <Clock size={28} />
                                     <span>Reset Today</span>
+                                </div>
+                                <div className="professor-action-card-item professor-card-blue" onClick={() => setIsMessageToAdminModalOpen(true)}>
+                                    <Send size={28} />
+                                    <span>Message Admin</span>
                                 </div>
                             </div>
 
@@ -1391,6 +1548,12 @@ export default function ProfessorDashboard() {
                                                             </button>
                                                             <button className="professor-icon-button delete" onClick={() => deleteCourse(course.id)} title="Delete">
                                                                 <Trash2 size={18} />
+                                                            </button>
+                                                            <button className="professor-icon-button" onClick={() => {
+                                                                setSelectedStudentForMessage({ id: 'all', studentName: 'All Students' });
+                                                                setIsMessageToStudentModalOpen(true);
+                                                            }} title="Message Students">
+                                                                <Mail size={18} />
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -1611,10 +1774,13 @@ export default function ProfessorDashboard() {
                                                                 <td className="professor-actions-cell">
                                                                     <button 
                                                                         className="professor-icon-button view"
-                                                                        title="View Details"
-                                                                        onClick={() => showNotification(`Viewing details for ${student.studentName}`, 'info')}
+                                                                        title="Send Message"
+                                                                        onClick={() => {
+                                                                            setSelectedStudentForMessage(student);
+                                                                            setIsMessageToStudentModalOpen(true);
+                                                                        }}
                                                                     >
-                                                                        <Eye size={16} />
+                                                                        <Mail size={16} />
                                                                     </button>
                                                                     <button 
                                                                         className="professor-icon-button delete"
@@ -1657,6 +1823,93 @@ export default function ProfessorDashboard() {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {activeTab === 'Messages' && (
+                        <div className="professor-lms-container">
+                            <div className="professor-lms-header">
+                                <div className="professor-lms-title">
+                                    <MessageSquare size={40} />
+                                    <div>
+                                        <h2>Message Center</h2>
+                                        <p>View messages from Admin and communicate with students</p>
+                                    </div>
+                                </div>
+                                <button className="professor-primary-button" onClick={() => setIsMessageToAdminModalOpen(true)}>
+                                    <Send size={18} /> Message Admin
+                                </button>
+                            </div>
+
+                            <div className="professor-lms-stats">
+                                <div className="professor-lms-stat-card">
+                                    <div className="professor-lms-stat-icon"><Inbox size={24} /></div>
+                                    <div className="professor-lms-stat-value">{unreadAdminCount}</div>
+                                    <div className="professor-lms-stat-label">Unread from Admin</div>
+                                </div>
+                                <div className="professor-lms-stat-card">
+                                    <div className="professor-lms-stat-icon"><Users size={24} /></div>
+                                    <div className="professor-lms-stat-value">{studentsList.length}</div>
+                                    <div className="professor-lms-stat-label">Students to Contact</div>
+                                </div>
+                            </div>
+
+                            <div className="professor-lms-cards">
+                                {/* رسائل من الأدمن */}
+                                <div className="professor-lms-card">
+                                    <div className="professor-lms-card-icon"><Mail size={28} /></div>
+                                    <h3>Messages from Admin</h3>
+                                    <p>Important announcements and communications from the system administrator</p>
+                                    <div className="professor-lms-card-footer">
+                                        <span className="professor-lms-card-count">{unreadAdminCount} unread</span>
+                                        <span className="professor-lms-card-link">View All →</span>
+                                    </div>
+                                </div>
+
+                                {/* رسائل للطلاب */}
+                                <div className="professor-lms-card" onClick={() => setIsMessageToStudentModalOpen(true)}>
+                                    <div className="professor-lms-card-icon"><Send size={28} /></div>
+                                    <h3>Send to Students</h3>
+                                    <p>Send announcements, reminders, or individual messages to your students</p>
+                                    <div className="professor-lms-card-footer">
+                                        <span className="professor-lms-card-count">{studentsList.length} students</span>
+                                        <span className="professor-lms-card-link">Send Message →</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* قائمة الرسائل من الأدمن */}
+                            <div className="professor-analytics-table-container">
+                                <h3>Messages from Admin</h3>
+                                <div className="professor-table-responsive">
+                                    <table className="professor-analytics-table">
+                                        <thead>
+                                            <tr>
+                                                <th>From</th>
+                                                <th>Subject</th>
+                                                <th>Message</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {adminMessages.length === 0 ? (
+                                                <tr><td colSpan="5" className="no-data-cell">No messages from Admin</td></tr>
+                                            ) : (
+                                                adminMessages.map(msg => (
+                                                    <tr key={msg.id} onClick={() => markAdminMessageAsRead(msg.id)} style={{ cursor: 'pointer', backgroundColor: !msg.read ? 'rgba(74, 144, 226, 0.1)' : 'transparent' }}>
+                                                        <td><strong>Admin</strong> ({msg.fromName})</td>
+                                                        <td>{msg.subject || 'No Subject'}</td>
+                                                        <td>{msg.message.length > 50 ? msg.message.substring(0, 50) + '...' : msg.message}</td>
+                                                        <td>{msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}</td>
+                                                        <td>{!msg.read ? <span className="status-badge at-risk">Unread</span> : <span className="status-badge good">Read</span>}</td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -1823,6 +2076,7 @@ export default function ProfessorDashboard() {
                                                                 <div className="professor-lms-assignment-meta">
                                                                     <span>Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
                                                                     <span>Max Score: {assignment.maxScore}</span>
+                                                                    <span>Submissions: {assignment.submissionsCount || 0}</span>
                                                                 </div>
                                                             </div>
                                                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -1834,7 +2088,7 @@ export default function ProfessorDashboard() {
                                                                         setShowSubmissionsModal(true);
                                                                     }}
                                                                 >
-                                                                    View Submissions
+                                                                    View Submissions ({assignment.submissionsCount || 0})
                                                                 </button>
                                                                 <button 
                                                                     className="professor-icon-button delete"
@@ -1933,7 +2187,7 @@ export default function ProfessorDashboard() {
                                         </thead>
                                         <tbody>
                                             {attendanceLoading ? (
-                                                <tr><td colSpan="9" className="loading-cell">Loading analytics data...</td></tr>
+                                                <td><td colSpan="9" className="loading-cell">Loading analytics data...</td></td>
                                             ) : cumulativeAttendanceStats.courses.length === 0 ? (
                                                 <tr><td colSpan="9" className="no-data-cell">No attendance data available</td></tr>
                                             ) : (
@@ -1972,7 +2226,7 @@ export default function ProfessorDashboard() {
                                 </div>
                             </div>
 
-                            {/* Courses Risk Distribution - Modified Section */}
+                            {/* Courses Risk Distribution */}
                             <div className="professor-risk-distribution">
                                 <div className="risk-header">
                                     <AlertTriangle size={20} />
@@ -1988,7 +2242,6 @@ export default function ProfessorDashboard() {
                                         
                                         return (
                                             <>
-                                                {/* Excellent */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Excellent (≥85%)</div>
                                                     <div className="risk-bar-container">
@@ -2002,8 +2255,6 @@ export default function ProfessorDashboard() {
                                                     </div>
                                                     <div className="risk-count">{excellent} courses</div>
                                                 </div>
-
-                                                {/* Good */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Good (70-84%)</div>
                                                     <div className="risk-bar-container">
@@ -2017,8 +2268,6 @@ export default function ProfessorDashboard() {
                                                     </div>
                                                     <div className="risk-count">{good} courses</div>
                                                 </div>
-
-                                                {/* At Risk - Modified with proper class */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">At Risk (50-69%)</div>
                                                     <div className="risk-bar-container">
@@ -2032,8 +2281,6 @@ export default function ProfessorDashboard() {
                                                     </div>
                                                     <div className="risk-count">{risk} courses</div>
                                                 </div>
-
-                                                {/* Critical */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Critical (&lt;50%)</div>
                                                     <div className="risk-bar-container">
@@ -2589,6 +2836,116 @@ export default function ProfessorDashboard() {
 
                         <div className="professor-modal-actions">
                             <button className="professor-cancel-button" onClick={() => setShowSubmissionsModal(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Message to Admin Modal */}
+            {isMessageToAdminModalOpen && (
+                <div className="professor-modal-overlay" onClick={() => setIsMessageToAdminModalOpen(false)}>
+                    <div className="professor-modal-container small" onClick={e => e.stopPropagation()}>
+                        <div className="professor-modal-header">
+                            <h3>Send Message to Admin</h3>
+                            <button className="professor-close-modal-button" onClick={() => setIsMessageToAdminModalOpen(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="professor-modal-form">
+                            <div className="professor-form-group">
+                                <label>Subject (Optional)</label>
+                                <input
+                                    type="text"
+                                    className="professor-form-input"
+                                    value={messageToAdminSubject}
+                                    onChange={(e) => setMessageToAdminSubject(e.target.value)}
+                                    placeholder="Enter subject"
+                                />
+                            </div>
+                            <div className="professor-form-group">
+                                <label>Message</label>
+                                <textarea
+                                    className="professor-form-input"
+                                    rows="5"
+                                    value={messageToAdminText}
+                                    onChange={(e) => setMessageToAdminText(e.target.value)}
+                                    placeholder="Type your message here..."
+                                />
+                            </div>
+                            <div className="professor-modal-actions">
+                                <button className="professor-cancel-button" onClick={() => setIsMessageToAdminModalOpen(false)}>Cancel</button>
+                                <button 
+                                    className="professor-update-button"
+                                    onClick={handleSendMessageToAdmin}
+                                    disabled={!messageToAdminText.trim()}
+                                >
+                                    <Send size={16} /> Send to Admin
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Message to Student Modal */}
+            {isMessageToStudentModalOpen && (
+                <div className="professor-modal-overlay" onClick={() => setIsMessageToStudentModalOpen(false)}>
+                    <div className="professor-modal-container small" onClick={e => e.stopPropagation()}>
+                        <div className="professor-modal-header">
+                            <h3>Send Message to Student</h3>
+                            <button className="professor-close-modal-button" onClick={() => setIsMessageToStudentModalOpen(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="professor-modal-form">
+                            <div className="professor-form-group">
+                                <label>To</label>
+                                <select
+                                    className="professor-form-input"
+                                    value={selectedStudentForMessage?.id || ''}
+                                    onChange={(e) => {
+                                        const student = studentsList.find(s => s.id === e.target.value);
+                                        setSelectedStudentForMessage(student);
+                                    }}
+                                >
+                                    <option value="">Select Student</option>
+                                    {studentsList.map(s => (
+                                        <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="professor-form-group">
+                                <label>Subject (Optional)</label>
+                                <input
+                                    type="text"
+                                    className="professor-form-input"
+                                    value={messageToStudentSubject}
+                                    onChange={(e) => setMessageToStudentSubject(e.target.value)}
+                                    placeholder="Enter subject"
+                                />
+                            </div>
+                            <div className="professor-form-group">
+                                <label>Message</label>
+                                <textarea
+                                    className="professor-form-input"
+                                    rows="5"
+                                    value={messageToStudentText}
+                                    onChange={(e) => setMessageToStudentText(e.target.value)}
+                                    placeholder="Type your message here..."
+                                />
+                            </div>
+                            <div className="professor-modal-actions">
+                                <button className="professor-cancel-button" onClick={() => setIsMessageToStudentModalOpen(false)}>Cancel</button>
+                                <button 
+                                    className="professor-update-button"
+                                    onClick={handleSendMessageToStudent}
+                                    disabled={!selectedStudentForMessage || !messageToStudentText.trim()}
+                                >
+                                    <Send size={16} /> Send to Student
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

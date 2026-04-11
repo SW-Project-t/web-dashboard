@@ -9,7 +9,7 @@ import {
     Activity, AlertTriangle, UserMinus, BarChart3, FileText
 } from 'lucide-react';
 import axios from 'axios';
-import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc, addDoc, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, deleteDoc, doc, updateDoc, getDoc, addDoc, orderBy, serverTimestamp, where } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, db } from './firebase'; 
 import './AdminDashboard.css';
@@ -27,6 +27,15 @@ const AdminDashboard = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [messages, setMessages] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    
+    // رسائل من الأساتذة
+    const [professorMessages, setProfessorMessages] = useState([]);
+    const [unreadProfessorCount, setUnreadProfessorCount] = useState(0);
+    const [isMessageToProfModalOpen, setIsMessageToProfModalOpen] = useState(false);
+    const [selectedProfessor, setSelectedProfessor] = useState(null);
+    const [messageToProfText, setMessageToProfText] = useState('');
+    const [messageToProfSubject, setMessageToProfSubject] = useState('');
+    const [professors, setProfessors] = useState([]);
     
     // Cumulative attendance stats state
     const [cumulativeAttendanceStats, setCumulativeAttendanceStats] = useState({
@@ -74,6 +83,43 @@ const AdminDashboard = () => {
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '', newPassword: '', confirmPassword: ''
     });
+
+    // جلب الأساتذة
+    useEffect(() => {
+        const fetchProfessors = () => {
+            const q = query(collection(db, "users"), where("role", "==", "instructor"));
+            const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                const profsArray = [];
+                querySnapshot.forEach((doc) => {
+                    profsArray.push({ id: doc.id, ...doc.data() });
+                });
+                setProfessors(profsArray);
+            });
+            return unsubscribe;
+        };
+        fetchProfessors();
+    }, []);
+
+    // جلب الرسائل من الأساتذة
+    useEffect(() => {
+        const messagesRef = collection(db, "messages");
+        const q = query(messagesRef, where("to", "==", "admin"), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const messagesArray = [];
+            let unread = 0;
+            querySnapshot.forEach((doc) => {
+                const messageData = { id: doc.id, ...doc.data() };
+                messagesArray.push(messageData);
+                if (!messageData.adminRead) {
+                    unread++;
+                }
+            });
+            setProfessorMessages(messagesArray);
+            setUnreadProfessorCount(unread);
+        });
+        
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
         const navbar = document.querySelector('.navbar-container');
@@ -160,7 +206,6 @@ const AdminDashboard = () => {
         setAttendanceLoading(true);
         const unsubscribe = subscribeToAllCoursesAttendance((data) => {
             if (data && data.courses) {
-                // Transform data to match our state structure
                 const transformedData = {
                     courses: data.courses.map(course => ({
                         courseId: course.courseId,
@@ -235,7 +280,6 @@ const AdminDashboard = () => {
 
     const studentUsers = users.filter(u => u.role === 'student');
 
-    // Helper function to get attendance rate for a course
     const getCourseAttendanceRate = (courseId) => {
         const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === courseId);
         return courseStats?.attendanceRate || 0;
@@ -252,7 +296,7 @@ const AdminDashboard = () => {
         if (rate >= 50) return 'At Risk';
         return 'Critical';
     };
-      const exportAttendanceReport = () => {
+    const exportAttendanceReport = () => {
         if (cumulativeAttendanceStats.courses.length === 0) {
             alert("No attendance data available to export");
             return;
@@ -286,64 +330,64 @@ const AdminDashboard = () => {
         alert("Report exported successfully!");
     };
 
-   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    setIsUploadingImage(true);
-    
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', 'Lms_uploads');
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
         
-        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/dsxijrxup/upload`, {
-            method: 'POST',
-            body: formData
-        });
-        const uploadData = await uploadRes.json();
+        setIsUploadingImage(true);
         
-        if (!uploadData.secure_url) {
-            throw new Error('Upload failed');
-        }
-        
-        const user = auth.currentUser;
-        if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            await updateDoc(userDocRef, {
-                profileImage: uploadData.secure_url
-            });
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', 'Lms_uploads');
             
-            setAdminProfileImage(uploadData.secure_url);
-            alert('Profile image updated successfully!');
+            const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/dsxijrxup/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const uploadData = await uploadRes.json();
+            
+            if (!uploadData.secure_url) {
+                throw new Error('Upload failed');
+            }
+            
+            const user = auth.currentUser;
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, {
+                    profileImage: uploadData.secure_url
+                });
+                
+                setAdminProfileImage(uploadData.secure_url);
+                alert('Profile image updated successfully!');
+            }
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            alert('Error uploading image');
+        } finally {
+            setIsUploadingImage(false);
         }
-    } catch (error) {
-        console.error("Error uploading image:", error);
-        alert('Error uploading image');
-    } finally {
-        setIsUploadingImage(false);
-    }
-};
+    };
 
     const removeProfileImage = async () => {
-    if (!window.confirm('Remove your profile image?')) return;
-    
-    try {
-        const user = auth.currentUser;
-        if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            await updateDoc(userDocRef, {
-                profileImage: null
-            });
-            
-            setAdminProfileImage(null);
-            alert('Profile image removed');
+        if (!window.confirm('Remove your profile image?')) return;
+        
+        try {
+            const user = auth.currentUser;
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, {
+                    profileImage: null
+                });
+                
+                setAdminProfileImage(null);
+                alert('Profile image removed');
+            }
+        } catch (error) {
+            console.error("Error removing image:", error);
+            alert('Error removing image');
         }
-    } catch (error) {
-        console.error("Error removing image:", error);
-        alert('Error removing image');
-    }
-};
+    };
 
     const handleUserInputChange = (e) => {
         const { name, value } = e.target;
@@ -545,7 +589,50 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleSendMessageToProfessor = async () => {
+        if (!selectedProfessor || !messageToProfText.trim()) {
+            alert("Please select a professor and enter a message");
+            return;
+        }
+
+        try {
+            const messageData = {
+                from: 'admin',
+                fromId: auth.currentUser?.uid,
+                fromName: adminData.name,
+                to: 'professor',
+                toId: selectedProfessor.id,
+                toName: selectedProfessor.fullName,
+                subject: messageToProfSubject.trim() || 'No Subject',
+                message: messageToProfText.trim(),
+                createdAt: serverTimestamp(),
+                read: false,
+                adminRead: true
+            };
+
+            await addDoc(collection(db, "messages"), messageData);
+            
+            alert("Message sent to professor successfully!");
+            setIsMessageToProfModalOpen(false);
+            setSelectedProfessor(null);
+            setMessageToProfText('');
+            setMessageToProfSubject('');
+        } catch (error) {
+            console.error("Error sending message:", error);
+            alert("Failed to send message");
+        }
+    };
+
     const markMessageAsRead = async (messageId) => {
+        try {
+            const messageRef = doc(db, "messages", messageId);
+            await updateDoc(messageRef, { adminRead: true });
+        } catch (error) {
+            console.error("Error marking message as read:", error);
+        }
+    };
+
+    const markProfessorMessageAsRead = async (messageId) => {
         try {
             const messageRef = doc(db, "messages", messageId);
             await updateDoc(messageRef, { adminRead: true });
@@ -716,9 +803,12 @@ const AdminDashboard = () => {
                                     <Send size={28} />
                                     <span>Send Message</span>
                                 </div>
+                                <div className="action-card-item card-blue" onClick={() => setIsMessageToProfModalOpen(true)}>
+                                    <MessageSquare size={28} />
+                                    <span>Message Professor</span>
+                                </div>
                             </div>
 
-                            {/* Attendance Overview Stats Cards */}
                             <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '30px' }}>
                                 <div className="stat-card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
                                     <div className="stat-icon"><TrendingUp size={24} /></div>
@@ -794,7 +884,6 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Top Courses by Attendance */}
                             <div className="chart-card-container" style={{ marginBottom: '30px' }}>
                                 <div className="card-header">
                                     <PieChart size={20} />
@@ -1117,12 +1206,11 @@ const AdminDashboard = () => {
                                     <MessageSquare size={24} className="text-primary margin-right-2" />
                                     <h3>Message Center</h3>
                                 </div>
-
                             </div>
 
                             <div className="messages-grid">
                                 <div className="compose-message-card">
-                                    <h4>Quick Message</h4>
+                                    <h4>Quick Message to Student</h4>
                                     <select 
                                         className="form-input"
                                         value={selectedStudent?.id || ''}
@@ -1162,11 +1250,11 @@ const AdminDashboard = () => {
                                 <div className="inbox-card">
                                     <h4>
                                         <Inbox size={18} />
-                                        Inbox ({unreadAdminMessages.length} unread)
+                                        Messages from Students ({unreadAdminMessages.length} unread)
                                     </h4>
                                     <div className="messages-list">
                                         {adminMessages.length === 0 ? (
-                                            <p className="no-data-message">No messages yet</p>
+                                            <p className="no-data-message">No messages from students</p>
                                         ) : (
                                             adminMessages.map(msg => (
                                                 <div 
@@ -1180,6 +1268,44 @@ const AdminDashboard = () => {
                                                     <div className="message-content">
                                                         <div className="message-header">
                                                             <span className="message-sender">{msg.fromName || 'Student'}</span>
+                                                            <span className="message-date">
+                                                                {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                                            </span>
+                                                        </div>
+                                                        {msg.subject && <span className="message-subject">{msg.subject}</span>}
+                                                        <p className="message-text">{msg.message}</p>
+                                                    </div>
+                                                    {!msg.adminRead && <div className="unread-dot"></div>}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* قسم رسائل الأساتذة */}
+                            <div className="messages-grid" style={{ marginTop: '25px' }}>
+                                <div className="inbox-card">
+                                    <h4>
+                                        <Inbox size={18} />
+                                        Messages from Professors ({unreadProfessorCount} unread)
+                                    </h4>
+                                    <div className="messages-list">
+                                        {professorMessages.length === 0 ? (
+                                            <p className="no-data-message">No messages from professors</p>
+                                        ) : (
+                                            professorMessages.map(msg => (
+                                                <div 
+                                                    key={msg.id} 
+                                                    className={`message-item ${!msg.adminRead ? 'unread' : ''}`}
+                                                    onClick={() => markProfessorMessageAsRead(msg.id)}
+                                                >
+                                                    <div className="message-avatar">
+                                                        {msg.fromName?.charAt(0).toUpperCase() || 'P'}
+                                                    </div>
+                                                    <div className="message-content">
+                                                        <div className="message-header">
+                                                            <span className="message-sender">Prof. {msg.fromName || 'Professor'}</span>
                                                             <span className="message-date">
                                                                 {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
                                                             </span>
@@ -1213,7 +1339,6 @@ const AdminDashboard = () => {
                                 </button>
                             </div>
 
-                            {/* Summary Cards */}
                             <div className="analytics-summary-grid">
                                 <div className="summary-card">
                                     <div className="summary-icon blue"><TrendingUp size={24} /></div>
@@ -1245,7 +1370,6 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Courses Attendance Table */}
                             <div className="analytics-table-container">
                                 <div className="table-header">
                                     <h3>Courses Attendance Details</h3>
@@ -1324,7 +1448,7 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Risk Distribution */}
+                            {/* Risk Distribution - Modified Section */}
                             <div className="risk-distribution">
                                 <div className="risk-header">
                                     <AlertTriangle size={20} />
@@ -1343,7 +1467,12 @@ const AdminDashboard = () => {
                                                 <div className="risk-item">
                                                     <div className="risk-label">Excellent</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar excellent-bar" style={{ width: `${(excellent / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="excellent-bar" 
+                                                                style={{ width: `${(excellent / total) * 100}%`, height: '100%', borderRadius: '14px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((excellent / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{excellent} courses</div>
@@ -1351,7 +1480,12 @@ const AdminDashboard = () => {
                                                 <div className="risk-item">
                                                     <div className="risk-label">Good</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar good-bar" style={{ width: `${(good / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="good-bar" 
+                                                                style={{ width: `${(good / total) * 100}%`, height: '100%', borderRadius: '14px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((good / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{good} courses</div>
@@ -1359,7 +1493,12 @@ const AdminDashboard = () => {
                                                 <div className="risk-item">
                                                     <div className="risk-label">At Risk</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar risk-bar-fill" style={{ width: `${(risk / total) * 100}%`}}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="risk-bar-fill" 
+                                                                style={{ width: `${(risk / total) * 100}%`, height: '100%', borderRadius: '14px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((risk / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{risk} courses</div>
@@ -1367,7 +1506,12 @@ const AdminDashboard = () => {
                                                 <div className="risk-item">
                                                     <div className="risk-label">Critical</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar critical-bar" style={{ width: `${(critical / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="critical-bar" 
+                                                                style={{ width: `${(critical / total) * 100}%`, height: '100%', borderRadius: '14px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((critical / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{critical} courses</div>
@@ -1382,7 +1526,7 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
-            {/* باقي المودالات */}
+            {/* Modals */}
             {isAddCourseModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container">
@@ -1495,7 +1639,7 @@ const AdminDashboard = () => {
                     <div className="modal-container modal-small">
                         <div className="modal-header">
                             <div className="flex-align-center">
-                                <h2>Send Message</h2>
+                                <h2>Send Message to Student</h2>
                                 <Mail size={24} className="text-primary margin-left-2" />
                             </div>
                             <button className="close-modal-button" onClick={() => {
@@ -1565,6 +1709,72 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {/* Message to Professor Modal */}
+            {isMessageToProfModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-container modal-small">
+                        <div className="modal-header">
+                            <div className="flex-align-center">
+                                <h2>Send Message to Professor</h2>
+                                <Mail size={24} className="text-primary margin-left-2" />
+                            </div>
+                            <button className="close-modal-button" onClick={() => setIsMessageToProfModalOpen(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="modal-form">
+                            <div className="form-group">
+                                <label className="view-label">To:</label>
+                                <select 
+                                    className="form-input"
+                                    value={selectedProfessor?.id || ''}
+                                    onChange={(e) => {
+                                        const prof = professors.find(p => p.id === e.target.value);
+                                        setSelectedProfessor(prof);
+                                    }}
+                                >
+                                    <option value="">Select Professor</option>
+                                    {professors.map(p => (
+                                        <option key={p.id} value={p.id}>{p.fullName} ({p.code})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label className="view-label">Subject (Optional):</label>
+                                <input 
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Enter subject"
+                                    value={messageToProfSubject}
+                                    onChange={(e) => setMessageToProfSubject(e.target.value)}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="view-label">Message:</label>
+                                <textarea
+                                    className="form-input message-textarea"
+                                    placeholder="Type your message here..."
+                                    value={messageToProfText}
+                                    onChange={(e) => setMessageToProfText(e.target.value)}
+                                    rows="5"
+                                />
+                            </div>
+                            <div className="modal-action-buttons">
+                                <button type="button" className="cancel-button" onClick={() => setIsMessageToProfModalOpen(false)}>Cancel</button>
+                                <button 
+                                    type="button" 
+                                    className="submit-button"
+                                    onClick={handleSendMessageToProfessor}
+                                    disabled={!selectedProfessor || !messageToProfText.trim()}
+                                >
+                                    <Send size={16} /> Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isViewModalOpen && selectedItem && (
                 <div className="modal-overlay">
                     <div className="modal-container view-modal-container">
@@ -1617,7 +1827,6 @@ const AdminDashboard = () => {
                                         <div className="view-label"><Users size={16} /> Capacity</div>
                                         <div className="view-value">{selectedItem.capacity} Students</div>
                                     </div>
-                                    {/* Attendance Stats in View Modal */}
                                     <div className="view-item view-item-full-width">
                                         <div className="view-label"><Activity size={16} /> Attendance Rate</div>
                                         <div className="view-value">
@@ -1801,7 +2010,8 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
-            {/* Digital ID Modal*/}
+
+            {/* Digital ID Modal */}
             {isDigitalIdModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsDigitalIdModalOpen(false)}>
                     <div className="modal-container digital-id-modal" onClick={e => e.stopPropagation()}>

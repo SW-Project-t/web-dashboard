@@ -160,7 +160,6 @@ const AdminDashboard = () => {
         setAttendanceLoading(true);
         const unsubscribe = subscribeToAllCoursesAttendance((data) => {
             if (data && data.courses) {
-                // Transform data to match our state structure
                 const transformedData = {
                     courses: data.courses.map(course => ({
                         courseId: course.courseId,
@@ -235,7 +234,6 @@ const AdminDashboard = () => {
 
     const studentUsers = users.filter(u => u.role === 'student');
 
-    // Helper function to get attendance rate for a course
     const getCourseAttendanceRate = (courseId) => {
         const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === courseId);
         return courseStats?.attendanceRate || 0;
@@ -252,7 +250,7 @@ const AdminDashboard = () => {
         if (rate >= 50) return 'At Risk';
         return 'Critical';
     };
-      const exportAttendanceReport = () => {
+    const exportAttendanceReport = () => {
         if (cumulativeAttendanceStats.courses.length === 0) {
             alert("No attendance data available to export");
             return;
@@ -718,7 +716,6 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Attendance Overview Stats Cards */}
                             <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '30px' }}>
                                 <div className="stat-card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
                                     <div className="stat-icon"><TrendingUp size={24} /></div>
@@ -794,7 +791,6 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Top Courses by Attendance */}
                             <div className="chart-card-container" style={{ marginBottom: '30px' }}>
                                 <div className="card-header">
                                     <PieChart size={20} />
@@ -1213,7 +1209,6 @@ const AdminDashboard = () => {
                                 </button>
                             </div>
 
-                            {/* Summary Cards */}
                             <div className="analytics-summary-grid">
                                 <div className="summary-card">
                                     <div className="summary-icon blue"><TrendingUp size={24} /></div>
@@ -1245,7 +1240,6 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Courses Attendance Table */}
                             <div className="analytics-table-container">
                                 <div className="table-header">
                                     <h3>Courses Attendance Details</h3>
@@ -1324,7 +1318,7 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Risk Distribution */}
+                            {/* Risk Distribution - Modified Section */}
                             <div className="risk-distribution">
                                 <div className="risk-header">
                                     <AlertTriangle size={20} />
@@ -1340,34 +1334,61 @@ const AdminDashboard = () => {
                                         
                                         return (
                                             <>
+                                                {/* Excellent */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Excellent</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar excellent-bar" style={{ width: `${(excellent / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="excellent-bar" 
+                                                                style={{ width: `${(excellent / total) * 100}%`, height: '100%', borderRadius: '14px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((excellent / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{excellent} courses</div>
                                                 </div>
+
+                                                {/* Good */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Good</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar good-bar" style={{ width: `${(good / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="good-bar" 
+                                                                style={{ width: `${(good / total) * 100}%`, height: '100%', borderRadius: '14px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((good / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{good} courses</div>
                                                 </div>
+
+                                                {/* At Risk - Modified with proper class */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">At Risk</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar risk-bar-fill" style={{ width: `${(risk / total) * 100}%`}}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="risk-bar-fill" 
+                                                                style={{ width: `${(risk / total) * 100}%`, height: '100%', borderRadius: '14px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((risk / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{risk} courses</div>
                                                 </div>
+
+                                                {/* Critical */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Critical</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar critical-bar" style={{ width: `${(critical / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="critical-bar" 
+                                                                style={{ width: `${(critical / total) * 100}%`, height: '100%', borderRadius: '14px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((critical / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{critical} courses</div>
@@ -1382,7 +1403,7 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
-            {/* باقي المودالات */}
+            {/* Modals */}
             {isAddCourseModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container">
@@ -1617,7 +1638,6 @@ const AdminDashboard = () => {
                                         <div className="view-label"><Users size={16} /> Capacity</div>
                                         <div className="view-value">{selectedItem.capacity} Students</div>
                                     </div>
-                                    {/* Attendance Stats in View Modal */}
                                     <div className="view-item view-item-full-width">
                                         <div className="view-label"><Activity size={16} /> Attendance Rate</div>
                                         <div className="view-value">
@@ -1801,7 +1821,8 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
-            {/* Digital ID Modal*/}
+
+            {/* Digital ID Modal */}
             {isDigitalIdModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsDigitalIdModalOpen(false)}>
                     <div className="modal-container digital-id-modal" onClick={e => e.stopPropagation()}>

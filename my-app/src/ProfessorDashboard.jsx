@@ -215,7 +215,8 @@ export default function ProfessorDashboard() {
 
         fetchProfessorCourses();
     }, [auth.currentUser]);
-     useEffect(() => {
+    
+    useEffect(() => {
         if (courses.length === 0) return;
         
         setAttendanceLoading(true);
@@ -779,63 +780,63 @@ export default function ProfessorDashboard() {
     };
 
     const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    setIsUploadingImage(true);
-    
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        const file = e.target.files[0];
+        if (!file) return;
         
-        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
-            method: 'POST',
-            body: formData
-        });
-        const uploadData = await uploadRes.json();
+        setIsUploadingImage(true);
         
-        if (!uploadData.secure_url) {
-            throw new Error('Upload failed');
-        }
-        
-        const user = auth.currentUser;
-        if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            await updateDoc(userDocRef, {
-                profileImage: uploadData.secure_url
-            });
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
             
-            setProfileImage(uploadData.secure_url);
-            showNotification('Profile image updated successfully!', 'success');
+            const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const uploadData = await uploadRes.json();
+            
+            if (!uploadData.secure_url) {
+                throw new Error('Upload failed');
+            }
+            
+            const user = auth.currentUser;
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, {
+                    profileImage: uploadData.secure_url
+                });
+                
+                setProfileImage(uploadData.secure_url);
+                showNotification('Profile image updated successfully!', 'success');
+            }
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            showNotification('Error uploading image', 'error');
+        } finally {
+            setIsUploadingImage(false);
         }
-    } catch (error) {
-        console.error("Error uploading image:", error);
-        showNotification('Error uploading image', 'error');
-    } finally {
-        setIsUploadingImage(false);
-    }
-};
+    };
 
     const removeProfileImage = async () => {
-    if (!window.confirm('Remove your profile image?')) return;
-    
-    try {
-        const user = auth.currentUser;
-        if (user) {
-            const userDocRef = doc(db, "users", user.uid);
-            await updateDoc(userDocRef, {
-                profileImage: null
-            });
-            
-            setProfileImage(null);
-            showNotification('Profile image removed', 'success');
+        if (!window.confirm('Remove your profile image?')) return;
+        
+        try {
+            const user = auth.currentUser;
+            if (user) {
+                const userDocRef = doc(db, "users", user.uid);
+                await updateDoc(userDocRef, {
+                    profileImage: null
+                });
+                
+                setProfileImage(null);
+                showNotification('Profile image removed', 'success');
+            }
+        } catch (error) {
+            console.error("Error removing image:", error);
+            showNotification('Error removing image', 'error');
         }
-    } catch (error) {
-        console.error("Error removing image:", error);
-        showNotification('Error removing image', 'error');
-    }
-};
+    };
 
     const resetDailyAttendance = (courseId) => {
         setCourses(courses.map(c => 
@@ -1165,10 +1166,7 @@ export default function ProfessorDashboard() {
                             <Bell size={20} />
                             <span className="professor-notification-badge"></span>
                         </button>
-                        <button className="professor-export-button" onClick={exportData} title="Export Data">
-                            <Download size={20} />
-                        </button>
-                    </div>
+                     </div>
                 </header>
 
                 <div className="professor-scrollable-content">
@@ -1883,11 +1881,7 @@ export default function ProfessorDashboard() {
                                         <p>Detailed attendance and performance metrics for your courses</p>
                                     </div>
                                 </div>
-                                <button className="professor-export-button" onClick={exportData}>
-                                    <Download size={18} />
-                                    Export Report
-                                </button>
-                            </div>
+                                </div>
 
                             <div className="professor-analytics-stats">
                                 <div className="analytics-stat-card">
@@ -1941,8 +1935,7 @@ export default function ProfessorDashboard() {
                                             {attendanceLoading ? (
                                                 <tr><td colSpan="9" className="loading-cell">Loading analytics data...</td></tr>
                                             ) : cumulativeAttendanceStats.courses.length === 0 ? (
-                                                <tr><td colSpan="9" className="no-data-cell">No attendance data available</td>
-                                            </tr>
+                                                <tr><td colSpan="9" className="no-data-cell">No attendance data available</td></tr>
                                             ) : (
                                                 cumulativeAttendanceStats.courses.map(course => {
                                                     const rate = course.attendanceRate;
@@ -1979,6 +1972,7 @@ export default function ProfessorDashboard() {
                                 </div>
                             </div>
 
+                            {/* Courses Risk Distribution - Modified Section */}
                             <div className="professor-risk-distribution">
                                 <div className="risk-header">
                                     <AlertTriangle size={20} />
@@ -1994,34 +1988,61 @@ export default function ProfessorDashboard() {
                                         
                                         return (
                                             <>
+                                                {/* Excellent */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Excellent (≥85%)</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar excellent-bar" style={{ width: `${(excellent / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="excellent-bar" 
+                                                                style={{ width: `${(excellent / total) * 100}%`, height: '100%', borderRadius: '12px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((excellent / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{excellent} courses</div>
                                                 </div>
+
+                                                {/* Good */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Good (70-84%)</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar good-bar" style={{ width: `${(good / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="good-bar" 
+                                                                style={{ width: `${(good / total) * 100}%`, height: '100%', borderRadius: '12px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((good / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{good} courses</div>
                                                 </div>
+
+                                                {/* At Risk - Modified with proper class */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">At Risk (50-69%)</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar risk-bar-fill" style={{ width: `${(risk / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="risk-bar-fill" 
+                                                                style={{ width: `${(risk / total) * 100}%`, height: '100%', borderRadius: '12px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((risk / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{risk} courses</div>
                                                 </div>
+
+                                                {/* Critical */}
                                                 <div className="risk-item">
                                                     <div className="risk-label">Critical (&lt;50%)</div>
                                                     <div className="risk-bar-container">
-                                                        <div className="risk-bar critical-bar" style={{ width: `${(critical / total) * 100}%` }}></div>
+                                                        <div className="risk-bar">
+                                                            <div 
+                                                                className="critical-bar" 
+                                                                style={{ width: `${(critical / total) * 100}%`, height: '100%', borderRadius: '12px' }}
+                                                            ></div>
+                                                        </div>
                                                         <span className="risk-percent">{Math.round((critical / total) * 100)}%</span>
                                                     </div>
                                                     <div className="risk-count">{critical} courses</div>

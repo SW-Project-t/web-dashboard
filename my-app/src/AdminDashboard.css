@@ -2323,6 +2323,8 @@ body.digital-id-open .navbar-container {
 
 .legend-dot.risk {
     background: #fd7e14;
+    box-shadow: 0 0 4px #fd7e14;
+    animation: legendPulse 1.5s infinite;
 }
 
 .legend-dot.critical {
@@ -2524,13 +2526,49 @@ body.digital-id-open .navbar-container {
     background: linear-gradient(90deg, #ffc107, #ffda6a);
 }
 
+/* ============================================ */
+/* قسم At Risk - تم التعديل والتحسين */
+/* ============================================ */
 .risk-bar-fill {
     background: linear-gradient(90deg, #fd7e14, #ffa64a);
+    box-shadow: 0 0 5px rgba(253, 126, 20, 0.5);
+    border-radius: 12px;
+    animation: glowPulse 2s infinite;
 }
 
 .critical-bar {
     background: linear-gradient(90deg, #dc3545, #ef6b7a);
 }
+
+/* إضافة حركة الوميض للون البرتقالي */
+@keyframes glowPulse {
+    0% {
+        box-shadow: 0 0 0px rgba(253, 126, 20, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 8px rgba(253, 126, 20, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 0px rgba(253, 126, 20, 0.3);
+    }
+}
+
+/* إضافة حركة للأسطورة (Legend) الخاصة بـ At Risk */
+@keyframes legendPulse {
+    0% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+}
+/* ============================================ */
 
 .risk-percent {
     font-weight: bold;

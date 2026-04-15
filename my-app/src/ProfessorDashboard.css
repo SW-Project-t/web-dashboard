@@ -86,7 +86,6 @@ body {
     }
 }
 
-/* Sidebar - مطابق لتصميم Admin */
 .professor-sidebar-wrapper {
     width: 320px;
     background: rgba(255, 255, 255, 0.95);
@@ -101,6 +100,8 @@ body {
     box-shadow: 20px 0 30px -15px rgba(0, 0, 0, 0.15);
     border-right: 1px solid rgba(255, 255, 255, 0.3);
     transition: transform 0.3s ease;
+    justify-content: center;
+    overflow-y: auto;   
 }
 
 .professor-sidebar-wrapper.open {
@@ -112,10 +113,8 @@ body {
         transform: translateX(-100%);
     }
 }
-
-/* Profile Section - مطابق لتصميم Admin */
 .professor-profile-section {
-    padding: 50px 10px 0px 10px;
+    padding: 150px 10px 0px 10px;
     text-align: center;
     border-bottom: 1px solid rgba(123, 168, 224, 0.2);
     position: relative;
@@ -318,6 +317,7 @@ body {
 .professor-sidebar-footer {
     padding: 0px 20px;
     border-top: 1px solid rgba(123, 168, 224, 0.2);
+    margin-top: auto;
 }
 
 .professor-password-button {
@@ -4234,4 +4234,31 @@ body.digital-id-open .navbar-container {
     .professor-messages-actions-grid {
         grid-template-columns: 1fr;
     }
+}
+/* ========== شريط التمرير الأزرق الناعم لـ Professor Dashboard ========== */
+
+/* للـ Chrome, Safari, Edge */
+.professor-sidebar-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.professor-sidebar-wrapper::-webkit-scrollbar-track {
+    background: #f0f4f8;
+    border-radius: 10px;
+}
+
+.professor-sidebar-wrapper::-webkit-scrollbar-thumb {
+    background: #a0c4e8;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.professor-sidebar-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #7ba8e0;
+}
+
+
+.professor-sidebar-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: #a0c4e8 #f0f4f8;
 }

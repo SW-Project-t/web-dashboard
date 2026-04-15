@@ -104,6 +104,8 @@
     box-shadow: 20px 0 30px -15px rgba(0, 0, 0, 0.15);
     border-right: 1px solid rgba(255, 255, 255, 0.3);
     transition: transform 0.3s ease;
+        justify-content: center;
+        overflow-y: auto;   
 }
 
 .student-sidebar-wrapper.open {
@@ -130,7 +132,7 @@
 }
 
 .student-profile-section {
-    padding: 80px 10px 0px 10px;
+    padding: 160px 10px 0px 10px;
     text-align: center;
     border-bottom: 1px solid rgba(123, 168, 224, 0.2);
     position: relative;
@@ -341,6 +343,7 @@
 .student-sidebar-footer {
     padding: 5px 20px;
     border-top: 1px solid rgba(123, 168, 224, 0.2);
+    margin-top: auto;
 }
 
 .student-password-button {
@@ -3771,4 +3774,31 @@
     .student-messages-actions-grid {
         grid-template-columns: 1fr;
     }
+}
+/* ========== شريط التمرير الأزرق الناعم لـ Student Dashboard ========== */
+
+/* للـ Chrome, Safari, Edge */
+.student-sidebar-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.student-sidebar-wrapper::-webkit-scrollbar-track {
+    background: #f0f4f8;
+    border-radius: 10px;
+}
+
+.student-sidebar-wrapper::-webkit-scrollbar-thumb {
+    background: #a0c4e8;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.student-sidebar-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #7ba8e0;
+}
+
+/* للـ Firefox */
+.student-sidebar-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: #a0c4e8 #f0f4f8;
 }

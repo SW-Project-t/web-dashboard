@@ -52,10 +52,12 @@ body {
     z-index: 100;
     box-shadow: 20px 0 30px -15px rgba(0, 0, 0, 0.15);
     border-right: 1px solid rgba(255, 255, 255, 0.3);
+    justify-content: center;
+    overflow-y: auto;
 }
 
 .profile-section {
-    padding: 80px 10px 0px 10px;
+    padding: 110px 10px 20px 10px;
     text-align: center;
     border-bottom: 1px solid rgba(123, 168, 224, 0.2);
     position: relative;
@@ -253,8 +255,9 @@ body {
 }
 
 .sidebar-footer {
-    padding: 5px 20px;
+    padding:20px;
     border-top: 1px solid rgba(123, 168, 224, 0.2);
+    margin-top: auto;
 }
 
 .password-button {
@@ -2967,4 +2970,21 @@ body.digital-id-open .navbar-container {
     .admin-messages-actions-grid {
         grid-template-columns: 1fr;
     }
+}
+.sidebar-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-wrapper::-webkit-scrollbar-track {
+    background: #e6f0fa;
+    border-radius: 10px;
+}
+
+.sidebar-wrapper::-webkit-scrollbar-thumb {
+    background: #a0c4e8;
+    border-radius: 10px;
+}
+
+.sidebar-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #7ba8e0;
 }

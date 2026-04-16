@@ -1293,14 +1293,7 @@ export default function ProfessorDashboard() {
                         <Users size={20} />
                         <span>Students</span>
                     </button>
-                    <button 
-                        className={`professor-nav-button ${activeTab === 'Schedule' ? 'active' : ''}`} 
-                        onClick={() => setActiveTab('Schedule')}
-                    >
-                        <Calendar size={20} />
-                        <span>Schedule</span>
-                    </button>
-                    <button 
+                     <button 
                         className={`professor-nav-button ${activeTab === 'Attendance Analytics' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Attendance Analytics')}
                     >

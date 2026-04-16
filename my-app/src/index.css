@@ -10,7 +10,7 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
+  color:#1a202c;
   background-color: #242424;
 
   font-synthesis: none;
@@ -63,15 +63,16 @@ h1 {
 }
 
 button {
-  border-radius: 8px;
+  border-radius: 16px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: white;
+  background-color:#6fa7ed;
   cursor: pointer;
   transition: border-color 0.25s;
+  color: white;
 }
 button:hover {
   border-color: #646cff;

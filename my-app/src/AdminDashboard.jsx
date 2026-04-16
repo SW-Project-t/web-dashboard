@@ -1310,11 +1310,7 @@ const AdminDashboard = () => {
                                         <p>Comprehensive attendance report for all courses</p>
                                     </div>
                                 </div>
-                                <button className="export-report-button" onClick={exportAttendanceReport}>
-                                    <Download size={18} />
-                                    Export Report
-                                </button>
-                            </div>
+                              </div>
 
                             <div className="analytics-summary-grid">
                                 <div className="summary-card">

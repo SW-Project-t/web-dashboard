@@ -1113,14 +1113,7 @@ export default function StudentDashboard() {
                         <TrendingUp size={20} />
                         <span>Attendance</span>
                     </button>
-                    <button 
-                        className={`student-nav-button ${activeTab === 'Schedule' ? 'active' : ''}`} 
-                        onClick={() => setActiveTab('Schedule')}
-                    >
-                        <Calendar size={20} />
-                        <span>Schedule</span>
-                    </button>
-                    <button 
+                     <button 
                         className={`student-nav-button ${activeTab === 'Profile' ? 'active' : ''}`} 
                         onClick={() => setActiveTab('Profile')}
                     >

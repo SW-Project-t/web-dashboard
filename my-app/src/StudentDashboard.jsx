@@ -165,23 +165,46 @@ export default function StudentDashboard() {
     }, []);
 
     // ========== جلب الأساتذة من الكورسات ==========
+  // ========== جلب الأساتذة من الكورسات ==========
     useEffect(() => {
-        if (courses.length > 0) {
-            const profsArray = [];
-            courses.forEach(course => {
-                if (course.instructor && course.instructor !== 'TBA' && course.instructor !== 'Loading...') {
-                    if (!profsArray.find(p => p.id === course.id)) {
-                        profsArray.push({
-                            id: course.id,
-                            name: course.instructor,
-                            courseName: course.name,
-                            courseId: course.id
-                        });
+        const fetchProfessors = async () => {
+            if (courses.length > 0) {
+                const profsArray = [];
+                for (let course of courses) {
+                    if (course.instructor && course.instructor !== 'TBA' && course.instructor !== 'Loading...') {
+                        // بنتأكد إننا مضفناش الكورس ده قبل كده
+                        if (!profsArray.find(p => p.courseId === course.id)) {
+                            let profId = course.id; // حل بديل مؤقت
+                            try {
+                                // بنبحث في جدول الكورسات الخاصة بالدكاترة باستخدام الـ courseId
+                                const q = query(collection(db, "professorCourses"), where("courseId", "==", course.id));
+                                const querySnapshot = await getDocs(q);
+                                
+                                if (!querySnapshot.empty) {
+                                    // لو لقينا الكورس، بنسحب الـ ID الحقيقي بتاع الدكتور
+                                    profId = querySnapshot.docs[0].data().professorId; 
+                                }
+                            } catch (error) {
+                                console.error("Error fetching professor ID:", error);
+                            }
+
+                            // بنمنع تكرار نفس الدكتور في القائمة لو بيدرس كذا كورس للطالب
+                            if (!profsArray.find(p => p.id === profId)) {
+                                profsArray.push({
+                                    id: profId,
+                                    name: course.instructor,
+                                    courseName: course.name,
+                                    courseId: course.id
+                                });
+                            }
+                        }
                     }
                 }
-            });
-            setProfessorsList(profsArray);
-        }
+                setProfessorsList(profsArray);
+            }
+        };
+        
+        fetchProfessors();
     }, [courses]);
 
     // ========== وظائف الرسائل ==========

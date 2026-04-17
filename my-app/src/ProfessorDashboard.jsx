@@ -212,22 +212,72 @@ export default function ProfessorDashboard() {
         return () => unsubscribeStudent();
     }, [auth.currentUser?.uid]); // <-- تم التعديل هنا
 
-    // جلب الطلاب المسجلين في كورسات الأستاذ
-    const fetchStudentsList = async () => {
+const fetchStudentsList = async () => {
         const user = auth.currentUser;
-        if (!user) return;
+        if (!user || courses.length === 0) return;
         
         try {
-            const response = await fetch(`http://localhost:3001/api/professor/${user.uid}/students`);
-            const data = await response.json();
-            if (data.success && data.students) {
-                setStudentsList(data.students);
+            let allStudentsMap = new Map();
+            
+            for (const course of courses) {
+                const response = await fetch(`http://localhost:3001/api/course-students/${course.id}`);
+                if (response.ok) {
+                    const studentsData = await response.json();
+                    
+                    for (const student of studentsData) {
+                        const sId = student.uid || student.id;
+                        
+                        if (!allStudentsMap.has(sId)) {
+                            let realName = "Unknown";
+                            let sCode = "N/A";
+                            
+                            try {
+                                // 1. الأول هنجرب نبحث بالـ Document ID
+                                const userDocRef = doc(db, "users", sId); // 👈 لو الكوليكشن اسمه students غيرها
+                                const userDocSnap = await getDoc(userDocRef);
+                                
+                                if (userDocSnap.exists()) {
+                                    const userData = userDocSnap.data();
+                                    realName = userData.name || userData.studentName || userData.fullName || "Unknown Student";
+                                    sCode = userData.studentCode || userData.code || sId.substring(0, 5);
+                                } else {
+                                    // 2. لو ملقاهوش، هنعمل بحث (Query) بحقل الـ uid
+                                    const usersRef = collection(db, "users"); // 👈 لو الكوليكشن اسمه students غيرها
+                                    const q = query(usersRef, where("uid", "==", sId));
+                                    const querySnapshot = await getDocs(q);
+                                    
+                                    if (!querySnapshot.empty) {
+                                        const userData = querySnapshot.docs[0].data();
+                                        realName = userData.name || userData.studentName || userData.fullName || "Unknown Student";
+                                        sCode = userData.studentCode || userData.code || sId.substring(0, 5);
+                                    }
+                                }
+                            } catch (err) {
+                                console.error("Error fetching detail for student:", sId, err);
+                            }
+
+                            allStudentsMap.set(sId, {
+                                ...student,
+                                id: sId,
+                                studentName: realName, 
+                                name: realName,         // ✅ ضفناها عشان لو الجدول بيقرأ name يشتغل
+                                studentCode: sCode,
+                                studentId: sCode,       // ✅ ضفناها عشان لو الجدول بيقرأ studentId يشتغل
+                                enrolledCourses: [course.id]
+                            });
+                        } else {
+                            allStudentsMap.get(sId).enrolledCourses.push(course.id);
+                        }
+                    }
+                }
             }
+            
+            setStudentsList(Array.from(allStudentsMap.values()));
         } catch (error) {
-            console.error("Error fetching students:", error);
+            console.error("Error in fetchStudentsList:", error);
         }
     };
-
+    
     useEffect(() => {
         fetchStudentsList();
     }, [courses]);
@@ -366,40 +416,73 @@ export default function ProfessorDashboard() {
             fetchLMSDiscussions(selectedCourseForLMS.id);
         }
     }, [selectedCourseForLMS]);
-
-    const fetchEnrolledStudents = async (courseId, courseName) => {
+const fetchEnrolledStudents = async (courseId, courseName) => {
         setIsLoadingStudents(true);
         try {
             const response = await fetch(`http://localhost:3001/api/course-students/${courseId}`);
             
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new TypeError("Backend returned HTML not JSON!");
-            }
-
             if (!response.ok) {
                 throw new Error("Failed to fetch students from server");
             }
 
             const students = await response.json();
 
-            const processedStudents = students.map(student => {
-                const attendance = student.attendanceRecords || [];
-                const grades = student.grades || [];
+            // 🚀 التعديل هنا: جلب البيانات الحقيقية من الفايربيز لكل طالب للجدول
+            const processedStudents = await Promise.all(students.map(async (student) => {
+                const sId = student.uid || student.id;
+                let realName = "Unknown Student";
+                let sCode = "N/A";
                 
-                const totalClasses = attendance.length || 1;
-                const presentClasses = attendance.filter(r => r.status === 'present').length;
-                const lateCount = attendance.filter(r => r.status === 'late').length;
+                try {
+                    const userDocRef = doc(db, "users", sId); 
+                    const userDocSnap = await getDoc(userDocRef);
+                    
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        const fName = userData.firstName || "";
+                        const lName = userData.lastName || "";
+                        if (fName || lName) {
+                            realName = `${fName} ${lName}`.trim();
+                        } else if (userData.name || userData.fullName) {
+                            realName = userData.name || userData.fullName;
+                        }
+                        sCode = userData.studentCode || sId.substring(0, 5);
+                    } else {
+                        const usersRef = collection(db, "users"); 
+                        const q = query(usersRef, where("uid", "==", sId));
+                        const querySnapshot = await getDocs(q);
+                        
+                        if (!querySnapshot.empty) {
+                            const userData = querySnapshot.docs[0].data();
+                            const fName = userData.firstName || "";
+                            const lName = userData.lastName || "";
+                            if (fName || lName) {
+                                realName = `${fName} ${lName}`.trim();
+                            } else if (userData.name || userData.fullName) {
+                                realName = userData.name || userData.fullName;
+                            }
+                            sCode = userData.studentCode || sId.substring(0, 5);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error fetching detail for student:", sId, err);
+                }
+
+                // حسابات الحضور والغياب (زي ما هي عندك)
+                const attendanceRecords = student.attendanceRecords || [];
+                const totalClasses = attendanceRecords.length || 1;
+                const presentClasses = attendanceRecords.filter(r => r.status === 'present').length;
+                const lateCount = attendanceRecords.filter(r => r.status === 'late').length;
                 const attendanceRate = (presentClasses / totalClasses) * 100;
                 
-                const totalScore = grades.reduce((sum, g) => sum + (g.score || 0), 0);
-                const averageGrade = grades.length > 0 ? (totalScore / grades.length) : 0;
-
                 let riskScore = 0;
-                
                 if (attendanceRate < 50) riskScore += 40;
                 else if (attendanceRate < 70) riskScore += 25;
                 else if (attendanceRate < 85) riskScore += 10;
+
+                const grades = student.grades || [];
+                const totalScore = grades.reduce((sum, g) => sum + (g.score || 0), 0);
+                const averageGrade = grades.length > 0 ? (totalScore / grades.length) : (student.averageGrade || 0);
 
                 if (averageGrade < 50) riskScore += 40;
                 else if (averageGrade < 65) riskScore += 25;
@@ -410,17 +493,37 @@ export default function ProfessorDashboard() {
                 else if (lateCount > 2) riskScore += 10;
                 else if (lateCount > 0) riskScore += 5;
 
+                // 🛠️ حل مشكلة التاريخ (Invalid Date)
+                let formattedDate = student.enrolledAt;
+                if (formattedDate && typeof formattedDate === 'object') {
+                    if (formattedDate._seconds) {
+                        formattedDate = formattedDate._seconds * 1000;
+                    } else if (formattedDate.seconds) {
+                        formattedDate = formattedDate.seconds * 1000;
+                    }
+                }
+
                 return {
                     ...student,
+                    id: sId,
+                    studentId: sCode,
+                    studentName: realName,
+                    name: realName,
+                    studentCode: sCode,
+                    studentEmail: student.studentEmail || '',
+                    status: student.status || 'active',
                     attendanceRate: Math.round(attendanceRate),
                     averageGrade: Math.round(averageGrade),
                     riskScore: riskScore,
                     lateCount: lateCount,
                     totalClasses: totalClasses,
                     presentCount: presentClasses,
-                    riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low'
+                    riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low',
+                    enrolledAt: formattedDate, // ✅ التاريخ المتصلح
+                    courseId: courseId,        // ✅ الكورس المتصلح
+                    courseName: courseName
                 };
-            });
+            }));
 
             setEnrolledStudents(prev => ({
                 ...prev,
@@ -436,7 +539,7 @@ export default function ProfessorDashboard() {
             setIsLoadingStudents(false);
         }
     };
-
+    
     const viewCourseStudents = async (course) => {
         setSelectedCourseForStudents(course);
         setStudentSearchQuery('');
@@ -452,96 +555,99 @@ export default function ProfessorDashboard() {
         setShowStudentsModal(true);
     };
 
-    const removeStudentFromCourse = async (enrollmentId, courseId, studentName) => {
-        if (!window.confirm(`Are you sure you want to remove ${studentName} from this course?`)) return;
-        
-        try {
-            const response = await fetch("/api/unenroll-student", {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enrollmentId: enrollmentId }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Unenrollment failed");
-            }
-
-            setEnrolledStudents(prev => ({
-                ...prev,
-                [courseId]: prev[courseId].filter(s => s.id !== enrollmentId)
-            }));
-            
-            showNotification(`${studentName} removed from course`, 'success');
-        } catch (error) {
-            console.error("Error removing student:", error);
-            showNotification(error.message || 'Error removing student', 'error');
-        }
-    };
-
-    const getFilteredAndSortedStudents = () => {
-        if (!selectedCourseForStudents) return [];
-        
-        let students = [...(enrolledStudents[selectedCourseForStudents.id] || [])];
-        if (studentSearchQuery) {
-            switch (studentFilterType) {
-                case 'name':
-                    students = students.filter(s => 
-                        s.studentName?.toLowerCase().includes(studentSearchQuery.toLowerCase())
-                    );
-                    break;
-                case 'code':
-                    students = students.filter(s => 
-                        s.studentCode?.toLowerCase().includes(studentSearchQuery.toLowerCase())
-                    );
-                    break;
-                case 'risk':
-                    const riskValue = parseInt(studentSearchQuery);
-                    if (!isNaN(riskValue)) {
-                        students = students.filter(s => s.riskScore <= riskValue);
-                    }
-                    break;
-                default:
-                    students = students.filter(s => 
-                        s.studentName?.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
-                        s.studentCode?.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
-                        s.studentEmail?.toLowerCase().includes(studentSearchQuery.toLowerCase())
-                    );
-            }
-        }
-        
-        if (showRiskFilter) {
-            students = students.filter(s => 
-                s.riskScore >= riskFilterRange.min && s.riskScore <= riskFilterRange.max
-            );
-        }
+   const removeStudentFromCourse = async (enrollmentId, courseId, studentName) => {
+    if (!window.confirm(`Are you sure you want to remove ${studentName} from this course?`)) return;
     
-        students.sort((a, b) => {
-            let comparison = 0;
-            switch (sortBy) {
-                case 'name':
-                    comparison = (a.studentName || '').localeCompare(b.studentName || '');
-                    break;
-                case 'code':
-                    comparison = (a.studentCode || '').localeCompare(b.studentCode || '');
-                    break;
-                case 'risk':
-                    comparison = (a.riskScore || 0) - (b.riskScore || 0);
-                    break;
-                case 'attendance':
-                    comparison = (a.attendanceRate || 0) - (b.attendanceRate || 0);
-                    break;
-                case 'grade':
-                    comparison = (a.averageGrade || 0) - (b.averageGrade || 0);
-                    break;
-                default:
-                    comparison = 0;
-            }
-            return sortOrder === 'asc' ? comparison : -comparison;
+    try {
+        const response = await fetch("http://localhost:3001/api/unenroll-student", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enrollmentId: enrollmentId }),
         });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Unenrollment failed");
+        }
+
+        // تحديث القائمة المحلية
+        setEnrolledStudents(prev => ({
+            ...prev,
+            [courseId]: prev[courseId].filter(s => s.id !== enrollmentId)
+        }));
         
-        return students;
-    };
+        showNotification(`${studentName} removed from course`, 'success');
+    } catch (error) {
+        console.error("Error removing student:", error);
+        showNotification(error.message || 'Error removing student', 'error');
+    }
+};
+const getFilteredAndSortedStudents = () => {
+    if (!selectedCourseForStudents) return [];
+    
+    let students = [...(enrolledStudents[selectedCourseForStudents.id] || [])];
+    
+    // فلترة حسب البحث
+    if (studentSearchQuery) {
+        switch (studentFilterType) {
+            case 'name':
+                students = students.filter(s => 
+                    s.studentName?.toLowerCase().includes(studentSearchQuery.toLowerCase())
+                );
+                break;
+            case 'code':
+                students = students.filter(s => 
+                    s.studentCode?.toLowerCase().includes(studentSearchQuery.toLowerCase())
+                );
+                break;
+            case 'risk':
+                const riskValue = parseInt(studentSearchQuery);
+                if (!isNaN(riskValue)) {
+                    students = students.filter(s => s.riskScore <= riskValue);
+                }
+                break;
+            default:
+                students = students.filter(s => 
+                    s.studentName?.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+                    s.studentCode?.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+                    s.studentEmail?.toLowerCase().includes(studentSearchQuery.toLowerCase())
+                );
+        }
+    }
+    
+    // فلترة حسب نطاق المخاطر
+    if (showRiskFilter) {
+        students = students.filter(s => 
+            s.riskScore >= riskFilterRange.min && s.riskScore <= riskFilterRange.max
+        );
+    }
+
+    students.sort((a, b) => {
+        let comparison = 0;
+        switch (sortBy) {
+            case 'name':
+                comparison = (a.studentName || '').localeCompare(b.studentName || '');
+                break;
+            case 'code':
+                comparison = (a.studentCode || '').localeCompare(b.studentCode || '');
+                break;
+            case 'risk':
+                comparison = (a.riskScore || 0) - (b.riskScore || 0);
+                break;
+            case 'attendance':
+                comparison = (a.attendanceRate || 0) - (b.attendanceRate || 0);
+                break;
+            case 'grade':
+                comparison = (a.averageGrade || 0) - (b.averageGrade || 0);
+                break;
+            default:
+                comparison = 0;
+        }
+        return sortOrder === 'asc' ? comparison : -comparison;
+    });
+    
+    return students;
+};
 
     const getRiskColor = (riskScore) => {
         if (riskScore >= 70) return '#dc3545';
@@ -1208,6 +1314,14 @@ export default function ProfessorDashboard() {
             navbar.style.display = 'flex';
         }
     };
+    console.log("All Students (studentsList):", studentsList);
+    console.log("Professor Courses:", courses);
+
+    const filteredStudentsTest = studentsList.filter(student =>
+        student.enrolledCourses &&
+        courses.some(course => student.enrolledCourses.includes(course.id))
+    );
+    console.log("Filtered Students for Dropdown:", filteredStudentsTest);
 
     return (
         <div className="professor-dashboard-container">
@@ -2989,7 +3103,7 @@ export default function ProfessorDashboard() {
                                 >
                                     <option value="">Select Student</option>
                                     {studentsList.map(s => (
-                                        <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>
+                                        <option key={s.id} value={s.id}>{s.studentName} {s.studentCode}</option>
                                     ))}
                                 </select>
                             </div>

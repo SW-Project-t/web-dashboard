@@ -1324,8 +1324,11 @@ export default function StudentDashboard() {
                                                 <p>{course.instructor}</p>
                                                 <div className="student-course-mini-footer">
                                                     <span>{course.schedule}</span>
-                                                    <div className="student-risk-mini-badge" style={{ backgroundColor: `${course.riskLevel.color}20`, color: course.riskLevel.color }}>
-                                                        {course.riskLevel.icon} {course.riskScore}
+                                                   <div className="student-risk-mini-badge" style={{ 
+                                                         backgroundColor: `${course?.riskLevel?.color || '#888888'}20`, 
+                                                           color: course?.riskLevel?.color || '#888888' 
+                                                        }}>
+                                                            {course?.riskLevel?.icon || '⚠️'} {course?.riskScore || 0}
                                                     </div>
                                                 </div>
                                             </div>

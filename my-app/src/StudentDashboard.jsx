@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './StudentDashboard.css';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -702,29 +703,38 @@ export default function StudentDashboard() {
         }
     };
 
-    const handleAddCourse = async (course) => {
-        try {
-            const user = auth.currentUser;
-            if (!user) return;
-            if (courses.length >= 5) {
-                showNotification('You can only enroll in up to 5 courses', 'error');
-                return;
-            }
-            if (courses.some(c => c.id === course.id)) {
-                showNotification('You are already enrolled in this course', 'error');
-                return;
-            }
+   const handleAddCourse = async (course) => {
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
 
-            setLoading(true);
-            const userDocRef = doc(db, "users", user.uid);
-            
-            await updateDoc(userDocRef, {
-                enrolledCourses: arrayUnion(course.id)
-            });
-            
+        // التحقق من العدد
+        if (courses.length >= 5) {
+            showNotification('You can only enroll in up to 5 courses', 'error');
+            return;
+        }
+
+        // التحقق من التكرار (تأكد هل الحقل اسمه id ولا courseId في الكائن course)
+        const courseIdentifier = course.courseId || course.id;
+        if (courses.some(c => (c.courseId || c.id) === courseIdentifier)) {
+            showNotification('You are already enrolled in this course', 'error');
+            return;
+        }
+
+        setLoading(true);
+
+        // --- التعديل الجوهري هنا: نكلم الـ Backend بتاعنا ---
+        const response = await axios.post('http://localhost:3001/api/enroll-course', {
+            studentUid: user.uid,
+            courseId: courseIdentifier // بنبعت الـ ID اللي السيرفر مستنيه
+        });
+
+        if (response.data.success) {
+            // لو السيرفر نجح، كمل باقي الـ Logic بتاع الـ UI عندك
             const attendanceRate = Math.floor(Math.random() * 40) + 60;
             const grades = Math.floor(Math.random() * 30) + 70;
             const timeliness = Math.floor(Math.random() * 50) + 50;
+            
             const riskScore = calculateRiskScore(
                 attendanceRate, 
                 grades, 
@@ -734,7 +744,7 @@ export default function StudentDashboard() {
             
             const newCourse = {
                 ...course,
-                students: course.capacity,
+                students: (course.studentsCount || 0) + 1, // العداد الجديد
                 attendanceRate: attendanceRate,
                 absenceRate: 100 - attendanceRate,
                 presentCount: 0,
@@ -752,19 +762,22 @@ export default function StudentDashboard() {
             setCourses(prev => [...prev, newCourse]);
             setStudentData(prev => ({
                 ...prev,
-                enrolledCourses: prev.enrolledCourses + 1
+                enrolledCourses: (prev.enrolledCourses || 0) + 1
             }));
 
-            showNotification(`Successfully enrolled in ${course.name}`, 'success');
+            showNotification(`Successfully enrolled in ${course.courseName || course.name}`, 'success');
             setIsAddCourseModalOpen(false);
-
-        } catch (error) {
-            console.error("Error adding course:", error);
-            showNotification('Error enrolling in course', 'error');
-        } finally {
-            setLoading(false);
         }
-    };
+
+    } catch (error) {
+        console.error("Error adding course:", error);
+        // إظهار رسالة الخطأ اللي جاية من السيرفر (مثلاً لو الكورس مش موجود)
+        const errorMsg = error.response?.data?.error || 'Error enrolling in course';
+        showNotification(errorMsg, 'error');
+    } finally {
+        setLoading(false);
+    }
+};
 
     const handleDeleteCourse = async (courseId) => {
         try {

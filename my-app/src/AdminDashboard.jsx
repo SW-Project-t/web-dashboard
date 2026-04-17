@@ -99,6 +99,8 @@ const AdminDashboard = () => {
             });
             setProfessorMessages(messagesArray);
             setUnreadProfessorCount(unread);
+        }, (error) => {
+            console.error("Error fetching professor messages:", error);
         });
         
         return () => unsubscribe();
@@ -138,18 +140,22 @@ const AdminDashboard = () => {
         const q = query(collection(db, "users"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const usersArray = [];
-            querySnapshot.forEach((doc) => {
-                usersArray.push({ id: doc.id, ...doc.data() });
-            });
-            setUsers(usersArray);
+            const deptMap = {}; 
             
-            const deptMap = {};
-            usersArray.forEach(u => {
-                const d = u.department || 'General';
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                usersArray.push({ id: doc.id, ...data });
+                
+                const d = data.department || 'General';
                 deptMap[d] = (deptMap[d] || 0) + 1;
             });
+            
+            setUsers(usersArray);
+            
             const deptList = Object.keys(deptMap).map(k => ({ name: k, count: deptMap[k] }));
             setDepartments(deptList);
+        }, (error) => {
+            console.error("Error fetching users:", error);
         });
         return () => unsubscribe();
     }, []);
@@ -162,6 +168,8 @@ const AdminDashboard = () => {
                 coursesArray.push({ id: doc.id, ...doc.data() });
             });
             setCourses(coursesArray);
+        }, (error) => {
+            console.error("Error fetching courses:", error);
         });
         return () => unsubscribe();
     }, []);
@@ -181,6 +189,8 @@ const AdminDashboard = () => {
             });
             setMessages(messagesArray);
             setUnreadCount(unread);
+        }, (error) => {
+            console.error("Error fetching admin messages:", error);
         });
         return () => unsubscribe();
     }, []);
@@ -1310,6 +1320,9 @@ const AdminDashboard = () => {
                                         <p>Comprehensive attendance report for all courses</p>
                                     </div>
                                 </div>
+                                <button className="export-report-button" onClick={exportAttendanceReport}>
+                                    <Download size={18} /> Export Report
+                                </button>
                               </div>
 
                             <div className="analytics-summary-grid">
@@ -1996,7 +2009,7 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="university-text">
                                         <h3>Cairo University</h3>
-                                        <p>Student Identification Card</p>
+                                        <p>Admin Identification Card</p>
                                     </div>
                                 </div>
                             </div>
@@ -2004,24 +2017,20 @@ const AdminDashboard = () => {
                             <div className="id-card-body new-body">
                                 <div className="id-info-section new-info">
                                     <div className="id-field">
-                                        <span className="id-field-label">STUDENT NAME</span>
+                                        <span className="id-field-label">ADMIN NAME</span>
                                         <span className="id-field-value">{adminData.name}</span>
                                     </div>
                                     <div className="id-field">
-                                        <span className="id-field-label">STUDENT ID</span>
+                                        <span className="id-field-label">ADMIN ID</span>
                                         <span className="id-field-value id-value">{adminData.code}</span>
                                     </div>
                                     <div className="id-field">
                                         <span className="id-field-label">DEPARTMENT</span>
-                                        <span className="id-field-value">CS</span>
-                                    </div>
-                                    <div className="id-field">
-                                        <span className="id-field-label">ACADEMIC YEAR</span>
-                                        <span className="id-field-value">2024</span>
+                                        <span className="id-field-value">IT Administration</span>
                                     </div>
                                     <div className="id-field">
                                         <span className="id-field-label">EMAIL</span>
-                                        <span className="id-field-value">{auth.currentUser?.email || 'student.yallaclass@gmail.com'}</span>
+                                        <span className="id-field-value">{auth.currentUser?.email || 'admin@yallaclass.com'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -2034,8 +2043,8 @@ const AdminDashboard = () => {
                                                     id: adminData.code,
                                                     name: adminData.name,
                                                     email: auth.currentUser?.email,
-                                                    department: 'CS',
-                                                    type: 'student',
+                                                    department: 'IT Admin',
+                                                    type: 'admin',
                                                     university: 'Cairo University'
                                                 })
                                             )}`}

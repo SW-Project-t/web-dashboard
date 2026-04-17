@@ -73,7 +73,11 @@ export default function StudentDashboard() {
         gpa: 0
     });
     
-    const [courses, setCourses] = useState([]);
+   const [courses, setCourses] = useState(() => {
+    // حاول تقرأ الكورسات القديمة من الكاش عشان الصفحة متبقاش فاضية أول ما تفتح
+    const saved = localStorage.getItem(STORAGE_KEYS.COURSES);
+    return saved ? JSON.parse(saved) : [];
+});
     const [availableCourses, setAvailableCourses] = useState([]);
     const [attendance, setAttendance] = useState([]);
     const [upcoming, setUpcoming] = useState([]);

@@ -1325,7 +1325,6 @@ const getFilteredAndSortedStudents = () => {
 
     return (
         <div className="professor-dashboard-container">
-            {/* Notifications System */}
             <div className="professor-notifications-container">
                 {notifications.map(n => (
                     <div key={n.id} className={`professor-notification-item ${n.type}`}>
@@ -1334,7 +1333,7 @@ const getFilteredAndSortedStudents = () => {
                 ))}
             </div>
 
-            {/* Sidebar */}
+            
             <aside className={`professor-sidebar-wrapper ${sidebarOpen ? 'open' : ''}`}>
                 <div className="professor-profile-section">
                     <div
@@ -1441,8 +1440,6 @@ const getFilteredAndSortedStudents = () => {
                     </button>
                 </div>
             </aside>
-
-            {/* Main Content */}
             <main className="professor-main-content">
                 <header className="professor-content-header">
                     <div className="professor-page-title">
@@ -1475,7 +1472,6 @@ const getFilteredAndSortedStudents = () => {
                 <div className="professor-scrollable-content">
                     {activeTab === 'Dashboard' && (
                         <div className="professor-dashboard-view">
-                            {/* Quick Actions */}
                             <div className="professor-quick-actions-grid">
                                 <div className="professor-action-card-item professor-card-blue" onClick={openAddModal}>
                                     <BookOpen size={28} />
@@ -1497,9 +1493,7 @@ const getFilteredAndSortedStudents = () => {
                                     <span>Reset Today</span>
                                 </div>
                             </div>
-
-                            {/* Stats Cards with Attendance */}
-                            <div className="professor-stats-grid">
+                             <div className="professor-stats-grid">
                                 <div className="professor-stat-card">
                                     <BookOpen className="professor-stat-icon blue" />
                                     <div className="professor-stat-info">
@@ -1529,9 +1523,7 @@ const getFilteredAndSortedStudents = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Courses Section with Attendance Rate */}
-                            <div className="professor-courses-section">
+                             <div className="professor-courses-section">
                                 <div className="professor-section-header">
                                     <h2>My Courses</h2>
                                     <button className="professor-view-all-button" onClick={() => setActiveTab('My Courses')}>
@@ -1558,9 +1550,7 @@ const getFilteredAndSortedStudents = () => {
                                                     <p><Clock size={14} /> {course.schedule}</p>
                                                     <p><Calendar size={14} /> {course.room}</p>
                                                 </div>
-                                                
-                                                {/* Cumulative Attendance Rate */}
-                                                <div className="professor-course-attendance-rate">
+                                                 <div className="professor-course-attendance-rate">
                                                     <div className="attendance-rate-header">
                                                         <Activity size={14} />
                                                         <span>Cumulative Attendance</span>
@@ -1601,9 +1591,7 @@ const getFilteredAndSortedStudents = () => {
                                     })}
                                 </div>
                             </div>
-
-                            {/* Chart Card */}
-                            <div className="professor-chart-card">
+                             <div className="professor-chart-card">
                                 <div className="professor-chart-header">
                                     <h3>Weekly Attendance Overview</h3>
                                     <span className="professor-chart-badge">Last 5 days</span>
@@ -1983,9 +1971,7 @@ const getFilteredAndSortedStudents = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Stats Cards */}
-                            <div className="professor-messages-stats">
+                             <div className="professor-messages-stats">
                                 <div className="professor-messages-stat-card">
                                     <div className="professor-messages-stat-icon"><Inbox size={24} /></div>
                                     <div className="professor-messages-stat-value">{unreadAdminCount}</div>
@@ -2002,11 +1988,8 @@ const getFilteredAndSortedStudents = () => {
                                     <div className="professor-messages-stat-label">Total Students</div>
                                 </div>
                             </div>
-
-                            {/* Two Cards Side by Side: Send to Admin & Send to Student */}
-                            <div className="professor-messages-actions-grid">
-                                {/* Card 1: Send Message to Admin */}
-                                <div className="professor-message-action-card" onClick={() => setIsMessageToAdminModalOpen(true)}>
+                             <div className="professor-messages-actions-grid">
+                                 <div className="professor-message-action-card" onClick={() => setIsMessageToAdminModalOpen(true)}>
                                     <div className="professor-message-action-icon admin">
                                         <Mail size={32} />
                                     </div>
@@ -2016,9 +1999,7 @@ const getFilteredAndSortedStudents = () => {
                                         <span>Compose Message →</span>
                                     </div>
                                 </div>
-
-                                {/* Card 2: Send Message to Student */}
-                                <div className="professor-message-action-card" onClick={() => setIsMessageToStudentModalOpen(true)}>
+                                 <div className="professor-message-action-card" onClick={() => setIsMessageToStudentModalOpen(true)}>
                                     <div className="professor-message-action-icon student">
                                         <Users size={32} />
                                     </div>
@@ -2029,9 +2010,7 @@ const getFilteredAndSortedStudents = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Inbox - Messages from Admin */}
-                            <div className="professor-inbox-section">
+                             <div className="professor-inbox-section">
                                 <h4>
                                     <Inbox size={18} />
                                     Messages from Admin ({unreadAdminCount} unread)
@@ -2065,9 +2044,7 @@ const getFilteredAndSortedStudents = () => {
                                     )}
                                 </div>
                             </div>
-
-                            {/* Inbox - Messages from Students */}
-                            <div className="professor-inbox-section">
+                             <div className="professor-inbox-section">
                                 <h4>
                                     <Inbox size={18} />
                                     Messages from Students ({unreadStudentCount} unread)
@@ -2416,9 +2393,7 @@ const getFilteredAndSortedStudents = () => {
                                     </table>
                                 </div>
                             </div>
-
-                            {/* Courses Risk Distribution */}
-                            <div className="professor-risk-distribution">
+                             <div className="professor-risk-distribution">
                                 <div className="risk-header">
                                     <AlertTriangle size={20} />
                                     <h3>Courses Risk Distribution</h3>
@@ -2502,9 +2477,7 @@ const getFilteredAndSortedStudents = () => {
                     )}
                 </div>
             </main>
-
-            {/* Password Modal */}
-            {isPasswordModalOpen && (
+             {isPasswordModalOpen && (
                 <div className="professor-modal-overlay" onClick={() => setIsPasswordModalOpen(false)}>
                     <div className="professor-modal-container small" onClick={e => e.stopPropagation()}>
                         <div className="professor-modal-header">
@@ -2571,9 +2544,7 @@ const getFilteredAndSortedStudents = () => {
                     </div>
                 </div>
             )}
-
-            {/* Digital ID Modal */}
-            {isDigitalIdModalOpen && (
+             {isDigitalIdModalOpen && (
                 <div className="professor-modal-overlay" onClick={closeDigitalID}>
                     <div className="professor-modal-container digital-id-modal" onClick={e => e.stopPropagation()}>
                         <div className="professor-modal-header">
@@ -2661,9 +2632,7 @@ const getFilteredAndSortedStudents = () => {
                     </div>
                 </div>
             )}
-
-            {/* Course Modal */}
-            {showModal && (
+             {showModal && (
                 <div className="professor-modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="professor-modal-container" onClick={e => e.stopPropagation()}>
                         {modalType === 'attendance' ? (
@@ -2789,9 +2758,7 @@ const getFilteredAndSortedStudents = () => {
                     </div>
                 </div>
             )}
-
-            {/* LMS Add Modal */}
-            {showLmsModal && (
+             {showLmsModal && (
                 <div className="professor-modal-overlay" onClick={() => setShowLmsModal(false)}>
                     <div className="professor-modal-container" onClick={e => e.stopPropagation()}>
                         <div className="professor-modal-header">
@@ -2942,9 +2909,7 @@ const getFilteredAndSortedStudents = () => {
                     </div>
                 </div>
             )}
-
-            {/* Submissions Modal */}
-            {showSubmissionsModal && selectedAssignmentForSub && (
+             {showSubmissionsModal && selectedAssignmentForSub && (
                 <div className="professor-modal-overlay" onClick={() => setShowSubmissionsModal(false)}>
                     <div className="professor-modal-container large" onClick={e => e.stopPropagation()}>
                         <div className="professor-modal-header">
@@ -3031,9 +2996,7 @@ const getFilteredAndSortedStudents = () => {
                     </div>
                 </div>
             )}
-
-            {/* Message to Admin Modal */}
-            {isMessageToAdminModalOpen && (
+             {isMessageToAdminModalOpen && (
                 <div className="professor-modal-overlay" onClick={() => setIsMessageToAdminModalOpen(false)}>
                     <div className="professor-modal-container small" onClick={e => e.stopPropagation()}>
                         <div className="professor-modal-header">
@@ -3078,9 +3041,7 @@ const getFilteredAndSortedStudents = () => {
                     </div>
                 </div>
             )}
-
-            {/* Message to Student Modal */}
-            {isMessageToStudentModalOpen && (
+             {isMessageToStudentModalOpen && (
                 <div className="professor-modal-overlay" onClick={() => setIsMessageToStudentModalOpen(false)}>
                     <div className="professor-modal-container small" onClick={e => e.stopPropagation()}>
                         <div className="professor-modal-header">

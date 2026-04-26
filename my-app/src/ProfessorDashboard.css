@@ -16,9 +16,7 @@ body {
     background-size: 40px 40px, 100% 100%;
     background-attachment: fixed;
 }
-
-/* Main Layout - مطابق لتصميم Admin */
-.professor-dashboard-container {
+ .professor-dashboard-container {
     display: flex;
     min-height: 100vh;
     position: relative;
@@ -39,9 +37,7 @@ body {
     z-index: 0;
     opacity: 0.9;
 }
-
-/* Notifications System */
-.professor-notifications-container {
+ .professor-notifications-container {
     position: fixed;
     top: 20px;
     right: 20px;
@@ -241,9 +237,7 @@ body {
 .professor-remove-photo-button:hover {
     background: #fee2e2;
 }
-
-/* Navigation - مطابق لتصميم Admin */
-.professor-navigation-menu {
+ .professor-navigation-menu {
     flex: 1;
     padding: 0px 10px 10px 10px;
     display: flex;
@@ -312,9 +306,7 @@ body {
 .professor-nav-button.active svg {
     color: white;
 }
-
-/* Sidebar Footer */
-.professor-sidebar-footer {
+ .professor-sidebar-footer {
     padding: 0px 20px;
     border-top: 1px solid rgba(123, 168, 224, 0.2);
     margin-top: auto;
@@ -349,9 +341,7 @@ body {
     background: linear-gradient(135deg, #fee2e2, #fecaca);
     transform: translateX(5px);
 }
-
-/* Main Content Area */
-.professor-main-content {
+ .professor-main-content {
     flex: 1;
     margin-left: 320px;
     position: relative;
@@ -364,9 +354,7 @@ body {
         margin-left: 0;
     }
 }
-
-/* Header */
-.professor-content-header {
+ .professor-content-header {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
     padding: 50px 10px 20px 10px;
@@ -429,9 +417,7 @@ body {
     align-items: center;
     gap: 25px;
 }
-
-/* Search Bar */
-.professor-search-container {
+ .professor-search-container {
     position: relative;
     width: 350px;
 }
@@ -467,9 +453,7 @@ body {
 .professor-search-input:focus + .professor-search-icon {
     color: #4a90e2;
 }
-
-/* Header Buttons */
-.professor-notification-button,
+ .professor-notification-button,
 .professor-export-button {
     background: none;
     border: none;
@@ -510,16 +494,12 @@ body {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
-
-/* Scrollable Content */
-.professor-scrollable-content {
+ .professor-scrollable-content {
     padding: 35px;
     overflow-y: auto;
     height: calc(100vh - 140px);
 }
-
-/* Quick Actions Grid */
-.professor-quick-actions-grid {
+ .professor-quick-actions-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 25px;
@@ -590,9 +570,7 @@ body {
     font-size: 18px;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
-/* Stats Grid */
-.professor-stats-grid {
+ .professor-stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 25px;
@@ -659,9 +637,7 @@ body {
     font-weight: 800;
     color: #2d3748;
 }
-
-/* Courses Section */
-.professor-courses-section {
+ .professor-courses-section {
     margin-bottom: 35px;
 }
 
@@ -701,9 +677,7 @@ body {
     color: white;
     transform: translateX(5px);
 }
-
-/* Courses Grid */
-.professor-courses-grid {
+ .professor-courses-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 25px;
@@ -830,9 +804,7 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 15px 30px -5px rgba(74, 144, 226, 0.6);
 }
-
-/* Chart Card */
-.professor-chart-card {
+ .professor-chart-card {
     background: white;
     border-radius: 24px;
     padding: 25px;
@@ -1959,9 +1931,7 @@ body.digital-id-open .navbar-container {
     border-radius: 20px;
     font-weight: 600;
 }
-
-/* LMS Tabs */
-.professor-lms-tabs {
+ .professor-lms-tabs {
     display: flex;
     gap: 8px;
     border-bottom: 2px solid #edf2f7;
@@ -2289,9 +2259,7 @@ body.digital-id-open .navbar-container {
     color: white;
     transform: scale(1.05);
 }
-
-/* File name display */
-.professor-file-name {
+ .professor-file-name {
     font-size: 13px;
     color: #10b981;
     background: #d1fae5;
@@ -2410,9 +2378,7 @@ body.digital-id-open .navbar-container {
 .professor-course-select-card.active .professor-student-count {
     background: rgba(255, 255, 255, 0.2);
 }
-
-/* Students Table Container */
-.professor-students-table-container {
+ .professor-students-table-container {
     background: white;
     border-radius: 16px;
     padding: 24px;
@@ -2441,9 +2407,7 @@ body.digital-id-open .navbar-container {
     font-size: 14px;
     font-weight: 500;
 }
-
-/* Filter Controls */
-.professor-filter-controls {
+ .professor-filter-controls {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
@@ -2544,9 +2508,7 @@ body.digital-id-open .navbar-container {
     background: #f8fafd;
     border-color: #4a90e2;
 }
-
-/* Risk Range Filter */
-.professor-risk-range-filter {
+ .professor-risk-range-filter {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -2601,9 +2563,7 @@ body.digital-id-open .navbar-container {
 .professor-risk-range-filter button:hover {
     background: #e2e8f0;
 }
-
-/* Students Table */
-.professor-students-table {
+ .professor-students-table {
     width: 100%;
     border-collapse: collapse;
 }
@@ -2628,9 +2588,7 @@ body.digital-id-open .navbar-container {
 .professor-students-table tbody tr:hover {
     background: #f8fafd;
 }
-
-/* Risk Level Row Backgrounds */
-.professor-students-table tbody tr.professor-risk-high {
+ .professor-students-table tbody tr.professor-risk-high {
     border-left: 4px solid #dc3545;
     background: rgba(220, 53, 69, 0.02);
 }
@@ -2643,9 +2601,7 @@ body.digital-id-open .navbar-container {
 .professor-students-table tbody tr.professor-risk-low {
     border-left: 4px solid #28a745;
 }
-
-/* Student Name Cell */
-.professor-student-name-cell {
+ .professor-student-name-cell {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -2664,9 +2620,7 @@ body.digital-id-open .navbar-container {
     font-weight: 600;
     font-size: 14px;
 }
-
-/* Progress Bar for Attendance */
-.professor-progress-bar {
+ .professor-progress-bar {
     position: relative;
     width: 100px;
     height: 28px;
@@ -2696,9 +2650,7 @@ body.digital-id-open .navbar-container {
     color: white;
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
 }
-
-/* Grade Badge */
-.professor-grade-badge {
+ .professor-grade-badge {
     display: inline-block;
     padding: 4px 8px;
     border-radius: 20px;
@@ -2720,9 +2672,7 @@ body.digital-id-open .navbar-container {
     background: #f8d7da;
     color: #721c24;
 }
-
-/* Risk Score Component */
-.professor-risk-score {
+ .professor-risk-score {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -2746,9 +2696,7 @@ body.digital-id-open .navbar-container {
     font-size: 12px;
     font-weight: 500;
 }
-
-/* Status Badge */
-.professor-status-badge {
+ .professor-status-badge {
     display: inline-block;
     padding: 4px 10px;
     border-radius: 20px;
@@ -2765,9 +2713,7 @@ body.digital-id-open .navbar-container {
     background: #f8d7da;
     color: #721c24;
 }
-
-/* Students Summary Cards */
-.professor-students-summary {
+ .professor-students-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
@@ -2806,9 +2752,7 @@ body.digital-id-open .navbar-container {
     font-weight: bold;
     color: #2d3748;
 }
-
-/* Loading Spinner */
-.professor-loading-students {
+ .professor-loading-students {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2880,9 +2824,7 @@ body.digital-id-open .navbar-container {
     background: rgba(220, 53, 69, 0.1);
     transform: scale(1.1);
 }
-
-/* Responsive Design for Students Page */
-@media (max-width: 1024px) {
+ @media (max-width: 1024px) {
     .professor-course-cards-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     }
@@ -2951,9 +2893,7 @@ body.digital-id-open .navbar-container {
         font-size: 18px;
     }
 }
-
-/* Animation for new students */
-@keyframes fadeInUp {
+ @keyframes fadeInUp {
     from {
         opacity: 0;
         transform: translateY(20px);
@@ -2967,9 +2907,7 @@ body.digital-id-open .navbar-container {
 .professor-students-table tbody tr {
     animation: fadeInUp 0.3s ease forwards;
 }
-
-/* Custom Scrollbar for Students Table */
-.professor-table-responsive::-webkit-scrollbar {
+ .professor-table-responsive::-webkit-scrollbar {
     height: 8px;
 }
 
@@ -2986,9 +2924,7 @@ body.digital-id-open .navbar-container {
 .professor-table-responsive::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
-
-/* Tooltip for Risk Score */
-.professor-risk-circle {
+ .professor-risk-circle {
     position: relative;
     cursor: help;
 }
@@ -3008,9 +2944,7 @@ body.digital-id-open .navbar-container {
     margin-bottom: 5px;
     z-index: 10;
 }
-
-/* Highlight for filtered rows */
-.professor-students-table tbody tr.highlight {
+ .professor-students-table tbody tr.highlight {
     background: rgba(74, 144, 226, 0.1);
     animation: pulse 0.5s ease;
 }
@@ -3023,14 +2957,7 @@ body.digital-id-open .navbar-container {
         background: rgba(74, 144, 226, 0.2);
     }
 }
-
-
-/* ============================================ */
-/* Professor Submissions Table */
-/* ============================================ */
-
-/* Submissions Modal - Large */
-.professor-modal-container.large {
+ .professor-modal-container.large {
     max-width: 1100px;
     width: 95%;
     overflow-x: auto;
@@ -4012,8 +3939,7 @@ body.digital-id-open .navbar-container {
         grid-template-columns: 1fr;
     }
 }
-/* Professor Messages Stats */
-.professor-messages-stats {
+ .professor-messages-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
@@ -4051,9 +3977,7 @@ body.digital-id-open .navbar-container {
     color: #718096;
     margin-top: 5px;
 }
-
-/* Two Cards Grid */
-.professor-messages-actions-grid {
+ .professor-messages-actions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 25px;
@@ -4115,9 +4039,7 @@ body.digital-id-open .navbar-container {
     color: #4a90e2;
     font-weight: 500;
 }
-
-/* Inbox Sections */
-.professor-inbox-section {
+ .professor-inbox-section {
     background: white;
     border-radius: 16px;
     padding: 20px;
@@ -4235,10 +4157,7 @@ body.digital-id-open .navbar-container {
         grid-template-columns: 1fr;
     }
 }
-/* ========== شريط التمرير الأزرق الناعم لـ Professor Dashboard ========== */
-
-/* للـ Chrome, Safari, Edge */
-.professor-sidebar-wrapper::-webkit-scrollbar {
+ .professor-sidebar-wrapper::-webkit-scrollbar {
     width: 6px;
 }
 

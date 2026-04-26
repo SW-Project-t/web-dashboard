@@ -1510,9 +1510,7 @@ useEffect(() => {
                                                     <span>Room {course.room}</span>
                                                 </div>
                                             </div>
-
-                                            {/* ATTENDANCE PROGRESS BAR SECTION */}
-                                            <div className="student-attendance-stats">
+                                             <div className="student-attendance-stats">
                                                 <div className="student-attendance-header">
                                                     <span>Attendance Rate</span>
                                                     <span className="student-attendance-percent-value" style={{ color: (course.attendanceRate || 0) >= 75 ? '#28a745' : (course.attendanceRate || 0) >= 50 ? '#ffc107' : '#dc3545' }}>
@@ -2017,8 +2015,7 @@ useEffect(() => {
                                 </div>
                             </div>
 
-                            {/* Inbox - All Messages */}
-                            <div className="student-inbox-section">
+                             <div className="student-inbox-section">
                                 <h4>
                                     <Inbox size={18} />
                                     All Messages ({unreadMessageCount} unread)
@@ -2066,8 +2063,7 @@ useEffect(() => {
                 </div>
             </main>
 
-            {/* Modals */}
-            {isRiskDetailsModalOpen && selectedRiskCourse && (
+             {isRiskDetailsModalOpen && selectedRiskCourse && (
                 <div className="student-modal-overlay" onClick={() => setIsRiskDetailsModalOpen(false)}>
                     <div className="student-modal-container" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">
@@ -2396,8 +2392,7 @@ useEffect(() => {
                 </div>
             )}
 
-            {/* Message to Admin Modal */}
-            {isMessageToAdminModalOpen && (
+             {isMessageToAdminModalOpen && (
                 <div className="student-modal-overlay" onClick={() => setIsMessageToAdminModalOpen(false)}>
                     <div className="student-modal-container small" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">
@@ -2442,9 +2437,7 @@ useEffect(() => {
                     </div>
                 </div>
             )}
-
-            {/* Message to Professor Modal */}
-            {isMessageToProfessorModalOpen && (
+             {isMessageToProfessorModalOpen && (
                 <div className="student-modal-overlay" onClick={() => setIsMessageToProfessorModalOpen(false)}>
                     <div className="student-modal-container small" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">
@@ -2508,8 +2501,7 @@ useEffect(() => {
                 </div>
             )}
 
-            {/* Message Detail Modal */}
-            {selectedMessage && (
+             {selectedMessage && (
                 <div className="student-modal-overlay" onClick={() => setSelectedMessage(null)}>
                     <div className="student-modal-container message-detail-modal" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">
@@ -2546,8 +2538,7 @@ useEffect(() => {
                 </div>
             )}
 
-            {/* Submit Assignment Modal */}
-            {isLmsModalOpen && selectedAssignment && (
+             {isLmsModalOpen && selectedAssignment && (
                 <div className="student-modal-overlay" onClick={() => setIsLmsModalOpen(false)}>
                     <div className="student-modal-container" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">

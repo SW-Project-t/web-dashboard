@@ -162,8 +162,7 @@ function Home() {
 
   return (
     <div className="yc-home">
-      {/* Hero Section */}
-      <section className="yc-hero">
+       <section className="yc-hero">
         <div className="yc-hero-bg">
           <div className="yc-geometric-pattern"></div>
         </div>
@@ -213,8 +212,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="yc-features" className="yc-features">
+       <section id="yc-features" className="yc-features">
         <div className="yc-container">
           <div className="yc-section-header">
             <span className="yc-section-badge">Features</span>
@@ -242,8 +240,7 @@ function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="yc-how-it-works" className="yc-how-it-works">
+       <section id="yc-how-it-works" className="yc-how-it-works">
         <div className="yc-container">
           <div className="yc-section-header">
             <span className="yc-section-badge">How It Works</span>
@@ -271,8 +268,7 @@ function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section id="yc-about" className="yc-cta">
+       <section id="yc-about" className="yc-cta">
         <div className="yc-cta-bg">
           <div className="yc-geometric-pattern"></div>
         </div>
@@ -311,8 +307,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="yc-footer">
+       <footer className="yc-footer">
         <div className="yc-container">
           <div className="yc-footer-main">
             <div className="yc-footer-brand">

@@ -1237,10 +1237,8 @@ const AdminDashboard = () => {
                             </div>
                         </div>
 
-                        {/* Two Cards Side by Side: Send to Student & Send to Professor */}
-                        <div className="admin-messages-actions-grid">
-                            {/* Card 1: Send Message to Student */}
-                            <div className="admin-message-action-card" onClick={() => {
+                         <div className="admin-messages-actions-grid">
+                             <div className="admin-message-action-card" onClick={() => {
                                 setSelectedStudent(null);
                                 setMessageText('');
                                 setMessageSubject('');
@@ -1256,8 +1254,7 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Card 2: Send Message to Professor */}
-                            <div className="admin-message-action-card" onClick={() => {
+                             <div className="admin-message-action-card" onClick={() => {
                                 setSelectedProfessor(null);
                                 setMessageToProfText('');
                                 setMessageToProfSubject('');
@@ -1434,8 +1431,7 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            {/* Risk Distribution - Modified Section */}
-                            <div className="risk-distribution">
+                             <div className="risk-distribution">
                                 <div className="risk-header">
                                     <AlertTriangle size={20} />
                                     <h3>Risk Distribution</h3>
@@ -1512,8 +1508,7 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
-            {/* Modals */}
-            {isAddCourseModalOpen && (
+             {isAddCourseModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container">
                         <div className="modal-header">
@@ -1695,8 +1690,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Message to Professor Modal */}
-            {isMessageToProfModalOpen && (
+             {isMessageToProfModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container modal-small">
                         <div className="modal-header">
@@ -1997,8 +1991,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* Digital ID Modal */}
-            {isDigitalIdModalOpen && (
+             {isDigitalIdModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsDigitalIdModalOpen(false)}>
                     <div className="modal-container digital-id-modal" onClick={e => e.stopPropagation()}>
                         <div className="digital-id-full new-design">

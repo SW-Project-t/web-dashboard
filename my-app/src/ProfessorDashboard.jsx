@@ -98,8 +98,6 @@ export default function ProfessorDashboard() {
         id: '', name: '', schedule: '', room: '', students: '', capacity: ''
     });
     const [isUploadingImage, setIsUploadingImage] = useState(false);
-
-    // ========== رسائل جديدة ==========
     const [adminMessages, setAdminMessages] = useState([]);
     const [studentMessages, setStudentMessages] = useState([]);
     const [unreadAdminCount, setUnreadAdminCount] = useState(0);
@@ -112,7 +110,10 @@ export default function ProfessorDashboard() {
     const [messageToStudentSubject, setMessageToStudentSubject] = useState('');
     const [selectedStudentForMessage, setSelectedStudentForMessage] = useState(null);
     const [studentsList, setStudentsList] = useState([]);
-    // =================================
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [studentIdInput, setStudentIdInput] = useState('');
+    const [aiResult, setAiResult] = useState(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false); 
 
     const getAttendanceColor = (rate) => {
         if (rate >= 85) return '#28a745';
@@ -210,7 +211,7 @@ export default function ProfessorDashboard() {
         });
         
         return () => unsubscribeStudent();
-    }, [auth.currentUser?.uid]); // <-- تم التعديل هنا
+    }, [auth.currentUser?.uid]); 
 
 const fetchStudentsList = async () => {
         const user = auth.currentUser;
@@ -232,8 +233,7 @@ const fetchStudentsList = async () => {
                             let sCode = "N/A";
                             
                             try {
-                                // 1. الأول هنجرب نبحث بالـ Document ID
-                                const userDocRef = doc(db, "users", sId); // 👈 لو الكوليكشن اسمه students غيرها
+                                const userDocRef = doc(db, "users", sId); 
                                 const userDocSnap = await getDoc(userDocRef);
                                 
                                 if (userDocSnap.exists()) {
@@ -241,8 +241,7 @@ const fetchStudentsList = async () => {
                                     realName = userData.name || userData.studentName || userData.fullName || "Unknown Student";
                                     sCode = userData.studentCode || userData.code || sId.substring(0, 5);
                                 } else {
-                                    // 2. لو ملقاهوش، هنعمل بحث (Query) بحقل الـ uid
-                                    const usersRef = collection(db, "users"); // 👈 لو الكوليكشن اسمه students غيرها
+                                    const usersRef = collection(db, "users"); 
                                     const q = query(usersRef, where("uid", "==", sId));
                                     const querySnapshot = await getDocs(q);
                                     
@@ -260,9 +259,9 @@ const fetchStudentsList = async () => {
                                 ...student,
                                 id: sId,
                                 studentName: realName, 
-                                name: realName,         // ✅ ضفناها عشان لو الجدول بيقرأ name يشتغل
+                                name: realName,        
                                 studentCode: sCode,
-                                studentId: sCode,       // ✅ ضفناها عشان لو الجدول بيقرأ studentId يشتغل
+                                studentId: sCode,
                                 enrolledCourses: [course.id]
                             });
                         } else {
@@ -282,7 +281,7 @@ const fetchStudentsList = async () => {
         fetchStudentsList();
     }, [courses]);
 
-    // جلب كورسات الأدمن
+    
     useEffect(() => {
         const fetchAdminCourses = async () => {
             const querySnapshot = await getDocs(collection(db, "courses"));
@@ -364,7 +363,7 @@ const fetchStudentsList = async () => {
         };
 
         fetchProfessorCourses();
-    }, [auth.currentUser?.uid]); // <-- تم التعديل هنا
+    }, [auth.currentUser?.uid]); 
     
     useEffect(() => {
         if (courses.length === 0) return;
@@ -416,7 +415,7 @@ const fetchStudentsList = async () => {
             fetchLMSDiscussions(selectedCourseForLMS.id);
         }
     }, [selectedCourseForLMS]);
-const fetchEnrolledStudents = async (courseId, courseName) => {
+    const fetchEnrolledStudents = async (courseId, courseName) => {
         setIsLoadingStudents(true);
         try {
             const response = await fetch(`http://localhost:3001/api/course-students/${courseId}`);
@@ -427,9 +426,8 @@ const fetchEnrolledStudents = async (courseId, courseName) => {
 
             const students = await response.json();
 
-            // 🚀 التعديل هنا: جلب البيانات الحقيقية من الفايربيز لكل طالب للجدول
             const processedStudents = await Promise.all(students.map(async (student) => {
-                const sId = student.uid || student.id;
+                const sId = student.code|| student.id;
                 let realName = "Unknown Student";
                 let sCode = "N/A";
                 
@@ -468,7 +466,6 @@ const fetchEnrolledStudents = async (courseId, courseName) => {
                     console.error("Error fetching detail for student:", sId, err);
                 }
 
-                // حسابات الحضور والغياب (زي ما هي عندك)
                 const attendanceRecords = student.attendanceRecords || [];
                 const totalClasses = attendanceRecords.length || 1;
                 const presentClasses = attendanceRecords.filter(r => r.status === 'present').length;
@@ -493,7 +490,6 @@ const fetchEnrolledStudents = async (courseId, courseName) => {
                 else if (lateCount > 2) riskScore += 10;
                 else if (lateCount > 0) riskScore += 5;
 
-                // 🛠️ حل مشكلة التاريخ (Invalid Date)
                 let formattedDate = student.enrolledAt;
                 if (formattedDate && typeof formattedDate === 'object') {
                     if (formattedDate._seconds) {
@@ -519,8 +515,8 @@ const fetchEnrolledStudents = async (courseId, courseName) => {
                     totalClasses: totalClasses,
                     presentCount: presentClasses,
                     riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low',
-                    enrolledAt: formattedDate, // ✅ التاريخ المتصلح
-                    courseId: courseId,        // ✅ الكورس المتصلح
+                    enrolledAt: formattedDate, 
+                    courseId: courseId,
                     courseName: courseName
                 };
             }));
@@ -569,8 +565,6 @@ const fetchEnrolledStudents = async (courseId, courseName) => {
             const errorData = await response.json();
             throw new Error(errorData.message || "Unenrollment failed");
         }
-
-        // تحديث القائمة المحلية
         setEnrolledStudents(prev => ({
             ...prev,
             [courseId]: prev[courseId].filter(s => s.id !== enrollmentId)
@@ -586,8 +580,6 @@ const getFilteredAndSortedStudents = () => {
     if (!selectedCourseForStudents) return [];
     
     let students = [...(enrolledStudents[selectedCourseForStudents.id] || [])];
-    
-    // فلترة حسب البحث
     if (studentSearchQuery) {
         switch (studentFilterType) {
             case 'name':
@@ -615,7 +607,6 @@ const getFilteredAndSortedStudents = () => {
         }
     }
     
-    // فلترة حسب نطاق المخاطر
     if (showRiskFilter) {
         students = students.filter(s => 
             s.riskScore >= riskFilterRange.min && s.riskScore <= riskFilterRange.max
@@ -941,7 +932,6 @@ const getFilteredAndSortedStudents = () => {
         }
     };
 
-    // ========== دوال إرسال الرسائل ==========
     const handleSendMessageToAdmin = async () => {
         if (!messageToAdminText.trim()) {
             showNotification("Please enter a message", 'error');
@@ -1028,7 +1018,6 @@ const getFilteredAndSortedStudents = () => {
             console.error("Error marking message as read:", error);
         }
     };
-    // =======================================
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -1314,15 +1303,37 @@ const getFilteredAndSortedStudents = () => {
             navbar.style.display = 'flex';
         }
     };
-    console.log("All Students (studentsList):", studentsList);
-    console.log("Professor Courses:", courses);
+  const handleAnalyzeStudent = async () => {
+    if (!studentIdInput.trim()) {
+        alert("Please enter a Student ID");
+        return;
+    }
 
-    const filteredStudentsTest = studentsList.filter(student =>
-        student.enrolledCourses &&
-        courses.some(course => student.enrolledCourses.includes(course.id))
-    );
-    console.log("Filtered Students for Dropdown:", filteredStudentsTest);
+    setIsAnalyzing(true);
+    setAiResult(null);
 
+    try {
+        const response = await fetch(`http://localhost:3001/api/analyze-risk/${studentIdInput}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            setAiResult(data.analysis);
+        } else {
+            alert("Error: " + data.error);
+        }
+    } catch (error) {
+        console.error("Error calling AI API:", error);
+        alert("Failed to connect to the server");
+    } finally {
+        setIsAnalyzing(false);
+    }
+};
     return (
         <div className="professor-dashboard-container">
             <div className="professor-notifications-container">
@@ -1491,6 +1502,10 @@ const getFilteredAndSortedStudents = () => {
                                 <div className="professor-action-card-item professor-card-red" onClick={resetAllAttendance}>
                                     <Clock size={28} />
                                     <span>Reset Today</span>
+                                </div>
+                                <div className="professor-action-card-item professor-card-purple" onClick={() => setIsAiModalOpen(true)}>
+                                  <Zap size={28} />
+                                  <span>AI Analysis</span>
                                 </div>
                             </div>
                              <div className="professor-stats-grid">
@@ -3102,6 +3117,81 @@ const getFilteredAndSortedStudents = () => {
                     </div>
                 </div>
             )}
+
+                {isAiModalOpen && (
+                    <div className="professor-modal-overlay">
+                        <div className="professor-modal-container" style={{ maxWidth: '500px' }}>
+                            <div className="professor-modal-header">
+                                <h3>AI Student Risk Analysis</h3>
+                                <button 
+                                    className="professor-modal-close" 
+                                    onClick={() => { 
+                                        setIsAiModalOpen(false); 
+                                        setAiResult(null); 
+                                        setStudentIdInput(''); 
+                                    }}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            
+                            <div className="professor-modal-content">
+                                <div className="professor-form-group">
+                                    <label>Student ID</label>
+                                    <input 
+                                        type="text" 
+                                        className="professor-form-input" 
+                                        placeholder="Enter Student ID here..."
+                                        value={studentIdInput}
+                                        onChange={(e) => setStudentIdInput(e.target.value)}
+                                        disabled={isAnalyzing}
+                                    />
+                                </div>
+
+                                {isAnalyzing && (
+                                    <div className="ai-loading-state" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#8e44ad', margin: '20px 0' }}>
+                                        <Zap className="ai-spinning-icon" size={24} />
+                                        <p>Analyzing student data...</p>
+                                    </div>
+                                )}
+
+                                {aiResult && (
+                                    <div style={{ 
+                                        marginTop: '20px', 
+                                        padding: '20px', 
+                                        borderRadius: '12px', 
+                                        backgroundColor: aiResult.riskLevel === 'High' ? '#fef2f2' : aiResult.riskLevel === 'Medium' ? '#fffbeb' : '#ecfdf5',
+                                        borderLeft: `5px solid ${aiResult.riskLevel === 'High' ? '#ef4444' : aiResult.riskLevel === 'Medium' ? '#f59e0b' : '#10b981'}`
+                                    }}>
+                                        <h4 style={{ marginBottom: '10px', color: '#2d3748' }}>Risk Level: <span style={{ color: aiResult.riskLevel === 'High' ? '#ef4444' : aiResult.riskLevel === 'Medium' ? '#f59e0b' : '#10b981' }}>{aiResult.riskLevel}</span></h4>
+                                        <p style={{ fontSize: '14px', color: '#4a5568', lineHeight: '1.5' }}><strong>Explanation:</strong> {aiResult.explanation}</p>
+                                    </div>
+                                )}
+
+                                <div className="professor-modal-actions" style={{ marginTop: '25px' }}>
+                                    <button 
+                                        className="professor-cancel-button" 
+                                        onClick={() => { 
+                                            setIsAiModalOpen(false); 
+                                            setAiResult(null); 
+                                            setStudentIdInput(''); 
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        className="professor-update-button" 
+                                        style={{ backgroundColor: '#8e44ad' }}
+                                        onClick={handleAnalyzeStudent}
+                                        disabled={isAnalyzing || !studentIdInput.trim()}
+                                    >
+                                        {isAnalyzing ? 'Analyzing...' : 'Analyze Now'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
         </div>
     );
 }

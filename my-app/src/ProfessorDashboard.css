@@ -4181,3 +4181,172 @@ body.digital-id-open .navbar-container {
     scrollbar-width: thin;
     scrollbar-color: #a0c4e8 #f0f4f8;
 }
+.professor-card-purple {
+    background-color: rgba(142, 68, 173, 0.1);
+    color: #8e44ad;
+    border: 1px solid rgba(142, 68, 173, 0.2); 
+}
+
+.professor-card-purple:hover {
+    background-color: #8e44ad;
+    color: white;
+}
+/* =========================================
+   AI Analysis Modal Styles
+   ========================================= */
+
+/* خلفية النافذة المظللة */
+.professor-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+/* حاوية النافذة */
+.professor-modal-container {
+    background-color: #ffffff;
+    border-radius: 16px;
+    width: 100%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* رأس النافذة */
+.professor-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.professor-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+/* زر الإغلاق X */
+.professor-modal-close {
+    background: none;
+    border: none;
+    color: #a0aec0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.professor-modal-close:hover {
+    color: #e53e3e;
+}
+
+/* محتوى النافذة */
+.professor-modal-content {
+    padding: 25px;
+}
+
+/* حقل الإدخال */
+.professor-form-group {
+    margin-bottom: 20px;
+}
+
+.professor-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 14px;
+}
+
+.professor-form-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #2d3748;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.professor-form-input:focus {
+    border-color: #8e44ad;
+    box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.1);
+}
+
+.professor-form-input:disabled {
+    background-color: #f7fafc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* حركة أيقونة التحميل */
+.ai-spinning-icon {
+    animation: ai-pulse-spin 1.5s infinite ease-in-out;
+}
+
+@keyframes ai-pulse-spin {
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.2) rotate(180deg); }
+    100% { transform: scale(1) rotate(360deg); }
+}
+
+/* أزرار النافذة السفلية */
+.professor-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.professor-cancel-button {
+    padding: 10px 18px;
+    background-color: #f7fafc;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.professor-cancel-button:hover {
+    background-color: #edf2f7;
+}
+
+.professor-update-button {
+    padding: 10px 20px;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.professor-update-button:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(142, 68, 173, 0.2);
+}
+
+.professor-update-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

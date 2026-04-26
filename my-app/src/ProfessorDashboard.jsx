@@ -213,70 +213,64 @@ export default function ProfessorDashboard() {
     }, [auth.currentUser?.uid]); // <-- تم التعديل هنا
 
 const fetchStudentsList = async () => {
-        const user = auth.currentUser;
-        if (!user || courses.length === 0) return;
-        
-        try {
-            let allStudentsMap = new Map();
-            
-            for (const course of courses) {
-                const response = await fetch(`http://localhost:3001/api/course-students/${course.id}`);
-                if (response.ok) {
-                    const studentsData = await response.json();
-                    
-                    for (const student of studentsData) {
-                        const sId = student.uid || student.id;
-                        
-                        if (!allStudentsMap.has(sId)) {
-                            let realName = "Unknown";
-                            let sCode = "N/A";
-                            
-                            try {
-                                // 1. الأول هنجرب نبحث بالـ Document ID
-                                const userDocRef = doc(db, "users", sId); // 👈 لو الكوليكشن اسمه students غيرها
-                                const userDocSnap = await getDoc(userDocRef);
-                                
-                                if (userDocSnap.exists()) {
-                                    const userData = userDocSnap.data();
-                                    realName = userData.name || userData.studentName || userData.fullName || "Unknown Student";
-                                    sCode = userData.studentCode || userData.code || sId.substring(0, 5);
-                                } else {
-                                    // 2. لو ملقاهوش، هنعمل بحث (Query) بحقل الـ uid
-                                    const usersRef = collection(db, "users"); // 👈 لو الكوليكشن اسمه students غيرها
-                                    const q = query(usersRef, where("uid", "==", sId));
-                                    const querySnapshot = await getDocs(q);
-                                    
-                                    if (!querySnapshot.empty) {
-                                        const userData = querySnapshot.docs[0].data();
-                                        realName = userData.name || userData.studentName || userData.fullName || "Unknown Student";
-                                        sCode = userData.studentCode || userData.code || sId.substring(0, 5);
-                                    }
-                                }
-                            } catch (err) {
-                                console.error("Error fetching detail for student:", sId, err);
-                            }
+    const user = auth.currentUser;
+    if (!user || courses.length === 0) return;
 
-                            allStudentsMap.set(sId, {
-                                ...student,
-                                id: sId,
-                                studentName: realName, 
-                                name: realName,         // ✅ ضفناها عشان لو الجدول بيقرأ name يشتغل
-                                studentCode: sCode,
-                                studentId: sCode,       // ✅ ضفناها عشان لو الجدول بيقرأ studentId يشتغل
-                                enrolledCourses: [course.id]
-                            });
-                        } else {
-                            allStudentsMap.get(sId).enrolledCourses.push(course.id);
+    try {
+        // 1. جلب كل الطلاب مرة واحدة لتجنب الطلبات المتكررة داخل اللوب
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const usersDataMap = {};
+        usersSnapshot.forEach(doc => {
+            usersDataMap[doc.id] = doc.data();
+        });
+
+        let allStudentsMap = new Map();
+
+        for (const course of courses) {
+            const response = await fetch(`http://localhost:3001/api/course-students/${course.id}`);
+            if (response.ok) {
+                const studentsData = await response.json();
+
+                for (const student of studentsData) {
+                    const sId = student.uid || student.id;
+
+                    if (!allStudentsMap.has(sId)) {
+                        // 2. الربط السريع من البيانات اللي حملناها فوق
+                        // بنجرب بالـ ID الأول، ولو منفعش بنعمل فلتر سريع في الـ Memory
+                        let userData = usersDataMap[sId];
+                        
+                        // لو مش لاقينه بالـ ID، ندور في الـ Object اللي معانا بـ حقل الـ uid
+                        if (!userData) {
+                            userData = Object.values(usersDataMap).find(u => u.uid === sId);
+                        }
+
+                        const realName = userData?.fullName || userData?.name || "Unknown Student";
+                        const sCode = userData?.code || userData?.studentCode || sId.substring(0, 5);
+
+                        allStudentsMap.set(sId, {
+                            ...student,
+                            id: sId,
+                            studentName: realName,
+                            name: realName,
+                            studentCode: sCode,
+                            studentId: sCode,
+                            enrolledCourses: [course.id]
+                        });
+                    } else {
+                        const current = allStudentsMap.get(sId);
+                        if (!current.enrolledCourses.includes(course.id)) {
+                            current.enrolledCourses.push(course.id);
                         }
                     }
                 }
             }
-            
-            setStudentsList(Array.from(allStudentsMap.values()));
-        } catch (error) {
-            console.error("Error in fetchStudentsList:", error);
         }
-    };
+
+        setStudentsList(Array.from(allStudentsMap.values()));
+    } catch (error) {
+        console.error("Error in fetchStudentsList:", error);
+    }
+};
     
     useEffect(() => {
         fetchStudentsList();

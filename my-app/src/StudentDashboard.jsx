@@ -742,18 +742,12 @@ useEffect(() => {
         }
     };
 
-  const handleAddCourse = async (course) => {
+ const handleAddCourse = async (course) => {
     try {
         const user = auth.currentUser;
         if (!user) return;
 
-        // التحقق من العدد
-        if (courses.length >= 5) {
-            showNotification('You can only enroll in up to 5 courses', 'error');
-            return;
-        }
-
-        // التحقق من التكرار
+        // التحقق من العدد والتكرار (نفس كودك الحالي)
         const courseIdentifier = course.courseId || course.id;
         if (courses.some(c => (c.courseId || c.id) === courseIdentifier)) {
             showNotification('You are already enrolled in this course', 'error');
@@ -762,103 +756,48 @@ useEffect(() => {
 
         setLoading(true);
 
-        // 1. تحديث Firestore أولاً
+        // 1. جلب بيانات الطالب "الحقيقية" من Firestore لضمان الاسم والكود
+        // هذه الخطوة تضمن عدم استخدام UID في خانة الاسم
         const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (!userDocSnap.exists()) {
+            throw new Error("Student profile not found");
+        }
+        
+        const officialData = userDocSnap.data();
+
+        // 2. تحديث قائمة كورسات الطالب
         await updateDoc(userDocRef, {
             enrolledCourses: arrayUnion(courseIdentifier)
         });
 
-        // 2. إرسال للـ Backend للتسجيل الرسمي
-        try {
-            const response = await axios.post('http://localhost:3001/api/enroll-course', {
-                studentId: user.uid,  // تم التصحيح من studentUid إلى studentId
-                courseId: courseIdentifier
-            });
-
-            if (response.data.success) {
-                console.log("Server enrollment successful");
-            }
-        } catch (apiError) {
-            console.warn("Server enrollment failed but Firestore updated:", apiError);
-            // نكمل عادي لأن Firestore اتحدث
-        }
-
-        // 3. إنشاء سجل في مجموعة enrollments في Firestore
-        try {
-            const enrollmentData = {
-                studentId: user.uid,
-                courseId: courseIdentifier,
-                studentName: studentData.name,
-                studentCode: studentData.id,
-                studentEmail: studentData.email,
-                enrolledAt: new Date().toISOString(),
-                status: "active"
-            };
-            
-            await addDoc(collection(db, "enrollments"), enrollmentData);
-        } catch (enrollError) {
-            console.warn("Could not create enrollment record:", enrollError);
-        }
-
-        // 4. تحديث الـ UI
-        const attendanceRate = Math.floor(Math.random() * 40) + 60;
-        const grades = Math.floor(Math.random() * 30) + 70;
-        const timeliness = Math.floor(Math.random() * 50) + 50;
-        
-        const riskScore = calculateRiskScore(
-            attendanceRate, 
-            grades, 
-            studentData.gpa, 
-            timeliness
-        );
-        
-        const newCourse = {
-            ...course,
-            id: courseIdentifier,
+        // 3. إنشاء سجل الـ enrollment الذي يظهر للدكتور
+        const enrollmentData = {
+            uid: user.uid, 
             courseId: courseIdentifier,
-            students: (course.enrolled || 0) + 1,
-            attendanceRate: attendanceRate,
-            absenceRate: 100 - attendanceRate,
-            presentCount: 0,
-            absentCount: 0,
-            lateCount: 0,
-            totalSessions: 0,
-            checkedIn: false,
-            timeRemaining: 0,
-            grades: grades,
-            timeliness: timeliness,
-            riskScore: riskScore,
-            riskLevel: getRiskLevel(riskScore)
+            
+            // استخدام البيانات الرسمية المستخرجة من الـ Document
+            studentName: officialData.fullName || officialData.name || "Unknown Student",
+            
+            // استخدام كود الطالب (مثل S-111)
+            studentCode: officialData.code || officialData.studentCode || "N/A",
+            
+            studentEmail: officialData.email || user.email,
+            enrolledAt: serverTimestamp(),
+            status: "active"
         };
 
-        setCourses(prev => [...prev, newCourse]);
-        setStudentData(prev => ({
-            ...prev,
-            enrolledCourses: (prev.enrolledCourses || 0) + 1
-        }));
+        // إضافة السجل في كولكشن الـ enrollments
+        await addDoc(collection(db, "enrollments"), enrollmentData);
 
-        // تحديث القوائم
-        const upcomingClasses = [...upcoming, {
-            id: upcoming.length + 1,
-            name: course.name || course.courseName,
-            time: course.time || 'TBA',
-            room: course.room || 'TBA',
-            date: "Today",
-            courseId: courseIdentifier
-        }];
-        setUpcoming(upcomingClasses);
-
+        // 4. تحديث الـ UI (نفس كودك الحالي)
         showNotification(`Successfully enrolled in ${course.courseName || course.name}`, 'success');
         setIsAddCourseModalOpen(false);
-        
-        setTimeout(() => {
-            loadStudentCourses(user.uid);
-        }, 500);
 
     } catch (error) {
         console.error("Error adding course:", error);
-        const errorMsg = error.response?.data?.error || 'Error enrolling in course';
-        showNotification(errorMsg, 'error');
+        showNotification('Error enrolling in course', 'error');
     } finally {
         setLoading(false);
     }

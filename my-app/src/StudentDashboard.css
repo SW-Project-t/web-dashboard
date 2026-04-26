@@ -2108,8 +2108,7 @@
         width: 100%;
     }
 }
-/* Digital ID Button */
-.student-digital-id-button {
+ .student-digital-id-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2138,9 +2137,7 @@
 .student-digital-id-button svg {
     animation: studentPulse 2s infinite;
 }
-
-/* Digital ID Modal */
-.student-modal-container.digital-id-modal {
+ .student-modal-container.digital-id-modal {
     max-width: 550px;
     padding: 25px;
     background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
@@ -2585,7 +2582,7 @@
     border: 2px solid white;
     animation: studentBlink 1s infinite;
 }
-/* Student LMS Page Styles */
+ 
 .student-lms-container {
     background: white;
     border-radius: 24px;
@@ -2845,9 +2842,7 @@
     font-weight: 600;
     color: #4a5568;
 }
-
-/* Messages Modal Styles */
-.messages-modal,
+ .messages-modal,
 .message-detail-modal {
     max-width: 550px;
 }
@@ -3014,8 +3009,7 @@
     word-break: break-word;
 }
 
-/* Fix for student-cancel-button */
-.student-cancel-button {
+ .student-cancel-button {
     background: #e2e8f0;
     color: #4a5568;
 }
@@ -3090,9 +3084,7 @@
     background: #f8fafd;
     border-radius: 24px;
 }
-
-/* Course Header */
-.student-lms-course-header {
+ .student-lms-course-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -3149,9 +3141,7 @@
     font-size: 12px;
     color: #718096;
 }
-
-/* Tabs */
-.student-lms-tabs {
+ .student-lms-tabs {
     display: flex;
     gap: 8px;
     border-bottom: 2px solid #edf2f7;
@@ -3185,9 +3175,7 @@
     margin-bottom: -2px;
     background: #f0f7ff;
 }
-
-/* Materials Grid */
-.student-lms-materials {
+ .student-lms-materials {
     min-height: 300px;
 }
 
@@ -3268,9 +3256,7 @@
     align-items: center;
     gap: 4px;
 }
-
-/* Assignments */
-.student-lms-assignments {
+ .student-lms-assignments {
     min-height: 300px;
 }
 
@@ -3357,9 +3343,7 @@
     font-weight: 600;
     cursor: default;
 }
-
-/* File Upload Area */
-.student-file-upload-area {
+ .student-file-upload-area {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
@@ -3385,9 +3369,7 @@
     color: white;
     border-color: #4a90e2;
 }
-
-/* Empty State */
-.student-lms-empty {
+ .student-lms-empty {
     text-align: center;
     padding: 60px 20px;
     background: #f8fafd;
@@ -3398,9 +3380,7 @@
     color: #a0aec0;
     font-size: 16px;
 }
-
-/* Coming Soon */
-.student-lms-coming-soon {
+ .student-lms-coming-soon {
     text-align: center;
     padding: 80px 20px;
     background: #f8fafd;
@@ -3423,9 +3403,7 @@
     color: #718096;
     font-size: 14px;
 }
-
-/* Responsive */
-@media (max-width: 768px) {
+ @media (max-width: 768px) {
     .student-lms-select-course h3 {
         font-size: 18px;
     }
@@ -3491,8 +3469,7 @@
 @keyframes studentSpin {
     to { transform: rotate(360deg); }
 }
-/* Student Messages Container */
-.student-messages-container {
+ .student-messages-container {
     padding: 20px;
 }
 
@@ -3516,9 +3493,7 @@
     color: #718096;
     font-size: 14px;
 }
-
-/* Stats Cards */
-.student-messages-stats {
+ .student-messages-stats {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
@@ -3556,9 +3531,7 @@
     color: #718096;
     margin-top: 5px;
 }
-
-/* Two Cards Grid */
-.student-messages-actions-grid {
+ .student-messages-actions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 25px;
@@ -3621,8 +3594,7 @@
     font-weight: 500;
 }
 
-/* Inbox Section */
-.student-inbox-section {
+ .student-inbox-section {
     background: white;
     border-radius: 16px;
     padding: 20px;
@@ -3725,9 +3697,7 @@
     padding: 40px;
     color: #a0aec0;
 }
-
-/* Message Detail Modal */
-.student-message-detail {
+ .student-message-detail {
     padding: 20px;
 }
 
@@ -3775,10 +3745,7 @@
         grid-template-columns: 1fr;
     }
 }
-/* ========== شريط التمرير الأزرق الناعم لـ Student Dashboard ========== */
-
-/* للـ Chrome, Safari, Edge */
-.student-sidebar-wrapper::-webkit-scrollbar {
+ .student-sidebar-wrapper::-webkit-scrollbar {
     width: 6px;
 }
 
@@ -3797,8 +3764,7 @@
     background: #7ba8e0;
 }
 
-/* للـ Firefox */
-.student-sidebar-wrapper {
+ .student-sidebar-wrapper {
     scrollbar-width: thin;
     scrollbar-color: #a0c4e8 #f0f4f8;
 }

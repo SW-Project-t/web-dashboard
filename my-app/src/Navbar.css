@@ -19,9 +19,7 @@
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
-
-/* القسم الخاص بالشعار */
-.logo-section {
+ .logo-section {
     flex: 1;
 }
 
@@ -56,9 +54,7 @@
 .text-class {
     color: #4a90e2;
 }
-
-/* روابط التنقل */
-.nav-links {
+ .nav-links {
     display: flex;
     gap: 30px;
     justify-content: center;
@@ -94,9 +90,7 @@
 .nav-links a.active {
     color: #4a90e2;
 }
-
-/* الأزرار والإجراءات */
-.nav-actions {
+ .nav-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -120,9 +114,7 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(74, 144, 226, 0.4);
 }
-
-/* قائمة الهامبرغر للجوال */
-.hamburger {
+ .hamburger {
     display: none;
     cursor: pointer;
     flex-direction: column;
@@ -148,9 +140,7 @@
 .hamburger.open span:nth-child(3) {
     transform: rotate(-45deg) translate(7px, -7px);
 }
-
-/* استعلامات الوسائط للشاشات الصغيرة */
-@media (max-width: 768px) {
+ @media (max-width: 768px) {
     .navbar-container {
         padding: 15px 20px;
         background: white;
@@ -193,16 +183,12 @@
         display: none;
     }
 }
-
-/* إخفاء الناف بار عند فتح Digital ID - هذه الجزئية مهمة */
-body.digital-id-open .navbar-container {
+ body.digital-id-open .navbar-container {
     display: none !important;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
 }
-
-/* منع التمرير عند فتح المودال */
-body.digital-id-open {
+ body.digital-id-open {
     overflow: hidden;
 }

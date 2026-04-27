@@ -227,7 +227,7 @@ const fetchStudentsList = async () => {
         let allStudentsMap = new Map();
 
         for (const course of courses) {
-            const response = await fetch(`http://localhost:3001/api/course-students/${course.id}`);
+            const response = await fetch(`https://backend-2-qju2.onrender.com/api/course-students/${course.id}`);
             if (response.ok) {
                 const studentsData = await response.json();
 
@@ -413,7 +413,7 @@ const fetchStudentsList = async () => {
 const fetchEnrolledStudents = async (courseId, courseName) => {
         setIsLoadingStudents(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/course-students/${courseId}`);
+            const response = await fetch(`https://backend-2-qju2.onrender.com/api/course-students/${courseId}`);
             
             if (!response.ok) {
                 throw new Error("Failed to fetch students from server");
@@ -553,7 +553,7 @@ const fetchEnrolledStudents = async (courseId, courseName) => {
     if (!window.confirm(`Are you sure you want to remove ${studentName} from this course?`)) return;
     
     try {
-        const response = await fetch("http://localhost:3001/api/unenroll-student", {
+        const response = await fetch("https://backend-2-qju2.onrender.com/api/unenroll-student", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ enrollmentId: enrollmentId }),

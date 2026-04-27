@@ -3,7 +3,7 @@
  * Handles authentication, error handling, and request/response formatting
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://backend-2-qju2.onrender.com';
 
 /**
  * Get authentication token from localStorage

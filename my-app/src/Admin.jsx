@@ -27,7 +27,7 @@ function Admin() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3001/admin/add-user', {
+      const response = await axios.post('https://backend-2-qju2.onrender.com/admin/add-user', {
         email,
         password,
         fullName,

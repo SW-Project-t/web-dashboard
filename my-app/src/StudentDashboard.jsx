@@ -580,7 +580,7 @@ useEffect(() => {
             if (!user) return;
             
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:3001/api/student/${user.uid}/courses-attendance`, {
+            const response = await fetch(`https://backend-2-qju2.onrender.com/api/student/${user.uid}/courses-attendance`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1004,7 +1004,7 @@ useEffect(() => {
         try {
             const token = localStorage.getItem('token'); 
             
-            const response = await fetch('http://localhost:3001/api/attendance/update-risk', {
+            const response = await fetch('https://backend-2-qju2.onrender.com/api/attendance/update-risk', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

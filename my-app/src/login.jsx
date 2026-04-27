@@ -26,11 +26,11 @@ function Login() {
       return;
     }
     setIsLoading(true)
-    console.log("Checking API URL:", 'http://localhost:3001/verify-login');
+    console.log("Checking API URL:", 'https://backend-2-qju2.onrender.com/verify-login');
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
-      const response = await axios.post('http://localhost:3001/verify-login?v=2', {
+      const response = await axios.post('https://backend-2-qju2.onrender.com/verify-login?v=2', {
         idToken: idToken 
       });
       if (response.data.success) {

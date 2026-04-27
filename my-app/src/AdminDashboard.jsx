@@ -423,7 +423,7 @@ const AdminDashboard = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:3001/admin/add-user', newUserData);
+            const response = await axios.post('https://backend-2-qju2.onrender.com/admin/add-user', newUserData);
             if (response.data.success) {
                 alert("User added successfully!");
                 setIsAddUserModalOpen(false);
@@ -455,7 +455,7 @@ const AdminDashboard = () => {
     
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.post('http://localhost:3001/admin/add-course', newCourseData, {
+        const response = await axios.post('https://backend-2-qju2.onrender.com/admin/add-course', newCourseData, {
             headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.success) {

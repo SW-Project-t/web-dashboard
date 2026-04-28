@@ -4181,3 +4181,7 @@ body.digital-id-open .navbar-container {
     scrollbar-width: thin;
     scrollbar-color: #a0c4e8 #f0f4f8;
 }
+.professor-card-purple {
+   background: linear-gradient(135deg, #8e44ad, #e50303);
+    box-shadow: 0 15px 30px -10px rgba(74, 144, 226, 0.1);
+}

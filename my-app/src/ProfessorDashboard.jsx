@@ -99,7 +99,7 @@ export default function ProfessorDashboard() {
     });
     const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-    // ========== رسائل جديدة ==========
+
     const [adminMessages, setAdminMessages] = useState([]);
     const [studentMessages, setStudentMessages] = useState([]);
     const [unreadAdminCount, setUnreadAdminCount] = useState(0);
@@ -112,7 +112,11 @@ export default function ProfessorDashboard() {
     const [messageToStudentSubject, setMessageToStudentSubject] = useState('');
     const [selectedStudentForMessage, setSelectedStudentForMessage] = useState(null);
     const [studentsList, setStudentsList] = useState([]);
-    // =================================
+     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [studentIdInput, setStudentIdInput] = useState('');
+    const [aiResult, setAiResult] = useState(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false); 
+
 
     const getAttendanceColor = (rate) => {
         if (rate >= 85) return '#28a745';
@@ -217,62 +221,50 @@ const fetchStudentsList = async () => {
     if (!user || courses.length === 0) return;
 
     try {
-        // 1. جلب كل الطلاب مرة واحدة لتجنب الطلبات المتكررة داخل اللوب
+        // جلب كل الطلاب من users collection
         const usersSnapshot = await getDocs(collection(db, "users"));
-        const usersDataMap = {};
+        const studentsMap = new Map(); // لمنع التكرار
+        
         usersSnapshot.forEach(doc => {
-            usersDataMap[doc.id] = doc.data();
+            const userData = doc.data();
+            if (userData.role === 'student') {
+                studentsMap.set(doc.id, {
+                    id: doc.id,
+                    studentId: doc.id,
+                    studentName: userData.fullName || userData.name || "Unknown Student",
+                    studentCode: userData.code || userData.studentCode || doc.id.substring(0, 5),
+                    studentEmail: userData.email || '',
+                    department: userData.department || 'General',
+                    gpa: userData.gpa || 0,
+                    status: 'active',
+                    enrolledCourses: []
+                });
+            }
         });
-
-        let allStudentsMap = new Map();
-
-        for (const course of courses) {
-            const response = await fetch(`https://backend-2-qju2.onrender.com/api/course-students/${course.id}`);
-            if (response.ok) {
-                const studentsData = await response.json();
-
-                for (const student of studentsData) {
-                    const sId = student.uid || student.id;
-
-                    if (!allStudentsMap.has(sId)) {
-                        // 2. الربط السريع من البيانات اللي حملناها فوق
-                        // بنجرب بالـ ID الأول، ولو منفعش بنعمل فلتر سريع في الـ Memory
-                        let userData = usersDataMap[sId];
-                        
-                        // لو مش لاقينه بالـ ID، ندور في الـ Object اللي معانا بـ حقل الـ uid
-                        if (!userData) {
-                            userData = Object.values(usersDataMap).find(u => u.uid === sId);
-                        }
-
-                        const realName = userData?.fullName || userData?.name || "Unknown Student";
-                        const sCode = userData?.code || userData?.studentCode || sId.substring(0, 5);
-
-                        allStudentsMap.set(sId, {
-                            ...student,
-                            id: sId,
-                            studentName: realName,
-                            name: realName,
-                            studentCode: sCode,
-                            studentId: sCode,
-                            enrolledCourses: [course.id]
-                        });
-                    } else {
-                        const current = allStudentsMap.get(sId);
-                        if (!current.enrolledCourses.includes(course.id)) {
-                            current.enrolledCourses.push(course.id);
-                        }
-                    }
+        
+        // جلب التسجيلات من enrollments
+        const enrollmentsSnapshot = await getDocs(collection(db, "enrollments"));
+        
+        enrollmentsSnapshot.forEach(doc => {
+            const enrollment = doc.data();
+            const studentId = enrollment.uid;
+            const courseId = enrollment.courseId;
+            
+            if (studentsMap.has(studentId)) {
+                const student = studentsMap.get(studentId);
+                if (!student.enrolledCourses.includes(courseId)) {
+                    student.enrolledCourses.push(courseId);
                 }
             }
-        }
-
-        setStudentsList(Array.from(allStudentsMap.values()));
+        });
+        
+        const studentsArray = Array.from(studentsMap.values());
+        setStudentsList(studentsArray);
+        
     } catch (error) {
         console.error("Error in fetchStudentsList:", error);
     }
-};
-    
-    useEffect(() => {
+};    useEffect(() => {
         fetchStudentsList();
     }, [courses]);
 
@@ -411,169 +403,196 @@ const fetchStudentsList = async () => {
         }
     }, [selectedCourseForLMS]);
 const fetchEnrolledStudents = async (courseId, courseName) => {
-        setIsLoadingStudents(true);
-        try {
-            const response = await fetch(`https://backend-2-qju2.onrender.com/api/course-students/${courseId}`);
-            
-            if (!response.ok) {
-                throw new Error("Failed to fetch students from server");
-            }
-
-            const students = await response.json();
-
-            // 🚀 التعديل هنا: جلب البيانات الحقيقية من الفايربيز لكل طالب للجدول
-            const processedStudents = await Promise.all(students.map(async (student) => {
-                const sId = student.uid || student.id;
-                let realName = "Unknown Student";
-                let sCode = "N/A";
-                
-                try {
-                    const userDocRef = doc(db, "users", sId); 
-                    const userDocSnap = await getDoc(userDocRef);
-                    
-                    if (userDocSnap.exists()) {
-                        const userData = userDocSnap.data();
-                        const fName = userData.firstName || "";
-                        const lName = userData.lastName || "";
-                        if (fName || lName) {
-                            realName = `${fName} ${lName}`.trim();
-                        } else if (userData.name || userData.fullName) {
-                            realName = userData.name || userData.fullName;
-                        }
-                        sCode = userData.studentCode || sId.substring(0, 5);
-                    } else {
-                        const usersRef = collection(db, "users"); 
-                        const q = query(usersRef, where("uid", "==", sId));
-                        const querySnapshot = await getDocs(q);
-                        
-                        if (!querySnapshot.empty) {
-                            const userData = querySnapshot.docs[0].data();
-                            const fName = userData.firstName || "";
-                            const lName = userData.lastName || "";
-                            if (fName || lName) {
-                                realName = `${fName} ${lName}`.trim();
-                            } else if (userData.name || userData.fullName) {
-                                realName = userData.name || userData.fullName;
-                            }
-                            sCode = userData.studentCode || sId.substring(0, 5);
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error fetching detail for student:", sId, err);
-                }
-
-                // حسابات الحضور والغياب (زي ما هي عندك)
-                const attendanceRecords = student.attendanceRecords || [];
-                const totalClasses = attendanceRecords.length || 1;
-                const presentClasses = attendanceRecords.filter(r => r.status === 'present').length;
-                const lateCount = attendanceRecords.filter(r => r.status === 'late').length;
-                const attendanceRate = (presentClasses / totalClasses) * 100;
-                
-                let riskScore = 0;
-                if (attendanceRate < 50) riskScore += 40;
-                else if (attendanceRate < 70) riskScore += 25;
-                else if (attendanceRate < 85) riskScore += 10;
-
-                const grades = student.grades || [];
-                const totalScore = grades.reduce((sum, g) => sum + (g.score || 0), 0);
-                const averageGrade = grades.length > 0 ? (totalScore / grades.length) : (student.averageGrade || 0);
-
-                if (averageGrade < 50) riskScore += 40;
-                else if (averageGrade < 65) riskScore += 25;
-                else if (averageGrade < 75) riskScore += 10;
-
-                if (lateCount > 10) riskScore += 20;
-                else if (lateCount > 5) riskScore += 15;
-                else if (lateCount > 2) riskScore += 10;
-                else if (lateCount > 0) riskScore += 5;
-
-                // 🛠️ حل مشكلة التاريخ (Invalid Date)
-                let formattedDate = student.enrolledAt;
-                if (formattedDate && typeof formattedDate === 'object') {
-                    if (formattedDate._seconds) {
-                        formattedDate = formattedDate._seconds * 1000;
-                    } else if (formattedDate.seconds) {
-                        formattedDate = formattedDate.seconds * 1000;
-                    }
-                }
-
-                return {
-                    ...student,
-                    id: sId,
-                    studentId: sCode,
-                    studentName: realName,
-                    name: realName,
-                    studentCode: sCode,
-                    studentEmail: student.studentEmail || '',
-                    status: student.status || 'active',
-                    attendanceRate: Math.round(attendanceRate),
-                    averageGrade: Math.round(averageGrade),
-                    riskScore: riskScore,
-                    lateCount: lateCount,
-                    totalClasses: totalClasses,
-                    presentCount: presentClasses,
-                    riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low',
-                    enrolledAt: formattedDate, // ✅ التاريخ المتصلح
-                    courseId: courseId,        // ✅ الكورس المتصلح
-                    courseName: courseName
-                };
-            }));
-
-            setEnrolledStudents(prev => ({
-                ...prev,
-                [courseId]: processedStudents
-            }));
-
-            return processedStudents;
-        } catch (error) {
-            console.error("Error fetching enrolled students:", error);
-            showNotification('Error loading students', 'error');
-            return [];
-        } finally {
-            setIsLoadingStudents(false);
-        }
-    };
-    
-    const viewCourseStudents = async (course) => {
-        setSelectedCourseForStudents(course);
-        setStudentSearchQuery('');
-        setStudentFilterType('all');
-        setRiskFilterRange({ min: 0, max: 100 });
-        setShowRiskFilter(false);
-        setSortBy('name');
-        setSortOrder('asc');
+    setIsLoadingStudents(true);
+    try {
+        console.log(`🔍 Fetching students for course: ${courseId} - ${courseName}`);
         
-        if (!enrolledStudents[course.id]) {
-            await fetchEnrolledStudents(course.id, course.name);
+        // ✅ جلب التسجيلات من enrollments collection
+        const enrollmentsQuery = query(
+            collection(db, "enrollments"),
+            where("courseId", "==", courseId),
+            where("status", "==", "active")
+        );
+        const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+        
+        console.log(`📚 Found ${enrollmentsSnapshot.size} enrollment records`);
+        
+        if (enrollmentsSnapshot.empty) {
+            setEnrolledStudents(prev => ({ ...prev, [courseId]: [] }));
+            setIsLoadingStudents(false);
+            return [];
         }
-        setShowStudentsModal(true);
-    };
+        
+        // ✅ استخدام Map لمنع التكرار (المفتاح = studentId)
+        const studentsMap = new Map();
+        
+        for (const enrollmentDoc of enrollmentsSnapshot.docs) {
+            const enrollment = enrollmentDoc.data();
+            const studentId = enrollment.uid;
+            
+            // ✅ لو الطالب موجود بالفعل، نتخطى (منع التكرار)
+            if (studentsMap.has(studentId)) {
+                console.log(`⏭️ Skipping duplicate: ${studentId}`);
+                continue;
+            }
+            
+            // ✅ جلب البيانات الكاملة من users collection
+            let studentName = "Unknown Student";
+            let studentCode = "N/A";
+            let studentEmail = "";
+            let studentGpa = 0;
+            let studentDepartment = "";
+            let studentAcademicYear = "";
+            
+            try {
+                const userDocRef = doc(db, "users", studentId);
+                const userDocSnap = await getDoc(userDocRef);
+                
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    // الاسم الكامل
+                    studentName = userData.fullName || userData.name || enrollment.studentName || "Unknown";
+                    // الكود
+                    studentCode = userData.code || userData.studentCode || enrollment.studentCode || studentId.substring(0, 5);
+                    // الإيميل
+                    studentEmail = userData.email || enrollment.studentEmail || "";
+                    // GPA (مهم جداً)
+                    studentGpa = userData.gpa || 0;
+                    // القسم
+                    studentDepartment = userData.department || "General";
+                    // السنة الدراسية
+                    studentAcademicYear = userData.academicYear || "N/A";
+                    
+                    console.log(`✅ Found student: ${studentName}, GPA: ${studentGpa}, Code: ${studentCode}`);
+                } else {
+                    console.warn(`⚠️ User document not found: ${studentId}`);
+                    // استخدام البيانات من enrollment كبديل
+                    studentName = enrollment.studentName || "Unknown";
+                    studentCode = enrollment.studentCode || studentId.substring(0, 5);
+                    studentEmail = enrollment.studentEmail || "";
+                }
+            } catch (err) {
+                console.error(`Error fetching user ${studentId}:`, err);
+            }
+            
+            // ✅ حساب Attendance من attendance collection
+            let presentCount = 0, lateCount = 0, absentCount = 0, totalClasses = 0;
+            
+            try {
+                const attendanceQuery = query(
+                    collection(db, "attendance"),
+                    where("courseId", "==", courseId),
+                    where("studentId", "==", studentId)
+                );
+                const attendanceSnapshot = await getDocs(attendanceQuery);
+                
+                attendanceSnapshot.forEach(doc => {
+                    const record = doc.data();
+                    totalClasses++;
+                    if (record.status === 'present') presentCount++;
+                    else if (record.status === 'late') lateCount++;
+                    else if (record.status === 'absent') absentCount++;
+                });
+            } catch (err) {
+                console.error(`Error fetching attendance:`, err);
+            }
+            
+            const attendanceRate = totalClasses > 0 ? Math.round((presentCount / totalClasses) * 100) : 0;
+            
+            // ✅ حساب Average Grade من GPA
+            // تحويل GPA من 4 إلى نسبة مئوية
+            const averageGrade = Math.round((studentGpa / 4) * 100);
+            
+            // ✅ حساب Risk Score
+            let riskScore = 0;
+            // عامل attendance
+            if (attendanceRate < 50) riskScore += 40;
+            else if (attendanceRate < 70) riskScore += 25;
+            else if (attendanceRate < 85) riskScore += 10;
+            // عامل الـ GPA
+            if (studentGpa < 2.0) riskScore += 40;
+            else if (studentGpa < 2.5) riskScore += 25;
+            else if (studentGpa < 3.0) riskScore += 10;
+            // عامل التأخير
+            if (lateCount > 10) riskScore += 20;
+            else if (lateCount > 5) riskScore += 15;
+            else if (lateCount > 2) riskScore += 10;
+            else if (lateCount > 0) riskScore += 5;
+            
+            // ✅ إضافة الطالب إلى الـ Map
+            studentsMap.set(studentId, {
+                id: studentId,
+                enrollmentId: enrollmentDoc.id,
+                studentName: studentName,
+                studentCode: studentCode,
+                studentEmail: studentEmail,
+                studentGpa: studentGpa,
+                studentDepartment: studentDepartment,
+                studentAcademicYear: studentAcademicYear,
+                attendanceRate: attendanceRate,
+                presentCount: presentCount,
+                lateCount: lateCount,
+                absentCount: absentCount,
+                totalClasses: totalClasses,
+                averageGrade: averageGrade,
+                riskScore: riskScore,
+                riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low',
+                status: enrollment.status || 'active'
+            });
+        }
+        
+        // ✅ تحويل الـ Map إلى Array
+        const uniqueStudents = Array.from(studentsMap.values());
+        
+        console.log(`✅ Final: ${uniqueStudents.length} unique students for ${courseName}`);
+        
+        setEnrolledStudents(prev => ({
+            ...prev,
+            [courseId]: uniqueStudents
+        }));
+        
+        return uniqueStudents;
+        
+    } catch (error) {
+        console.error("Error in fetchEnrolledStudents:", error);
+        showNotification('Error loading students', 'error');
+        return [];
+    } finally {
+        setIsLoadingStudents(false);
+    }
+};  const viewCourseStudents = async (course) => {
+    console.log(`🎯 Viewing students for course:`, course);
+    
+    setSelectedCourseForStudents(course);
+    setStudentSearchQuery('');
+    setStudentFilterType('all');
+    setRiskFilterRange({ min: 0, max: 100 });
+    setShowRiskFilter(false);
+    setSortBy('name');
+    setSortOrder('asc');
+    
+    // ✅ جلب الطلاب من الـ API أو Firebase
+    const students = await fetchEnrolledStudents(course.id, course.name);
+    console.log(`📋 Got ${students?.length || 0} students`);
+    
+    setShowStudentsModal(true);
+};
 
-   const removeStudentFromCourse = async (enrollmentId, courseId, studentName) => {
+  const removeStudentFromCourse = async (enrollmentId, courseId, studentName) => {
     if (!window.confirm(`Are you sure you want to remove ${studentName} from this course?`)) return;
     
     try {
-        const response = await fetch("https://backend-2-qju2.onrender.com/api/unenroll-student", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ enrollmentId: enrollmentId }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Unenrollment failed");
-        }
-
-        // تحديث القائمة المحلية
+        await deleteDoc(doc(db, "enrollments", enrollmentId));
+        
         setEnrolledStudents(prev => ({
             ...prev,
-            [courseId]: prev[courseId].filter(s => s.id !== enrollmentId)
+            [courseId]: prev[courseId].filter(s => s.enrollmentId !== enrollmentId)
         }));
         
-        showNotification(`${studentName} removed from course`, 'success');
+        showNotification(`${studentName} removed from course successfully!`, 'success');
     } catch (error) {
         console.error("Error removing student:", error);
-        showNotification(error.message || 'Error removing student', 'error');
+        showNotification('Error removing student', 'error');
     }
 };
 const getFilteredAndSortedStudents = () => {
@@ -1308,15 +1327,37 @@ const getFilteredAndSortedStudents = () => {
             navbar.style.display = 'flex';
         }
     };
-    console.log("All Students (studentsList):", studentsList);
-    console.log("Professor Courses:", courses);
+   const handleAnalyzeStudent = async () => {
+    if (!studentIdInput.trim()) {
+        alert("Please enter a Student ID");
+        return;
+    }
 
-    const filteredStudentsTest = studentsList.filter(student =>
-        student.enrolledCourses &&
-        courses.some(course => student.enrolledCourses.includes(course.id))
-    );
-    console.log("Filtered Students for Dropdown:", filteredStudentsTest);
+    setIsAnalyzing(true);
+    setAiResult(null);
 
+    try {
+        const response = await fetch(`http://localhost:3001/api/analyze-risk/${studentIdInput}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            setAiResult(data.analysis);
+        } else {
+            alert("Error: " + data.error);
+        }
+    } catch (error) {
+        console.error("Error calling AI API:", error);
+        alert("Failed to connect to the server");
+    } finally {
+        setIsAnalyzing(false);
+    }
+};
     return (
         <div className="professor-dashboard-container">
             <div className="professor-notifications-container">
@@ -1485,6 +1526,10 @@ const getFilteredAndSortedStudents = () => {
                                 <div className="professor-action-card-item professor-card-red" onClick={resetAllAttendance}>
                                     <Clock size={28} />
                                     <span>Reset Today</span>
+                                </div>
+                                 <div className="professor-action-card-item professor-card-purple" onClick={() => setIsAiModalOpen(true)}>
+                                  <Zap size={28} />
+                                  <span>AI Analysis</span>
                                 </div>
                             </div>
                              <div className="professor-stats-grid">
@@ -3096,6 +3141,80 @@ const getFilteredAndSortedStudents = () => {
                     </div>
                 </div>
             )}
+            {isAiModalOpen && (
+                    <div className="professor-modal-overlay">
+                        <div className="professor-modal-container" style={{ maxWidth: '500px' }}>
+                            <div className="professor-modal-header">
+                                <h3>AI Student Risk Analysis</h3>
+                                <button 
+                                    className="professor-modal-close" 
+                                    onClick={() => { 
+                                        setIsAiModalOpen(false); 
+                                        setAiResult(null); 
+                                        setStudentIdInput(''); 
+                                    }}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            
+                            <div className="professor-modal-content">
+                                <div className="professor-form-group">
+                                    <label>Student ID</label>
+                                    <input 
+                                        type="text" 
+                                        className="professor-form-input" 
+                                        placeholder="Enter Student ID here..."
+                                        value={studentIdInput}
+                                        onChange={(e) => setStudentIdInput(e.target.value)}
+                                        disabled={isAnalyzing}
+                                    />
+                                </div>
+
+                                {isAnalyzing && (
+                                    <div className="ai-loading-state" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#8e44ad', margin: '20px 0' }}>
+                                        <Zap className="ai-spinning-icon" size={24} />
+                                        <p>Analyzing student data...</p>
+                                    </div>
+                                )}
+
+                                {aiResult && (
+                                    <div style={{ 
+                                        marginTop: '20px', 
+                                        padding: '20px', 
+                                        borderRadius: '12px', 
+                                        backgroundColor: aiResult.riskLevel === 'High' ? '#fef2f2' : aiResult.riskLevel === 'Medium' ? '#fffbeb' : '#ecfdf5',
+                                        borderLeft: `5px solid ${aiResult.riskLevel === 'High' ? '#ef4444' : aiResult.riskLevel === 'Medium' ? '#f59e0b' : '#10b981'}`
+                                    }}>
+                                        <h4 style={{ marginBottom: '10px', color: '#2d3748' }}>Risk Level: <span style={{ color: aiResult.riskLevel === 'High' ? '#ef4444' : aiResult.riskLevel === 'Medium' ? '#f59e0b' : '#10b981' }}>{aiResult.riskLevel}</span></h4>
+                                        <p style={{ fontSize: '14px', color: '#4a5568', lineHeight: '1.5' }}><strong>Explanation:</strong> {aiResult.explanation}</p>
+                                    </div>
+                                )}
+
+                                <div className="professor-modal-actions" style={{ marginTop: '25px' }}>
+                                    <button 
+                                        className="professor-cancel-button" 
+                                        onClick={() => { 
+                                            setIsAiModalOpen(false); 
+                                            setAiResult(null); 
+                                            setStudentIdInput(''); 
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        className="professor-update-button" 
+                                        style={{ backgroundColor: '#8e44ad' }}
+                                        onClick={handleAnalyzeStudent}
+                                        disabled={isAnalyzing || !studentIdInput.trim()}
+                                    >
+                                        {isAnalyzing ? 'Analyzing...' : 'Analyze Now'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
         </div>
     );
 }

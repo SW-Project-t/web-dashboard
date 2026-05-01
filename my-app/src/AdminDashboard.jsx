@@ -27,16 +27,14 @@ const AdminDashboard = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [messages, setMessages] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    
-    // رسائل من الأساتذة
+    const [newDepartmentName, setNewDepartmentName] = useState('');
+    const [isAddingDepartment, setIsAddingDepartment] = useState(false);
     const [professorMessages, setProfessorMessages] = useState([]);
     const [unreadProfessorCount, setUnreadProfessorCount] = useState(0);
     const [isMessageToProfModalOpen, setIsMessageToProfModalOpen] = useState(false);
     const [selectedProfessor, setSelectedProfessor] = useState(null);
     const [messageToProfText, setMessageToProfText] = useState('');
     const [messageToProfSubject, setMessageToProfSubject] = useState('');
-    
-    // Cumulative attendance stats state
     const [cumulativeAttendanceStats, setCumulativeAttendanceStats] = useState({
         courses: [],
         overall: {
@@ -50,12 +48,11 @@ const AdminDashboard = () => {
         }
     });
     const [attendanceLoading, setAttendanceLoading] = useState(true);
-
     const [adminData, setAdminData] = useState({ name: 'System Admin', code: 'ADM-001' });
     const [adminProfileImage, setAdminProfileImage] = useState(localStorage.getItem('admin_profile_image') || null);
-
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
     const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
+    const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false);
     const [isDigitalIdModalOpen, setIsDigitalIdModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -65,25 +62,63 @@ const AdminDashboard = () => {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [messageText, setMessageText] = useState('');
     const [messageSubject, setMessageSubject] = useState('');
-
     const [isUploadingImage, setIsUploadingImage] = useState(false);
-
     const [newUserData, setNewUserData] = useState({
         fullName: '', email: '', password: '', role: '',
         academicYear: '', code: '', department: '', phoneNumber: '',
         gpa: ''
     });
-
     const [newCourseData, setNewCourseData] = useState({
         courseId: '', courseName: '', instructorName: '',
-        SelectDays: '', Time: '', RoomNumber: '', capacity: '' ,totalStudents :0
+        SelectDays: '', Time: '', RoomNumber: '', capacity: '', totalStudents: 0
     });
-
     const [passwordFields, setPasswordFields] = useState({
         currentPassword: '', newPassword: '', confirmPassword: ''
     });
 
-    // جلب الرسائل من الأساتذة
+    useEffect(() => {
+        const qDepartments = query(collection(db, 'departments'));
+        const unsubscribeDepartments = onSnapshot(qDepartments, (snapshot) => {
+            const deptsData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                name: doc.data().name,
+                createdAt: doc.data().createdAt
+            }));
+            setDepartments(deptsData);
+        });
+        return () => unsubscribeDepartments();
+    }, []);
+
+    const handleAddDepartment = async (e) => {
+        e.preventDefault();
+        if (!newDepartmentName.trim()) {
+            alert("Please enter a department name");
+            return;
+        }
+
+        const departmentExists = departments.some(
+            dept => dept.name.toLowerCase() === newDepartmentName.trim().toLowerCase()
+        );
+
+        if (departmentExists) {
+            alert("This department already exists!");
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, 'departments'), {
+                name: newDepartmentName.trim(),
+                createdAt: serverTimestamp()
+            });
+            setNewDepartmentName('');
+            setIsAddDepartmentModalOpen(false);
+            alert('Department added successfully!');
+        } catch (error) {
+            console.error('Error adding department:', error);
+            alert('Failed to add department.');
+        }
+    };
+
     useEffect(() => {
         const messagesRef = collection(db, "messages");
         const q = query(messagesRef, where("to", "==", "admin"), orderBy("createdAt", "desc"));
@@ -140,20 +175,10 @@ const AdminDashboard = () => {
         const q = query(collection(db, "users"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const usersArray = [];
-            const deptMap = {}; 
-            
             querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                usersArray.push({ id: doc.id, ...data });
-                
-                const d = data.department || 'General';
-                deptMap[d] = (deptMap[d] || 0) + 1;
+                usersArray.push({ id: doc.id, ...doc.data() });
             });
-            
             setUsers(usersArray);
-            
-            const deptList = Object.keys(deptMap).map(k => ({ name: k, count: deptMap[k] }));
-            setDepartments(deptList);
         }, (error) => {
             console.error("Error fetching users:", error);
         });
@@ -253,9 +278,7 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, [navigate]);
 
-    const totalStudents = departments.length > 0 
-        ? departments.reduce((sum, dept) => sum + dept.count, 0) 
-        : 1;
+    const totalStudents = users.filter(u => u.role === 'student').length;
 
     const filteredUsers = useMemo(() => {
         return users.filter(u => 
@@ -270,8 +293,7 @@ const AdminDashboard = () => {
             c.courseId?.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [courses, searchQuery]);
-
-    // فلترة الطلاب والدكاترة من كل المستخدمين مباشرة
+    
     const studentUsers = users.filter(u => u.role === 'student');
     const instructorUsers = users.filter(u => u.role === 'instructor' || u.role?.toLowerCase() === 'professor');
 
@@ -279,18 +301,21 @@ const AdminDashboard = () => {
         const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === courseId);
         return courseStats?.attendanceRate || 0;
     };
+    
     const getAttendanceColor = (rate) => {
         if (rate >= 85) return '#28a745';
         if (rate >= 70) return '#ffc107';
         if (rate >= 50) return '#fd7e14';
         return '#dc3545';
     };
+    
     const getAttendanceStatus = (rate) => {
         if (rate >= 85) return 'Excellent';
         if (rate >= 70) return 'Good';
         if (rate >= 50) return 'At Risk';
         return 'Critical';
     };
+    
     const exportAttendanceReport = () => {
         if (cumulativeAttendanceStats.courses.length === 0) {
             alert("No attendance data available to export");
@@ -402,7 +427,7 @@ const AdminDashboard = () => {
     const handleAddUserSubmit = async (e) => {
         e.preventDefault();
         
-        const requiredFields = ['fullName', 'email', 'password', 'role', 'phoneNumber'];
+        const requiredFields = ['fullName', 'email', 'password', 'role', 'phoneNumber', 'department'];
         const hasEmptyRequired = requiredFields.some(field => !newUserData[field]?.trim());
         
         if (hasEmptyRequired) {
@@ -429,7 +454,7 @@ const AdminDashboard = () => {
                 setIsAddUserModalOpen(false);
                 setNewUserData({
                     fullName: '', email: '', password: '', role: '',
-                    academicYear: '', department: '', phoneNumber: '', code: '',
+                    academicYear: '', code: '', department: '', phoneNumber: '',
                     gpa: ''
                 });
             }
@@ -438,44 +463,43 @@ const AdminDashboard = () => {
         }
     };
 
-   const handleAddCourseSubmit = async (e) => {
-    e.preventDefault();
-    
-    // التحقق من صحة البيانات بشكل آمن
-    const isFormValid = Object.values(newCourseData).every(value => {
-        if (value === undefined || value === null) return false;
-        if (typeof value === 'string') return value.trim() !== "";
-        return value !== "";
-    });
-    
-    if (!isFormValid) {
-        alert("Please fill in all fields.");
-        return;
-    }
-    
-    try {
-        const token = localStorage.getItem('token');
-        const response = await axios.post('https://backend-2-qju2.onrender.com/admin/add-course', newCourseData, {
-            headers: { Authorization: `Bearer ${token}` }
+    const handleAddCourseSubmit = async (e) => {
+        e.preventDefault();
+
+        const isFormValid = Object.values(newCourseData).every(value => {
+            if (value === undefined || value === null) return false;
+            if (typeof value === 'string') return value.trim() !== "";
+            return value !== "";
         });
-        if (response.data.success) {
-            alert("Course added successfully!");
-            setIsAddCourseModalOpen(false);
-            setNewCourseData({ 
-                courseId: '', 
-                courseName: '', 
-                instructorName: '', 
-                SelectDays: '', 
-                Time: '', 
-                RoomNumber: '', 
-                capacity: '',
-                totalStudents: 0 
-            });
+        
+        if (!isFormValid) {
+            alert("Please fill in all fields.");
+            return;
         }
-    } catch (error) {
-        alert(error.response?.data?.error || "Failed to add course.");
-    }
-};
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post('https://backend-2-qju2.onrender.com/admin/add-course', newCourseData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data.success) {
+                alert("Course added successfully!");
+                setIsAddCourseModalOpen(false);
+                setNewCourseData({ 
+                    courseId: '', 
+                    courseName: '', 
+                    instructorName: '', 
+                    SelectDays: '', 
+                    Time: '', 
+                    RoomNumber: '', 
+                    capacity: '',
+                    totalStudents: 0 
+                });
+            }
+        } catch (error) {
+            alert(error.response?.data?.error || "Failed to add course.");
+        }
+    };
 
     const handleDelete = async (collectionName, id) => {
         if (window.confirm("Are you sure you want to delete this item?")) {
@@ -798,17 +822,17 @@ const AdminDashboard = () => {
                                     <Users size={28} />
                                     <span>New User</span>
                                 </div>
-                                <div className="action-card-item card-yellow" onClick={() => {
+                                <div className="action-card-item card-yellow" onClick={() => setIsAddDepartmentModalOpen(true)}>
+                                    <Building size={28} />
+                                    <span>Add Department</span>
+                                </div>
+                                <div className="action-card-item card-blue" onClick={() => {
                                     setActiveTab('Messages');
                                     setSelectedStudent(null);
                                     setIsMessageModalOpen(true);
                                 }}>
                                     <Send size={28} />
                                     <span>Send Message</span>
-                                </div>
-                                <div className="action-card-item card-blue" onClick={() => setIsMessageToProfModalOpen(true)}>
-                                    <MessageSquare size={28} />
-                                    <span>Message Professor</span>
                                 </div>
                             </div>
 
@@ -824,7 +848,7 @@ const AdminDashboard = () => {
                                     <div className="stat-icon"><Users size={24} /></div>
                                     <div className="stat-info">
                                         <span className="stat-label">Total Students</span>
-                                        <span className="stat-value">{cumulativeAttendanceStats.overall.totalStudents || 0}</span>
+                                        <span className="stat-value">{totalStudents}</span>
                                     </div>
                                 </div>
                                 <div className="stat-card" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
@@ -847,21 +871,26 @@ const AdminDashboard = () => {
                                 <div className="chart-card-container">
                                     <div className="card-header">
                                         <Building size={20} />
-                                        <h3>Students by Department</h3>
+                                        <h3>Departments</h3>
                                     </div>
                                     <div className="department-list">
-                                        {departments.length === 0 ? <p className="no-data-message">No data available</p> : (
-                                            departments.map(dept => (
-                                                <div className="department-item" key={dept.name}>
-                                                    <div className="department-info">
-                                                        <span className="department-name">{dept.name}</span>
-                                                        <span className="department-count">{dept.count} Users</span>
+                                        {departments.length === 0 ? (
+                                            <p className="no-data-message">No departments yet. Click "Add Department" to create one.</p>
+                                        ) : (
+                                            departments.map(dept => {
+                                                const deptUserCount = users.filter(u => u.department === dept.name).length;
+                                                return (
+                                                    <div className="department-item" key={dept.id}>
+                                                        <div className="department-info">
+                                                            <span className="department-name">{dept.name}</span>
+                                                            <span className="department-count">{deptUserCount} Users</span>
+                                                        </div>
+                                                        <div className="progress-bar-bg">
+                                                            <div className="progress-bar-fill" style={{ width: totalStudents ? `${(deptUserCount / totalStudents) * 100}%` : '0%' }}></div>
+                                                        </div>
                                                     </div>
-                                                    <div className="progress-bar-bg">
-                                                        <div className="progress-bar-fill" style={{ width: `${(dept.count / totalStudents) * 100}%` }}></div>
-                                                    </div>
-                                                </div>
-                                            ))
+                                                );
+                                            })
                                         )}
                                     </div>
                                 </div>
@@ -946,7 +975,7 @@ const AdminDashboard = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredUsers.slice(0, 4).length === 0 ? <tr><td colSpan="5" className="no-data-message">No data</td></tr> : filteredUsers.slice(0, 4).map(u => (
+                                                {filteredUsers.slice(0, 4).map(u => (
                                                     <tr key={u.id}>
                                                         <td className="text-muted">{u.code || '---'}</td>
                                                         <td className="text-bold">{u.fullName}</td>
@@ -1011,7 +1040,7 @@ const AdminDashboard = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredCourses.slice(0, 4).length === 0 ? <tr><td colSpan="5" className="no-data-message">No data</td></tr> : filteredCourses.slice(0, 4).map(c => (
+                                                {filteredCourses.slice(0, 4).map(c => (
                                                     <tr key={c.id}>
                                                         <td className="text-muted">{c.courseId}</td>
                                                         <td className="text-primary text-bold">{c.courseName}</td>
@@ -1049,7 +1078,7 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     )}
-
+                    
                     {activeTab === 'All Users' && (
                         <div className="table-card-container full-page">
                             <div className="table-header">
@@ -1076,7 +1105,7 @@ const AdminDashboard = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredUsers.length === 0 ? <tr><td colSpan="8" className="no-data-message">No data</td></tr> : filteredUsers.map(u => (
+                                        {filteredUsers.map(u => (
                                             <tr key={u.id}>
                                                 <td className="text-muted">{u.code || '---'}</td>
                                                 <td className="text-bold">{u.fullName}</td>
@@ -1155,7 +1184,7 @@ const AdminDashboard = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredCourses.length === 0 ? <tr><td colSpan="9" className="no-data-message">No data</td></tr> : filteredCourses.map(c => {
+                                        {filteredCourses.map(c => {
                                             const attendanceRate = getCourseAttendanceRate(c.id);
                                             return (
                                                 <tr key={c.id}>
@@ -1203,108 +1232,109 @@ const AdminDashboard = () => {
                     )}
 
                     {activeTab === 'Messages' && (
-                    <div className="admin-messages-container">
-                        <div className="admin-messages-header">
-                            <div className="admin-messages-title">
-                                <MessageSquare size={40} />
-                                <div>
-                                    <h2>Message Center</h2>
-                                    <p>Send messages to students or professors and view incoming messages</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="admin-messages-stats">
-                            <div className="admin-messages-stat-card">
-                                <div className="admin-messages-stat-icon"><Inbox size={24} /></div>
-                                <div className="admin-messages-stat-value">{unreadAdminMessages.length}</div>
-                                <div className="admin-messages-stat-label">Unread from Students</div>
-                            </div>
-                            <div className="admin-messages-stat-card">
-                                <div className="admin-messages-stat-icon"><Inbox size={24} /></div>
-                                <div className="admin-messages-stat-value">{unreadProfessorCount}</div>
-                                <div className="admin-messages-stat-label">Unread from Professors</div>
-                            </div>
-                            <div className="admin-messages-stat-card">
-                                <div className="admin-messages-stat-icon"><Users size={24} /></div>
-                                <div className="admin-messages-stat-value">{studentUsers.length}</div>
-                                <div className="admin-messages-stat-label">Total Students</div>
-                            </div>
-                            <div className="admin-messages-stat-card">
-                                <div className="admin-messages-stat-icon"><UserCheck size={24} /></div>
-                                <div className="admin-messages-stat-value">{instructorUsers.length}</div>
-                                <div className="admin-messages-stat-label">Total Professors</div>
-                            </div>
-                        </div>
-
-                         <div className="admin-messages-actions-grid">
-                             <div className="admin-message-action-card" onClick={() => {
-                                setSelectedStudent(null);
-                                setMessageText('');
-                                setMessageSubject('');
-                                setIsMessageModalOpen(true);
-                            }}>
-                                <div className="admin-message-action-icon student">
-                                    <GraduationCap size={32} />
-                                </div>
-                                <h3>Send to Student</h3>
-                                <p>Send announcements, reminders, or individual messages to your students</p>
-                                <div className="admin-message-action-footer">
-                                    <span>{studentUsers.length} students available →</span>
+                        <div className="admin-messages-container">
+                            <div className="admin-messages-header">
+                                <div className="admin-messages-title">
+                                    <MessageSquare size={40} />
+                                    <div>
+                                        <h2>Message Center</h2>
+                                        <p>Send messages to students or professors and view incoming messages</p>
+                                    </div>
                                 </div>
                             </div>
 
-                             <div className="admin-message-action-card" onClick={() => {
-                                setSelectedProfessor(null);
-                                setMessageToProfText('');
-                                setMessageToProfSubject('');
-                                setIsMessageToProfModalOpen(true);
-                            }}>
-                                <div className="admin-message-action-icon professor">
-                                    <UserCheck size={32} />
+                            <div className="admin-messages-stats">
+                                <div className="admin-messages-stat-card">
+                                    <div className="admin-messages-stat-icon"><Inbox size={24} /></div>
+                                    <div className="admin-messages-stat-value">{unreadCount}</div>
+                                    <div className="admin-messages-stat-label">Unread</div>
                                 </div>
-                                <h3>Send to Professor</h3>
-                                <p>Send important announcements, schedule changes, or respond to professor inquiries</p>
-                                <div className="admin-message-action-footer">
-                                    <span>{instructorUsers.length} professors available →</span>
+                                <div className="admin-messages-stat-card">
+                                    <div className="admin-messages-stat-icon"><Users size={24} /></div>
+                                    <div className="admin-messages-stat-value">{studentUsers.length}</div>
+                                    <div className="admin-messages-stat-label">Students</div>
+                                </div>
+                                <div className="admin-messages-stat-card">
+                                    <div className="admin-messages-stat-icon"><UserCheck size={24} /></div>
+                                    <div className="admin-messages-stat-value">{instructorUsers.length}</div>
+                                    <div className="admin-messages-stat-label">Professors</div>
+                                </div>
+                                <div className="admin-messages-stat-card">
+                                    <div className="admin-messages-stat-icon"><Building size={24} /></div>
+                                    <div className="admin-messages-stat-value">{departments.length}</div>
+                                    <div className="admin-messages-stat-label">Departments</div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="admin-inbox-section">
-                            <h4>
-                                <Inbox size={18} />
-                                Messages from Professors ({unreadAdminMessages.length} unread)
-                            </h4>
-                            <div className="admin-messages-list">
-                                {adminMessages.length === 0 ? (
-                                    <p className="admin-no-data">No messages from professors</p>
-                                ) : (
-                                    adminMessages.map(msg => (
-                                        <div 
-                                            key={msg.id} 
-                                            className={`admin-message-item ${!msg.adminRead ? 'unread' : ''}`}
-                                            onClick={() => markMessageAsRead(msg.id)}
-                                        >
-                                            <div className="admin-message-avatar">
-                                                {msg.fromName?.charAt(0).toUpperCase() || 'P'}
-                                            </div>
-                                            <div className="admin-message-content">
-                                                <div className="admin-message-header">
-                                                    <span className="admin-message-sender">{msg.fromName || 'Professor'}</span>
-                                                    <span className="admin-message-date">
-                                                        {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
-                                                    </span>
+
+                            <div className="admin-messages-actions-grid">
+                                <div className="admin-message-action-card" onClick={() => {
+                                    setSelectedStudent(null);
+                                    setMessageText('');
+                                    setMessageSubject('');
+                                    setIsMessageModalOpen(true);
+                                }}>
+                                    <div className="admin-message-action-icon student">
+                                        <GraduationCap size={32} />
+                                    </div>
+                                    <h3>Send to Student</h3>
+                                    <p>Send announcements or individual messages to students</p>
+                                    <div className="admin-message-action-footer">
+                                        <span>{studentUsers.length} students available →</span>
+                                    </div>
+                                </div>
+
+                                <div className="admin-message-action-card" onClick={() => {
+                                    setSelectedProfessor(null);
+                                    setMessageToProfText('');
+                                    setMessageToProfSubject('');
+                                    setIsMessageToProfModalOpen(true);
+                                }}>
+                                    <div className="admin-message-action-icon professor">
+                                        <UserCheck size={32} />
+                                    </div>
+                                    <h3>Send to Professor</h3>
+                                    <p>Send important announcements or respond to inquiries</p>
+                                    <div className="admin-message-action-footer">
+                                        <span>{instructorUsers.length} professors available →</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="admin-inbox-section">
+                                <h4>
+                                    <Inbox size={18} />
+                                    Messages from Users
+                                </h4>
+                                <div className="admin-messages-list">
+                                    {messages.filter(m => m.to === 'admin').length === 0 ? (
+                                        <p className="admin-no-data">No messages</p>
+                                    ) : (
+                                        messages.filter(m => m.to === 'admin').map(msg => (
+                                            <div 
+                                                key={msg.id} 
+                                                className={`admin-message-item ${!msg.adminRead ? 'unread' : ''}`}
+                                                onClick={() => markMessageAsRead(msg.id)}
+                                            >
+                                                <div className="admin-message-avatar">
+                                                    {msg.fromName?.charAt(0).toUpperCase() || 'U'}
                                                 </div>
-                                                {msg.subject && <span className="admin-message-subject">{msg.subject}</span>}
-                                                <p className="admin-message-text">{msg.message}</p>
+                                                <div className="admin-message-content">
+                                                    <div className="admin-message-header">
+                                                        <span className="admin-message-sender">{msg.fromName || 'User'}</span>
+                                                        <span className="admin-message-date">
+                                                            {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleString() : 'Just now'}
+                                                        </span>
+                                                    </div>
+                                                    {msg.subject && <span className="admin-message-subject">{msg.subject}</span>}
+                                                    <p className="admin-message-text">{msg.message}</p>
+                                                </div>
+                                                {!msg.adminRead && <div className="admin-unread-dot"></div>}
                                             </div>
-                                            {!msg.adminRead && <div className="admin-unread-dot"></div>}
-                                        </div>
-                                    ))
-                                )}
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
                     )}
 
                     {activeTab === 'Attendance Analytics' && (
@@ -1320,7 +1350,7 @@ const AdminDashboard = () => {
                                 <button className="export-report-button" onClick={exportAttendanceReport}>
                                     <Download size={18} /> Export Report
                                 </button>
-                              </div>
+                            </div>
 
                             <div className="analytics-summary-grid">
                                 <div className="summary-card">
@@ -1386,9 +1416,9 @@ const AdminDashboard = () => {
                                         </thead>
                                         <tbody>
                                             {attendanceLoading ? (
-                                                <tr><td colSpan="11" className="loading-cell">Loading attendance data...</td></tr>
+                                                <tr><td colSpan="11" className="loading-cell">Loading...</td></tr>
                                             ) : cumulativeAttendanceStats.courses.length === 0 ? (
-                                                <tr><td colSpan="11" className="no-data-cell">No attendance data available</td></tr>
+                                                <tr><td colSpan="11" className="no-data-cell">No data</td></tr>
                                             ) : (
                                                 cumulativeAttendanceStats.courses.map((course, idx) => {
                                                     const rate = course.attendanceRate;
@@ -1397,7 +1427,7 @@ const AdminDashboard = () => {
                                                     const courseDetails = courses.find(c => c.id === course.courseId);
                                                     
                                                     return (
-                                                        <tr key={course.courseId} className="course-row">
+                                                        <tr key={course.courseId}>
                                                             <td>{idx + 1}</td>
                                                             <td className="course-code">{course.courseCode}</td>
                                                             <td className="course-name">{course.courseName}</td>
@@ -1431,7 +1461,7 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                             <div className="risk-distribution">
+                            <div className="risk-distribution">
                                 <div className="risk-header">
                                     <AlertTriangle size={20} />
                                     <h3>Risk Distribution</h3>
@@ -1508,39 +1538,33 @@ const AdminDashboard = () => {
                 </div>
             </main>
 
-             {isAddCourseModalOpen && (
+            {isAddDepartmentModalOpen && (
                 <div className="modal-overlay">
-                    <div className="modal-container">
+                    <div className="modal-container modal-small">
                         <div className="modal-header">
                             <div className="flex-align-center">
-                                <h2>Add Course</h2>
-                                <BookOpen size={24} className="text-primary margin-left-2" />
+                                <h2>Add Department</h2>
+                                <Building size={24} className="text-primary margin-left-2" />
                             </div>
-                            <button className="close-modal-button" onClick={() => setIsAddCourseModalOpen(false)}>
+                            <button className="close-modal-button" onClick={() => setIsAddDepartmentModalOpen(false)}>
                                 <X size={24} />
                             </button>
                         </div>
-                        <form onSubmit={handleAddCourseSubmit} className="modal-form">
-                            <div className="form-grid-layout">
-                                <input type="text" name="courseName" className="form-input input-full-width" value={newCourseData.courseName} onChange={handleCourseInputChange} placeholder="Course Name" required />
-                                <input type="text" name="courseId" className="form-input" value={newCourseData.courseId} onChange={handleCourseInputChange} placeholder="Course Code" required />
-                                <input type="text" name="instructorName" className="form-input" value={newCourseData.instructorName} onChange={handleCourseInputChange} placeholder="Instructor" required />
-                                <select name="SelectDays" className="form-input select-input" value={newCourseData.SelectDays} onChange={handleCourseInputChange} required>
-                                    <option value="" disabled hidden>Select Day</option>
-                                    <option value="Saturday">Saturday</option>
-                                    <option value="Sunday">Sunday</option>
-                                    <option value="Monday">Monday</option>
-                                    <option value="Tuesday">Tuesday</option>
-                                    <option value="Wednesday">Wednesday</option>
-                                    <option value="Thursday">Thursday</option>
-                                </select>
-                                <input type="text" name="Time" className="form-input" value={newCourseData.Time} onChange={handleCourseInputChange} placeholder="Time" required />
-                                <input type="text" name="RoomNumber" className="form-input" value={newCourseData.RoomNumber} onChange={handleCourseInputChange} placeholder="Room Number" required />
-                                <input type="number" name="capacity" className="form-input" value={newCourseData.capacity} onChange={handleCourseInputChange} placeholder="Capacity" required />
+                        <form onSubmit={handleAddDepartment}>
+                            <div className="form-group-single">
+                                <label className="view-label">Department Name</label>
+                                <input 
+                                    type="text" 
+                                    className="form-input" 
+                                    placeholder="e.g., Computer Science, Business, Engineering" 
+                                    value={newDepartmentName} 
+                                    onChange={(e) => setNewDepartmentName(e.target.value)} 
+                                    required 
+                                />
                             </div>
                             <div className="modal-action-buttons">
-                                <button type="button" className="cancel-button" onClick={() => setIsAddCourseModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="submit-button">Add Course</button>
+                                <button type="button" className="cancel-button" onClick={() => setIsAddDepartmentModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="submit-button">Add Department</button>
                             </div>
                         </form>
                     </div>
@@ -1559,7 +1583,7 @@ const AdminDashboard = () => {
                                 <X size={24} />
                             </button>
                         </div>
-                        <form onSubmit={handleAddUserSubmit} className="modal-form">
+                        <form onSubmit={handleAddUserSubmit}>
                             <div className="form-grid-layout">
                                 <input type="text" name="fullName" className="form-input input-full-width" value={newUserData.fullName} onChange={handleUserInputChange} placeholder="Full Name" required />
                                 <input type="email" name="email" className="form-input" value={newUserData.email} onChange={handleUserInputChange} placeholder="Email" required />
@@ -1572,13 +1596,14 @@ const AdminDashboard = () => {
                                     <option value="admin">Admin</option>
                                 </select>
                                 
-                                <select name="department" className="form-input select-input" value={newUserData.department} onChange={handleUserInputChange}>
-                                    <option value="" disabled hidden>Department</option>
-                                    <option value="CS">CS</option>
-                                    <option value="IT">IT</option>
-                                    <option value="IS">IS</option>
-                                    <option value="AI">AI</option>
-                                    <option value="General">General</option>
+                                <select name="department" className="form-input select-input" value={newUserData.department} onChange={handleUserInputChange} required>
+                                    <option value="" disabled hidden>Select Department</option>
+                                    {departments.map(dept => (
+                                        <option key={dept.id} value={dept.name}>{dept.name}</option>
+                                    ))}
+                                    {departments.length === 0 && (
+                                        <option value="" disabled>No departments available. Please add a department first.</option>
+                                    )}
                                 </select>
                                 
                                 <input type="text" name="academicYear" className="form-input" value={newUserData.academicYear} onChange={handleUserInputChange} placeholder="Academic Year" />
@@ -1600,7 +1625,7 @@ const AdminDashboard = () => {
                                             required
                                         />
                                         <small style={{ color: '#718096', gridColumn: 'span 2' }}>
-                                            Note: GPA should be between 0 and 4
+                                            GPA must be between 0 and 4
                                         </small>
                                     </>
                                 )}
@@ -1609,6 +1634,45 @@ const AdminDashboard = () => {
                             <div className="modal-action-buttons">
                                 <button type="button" className="cancel-button" onClick={() => setIsAddUserModalOpen(false)}>Cancel</button>
                                 <button type="submit" className="submit-button">Add User</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isAddCourseModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-container">
+                        <div className="modal-header">
+                            <div className="flex-align-center">
+                                <h2>Add Course</h2>
+                                <BookOpen size={24} className="text-primary margin-left-2" />
+                            </div>
+                            <button className="close-modal-button" onClick={() => setIsAddCourseModalOpen(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAddCourseSubmit}>
+                            <div className="form-grid-layout">
+                                <input type="text" name="courseName" className="form-input input-full-width" value={newCourseData.courseName} onChange={handleCourseInputChange} placeholder="Course Name" required />
+                                <input type="text" name="courseId" className="form-input" value={newCourseData.courseId} onChange={handleCourseInputChange} placeholder="Course Code" required />
+                                <input type="text" name="instructorName" className="form-input" value={newCourseData.instructorName} onChange={handleCourseInputChange} placeholder="Instructor" required />
+                                <select name="SelectDays" className="form-input select-input" value={newCourseData.SelectDays} onChange={handleCourseInputChange} required>
+                                    <option value="" disabled hidden>Select Day</option>
+                                    <option value="Saturday">Saturday</option>
+                                    <option value="Sunday">Sunday</option>
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                </select>
+                                <input type="text" name="Time" className="form-input" value={newCourseData.Time} onChange={handleCourseInputChange} placeholder="Time" required />
+                                <input type="text" name="RoomNumber" className="form-input" value={newCourseData.RoomNumber} onChange={handleCourseInputChange} placeholder="Room Number" required />
+                                <input type="number" name="capacity" className="form-input" value={newCourseData.capacity} onChange={handleCourseInputChange} placeholder="Capacity" required />
+                            </div>
+                            <div className="modal-action-buttons">
+                                <button type="button" className="cancel-button" onClick={() => setIsAddCourseModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="submit-button">Add Course</button>
                             </div>
                         </form>
                     </div>
@@ -1690,7 +1754,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-             {isMessageToProfModalOpen && (
+            {isMessageToProfModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-container modal-small">
                         <div className="modal-header">
@@ -1807,25 +1871,6 @@ const AdminDashboard = () => {
                                         <div className="view-label"><Users size={16} /> Capacity</div>
                                         <div className="view-value">{selectedItem.capacity} Students</div>
                                     </div>
-                                    <div className="view-item view-item-full-width">
-                                        <div className="view-label"><Activity size={16} /> Attendance Rate</div>
-                                        <div className="view-value">
-                                            <div className="attendance-detail">
-                                                <span className="attendance-percent-large" style={{ color: getAttendanceColor(getCourseAttendanceRate(selectedItem.id)), fontSize: '24px', fontWeight: 'bold' }}>
-                                                    {getCourseAttendanceRate(selectedItem.id)}%
-                                                </span>
-                                                <div className="attendance-status-large" style={{ color: getAttendanceColor(getCourseAttendanceRate(selectedItem.id)) }}>
-                                                    {getAttendanceStatus(getCourseAttendanceRate(selectedItem.id))}
-                                                </div>
-                                                <div className="attendance-bar-large" style={{ marginTop: '10px' }}>
-                                                    <div 
-                                                        className="attendance-bar-fill-large"
-                                                        style={{ width: `${getCourseAttendanceRate(selectedItem.id)}%`, backgroundColor: getAttendanceColor(getCourseAttendanceRate(selectedItem.id)), height: '8px', borderRadius: '4px' }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         ) : (
@@ -1895,7 +1940,7 @@ const AdminDashboard = () => {
                                 <X size={24} />
                             </button>
                         </div>
-                        <form className="modal-form" onSubmit={handleSaveChanges}>
+                        <form onSubmit={handleSaveChanges}>
                             <div className="form-group">
                                 <label className="view-label">Name (Read Only)</label>
                                 <input type="text" className="form-input disabled-input" value={selectedItem.fullName || selectedItem.courseName} disabled />
@@ -1954,7 +1999,7 @@ const AdminDashboard = () => {
                                 <X size={24} />
                             </button>
                         </div>
-                        <form onSubmit={handlePasswordUpdate} className="modal-form vertical-form">
+                        <form onSubmit={handlePasswordUpdate}>
                             <input 
                                 type="password" 
                                 name="currentPassword" 
@@ -1991,7 +2036,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-             {isDigitalIdModalOpen && (
+            {isDigitalIdModalOpen && (
                 <div className="modal-overlay" onClick={() => setIsDigitalIdModalOpen(false)}>
                     <div className="modal-container digital-id-modal" onClick={e => e.stopPropagation()}>
                         <div className="digital-id-full new-design">

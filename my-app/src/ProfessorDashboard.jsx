@@ -165,6 +165,7 @@ export default function ProfessorDashboard() {
             messagesRef, 
             where("to", "==", "professor"),
             where("toId", "==", user.uid),
+            where("from", "==", "admin"),
             orderBy("createdAt", "desc")
         );
         
@@ -1005,8 +1006,7 @@ const getFilteredAndSortedStudents = () => {
                 subject: messageToStudentSubject.trim() || 'No Subject',
                 message: messageToStudentText.trim(),
                 createdAt: serverTimestamp(),
-                read: false,
-                adminRead: true
+                read: false
             };
 
             await addDoc(collection(db, "messages"), messageData);

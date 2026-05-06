@@ -93,16 +93,11 @@ export default function StudentDashboard() {
     const [isDigitalIdModalOpen, setIsDigitalIdModalOpen] = useState(false);
     const [selectedRiskCourse, setSelectedRiskCourse] = useState(null);
     const [loading, setLoading] = useState(false);
-    
-    // Messages States
     const [studentMessages, setStudentMessages] = useState([]);
     const [unreadMessageCount, setUnreadMessageCount] = useState(0);
     const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
-    const [isMessageToAdminModalOpen, setIsMessageToAdminModalOpen] = useState(false);
     const [isMessageToProfessorModalOpen, setIsMessageToProfessorModalOpen] = useState(false);
-    const [messageToAdminText, setMessageToAdminText] = useState('');
-    const [messageToAdminSubject, setMessageToAdminSubject] = useState('');
     const [messageToProfessorText, setMessageToProfessorText] = useState('');
     const [messageToProfessorSubject, setMessageToProfessorSubject] = useState('');
     const [selectedProfessor, setSelectedProfessor] = useState(null);
@@ -217,40 +212,6 @@ export default function StudentDashboard() {
             console.error("Error marking message as read:", error);
         }
     };
-
-    const handleSendMessageToAdmin = async () => {
-        if (!messageToAdminText.trim()) {
-            showNotification("Please enter a message", 'error');
-            return;
-        }
-
-        try {
-            const messageData = {
-                from: 'student',
-                fromId: auth.currentUser?.uid,
-                fromName: studentData.name,
-                to: 'admin',
-                toId: 'admin',
-                toName: 'System Admin',
-                subject: messageToAdminSubject.trim() || 'No Subject',
-                message: messageToAdminText.trim(),
-                createdAt: serverTimestamp(),
-                read: false,
-                adminRead: false
-            };
-
-            await addDoc(collection(db, "messages"), messageData);
-            
-            showNotification("Message sent to Admin successfully!", 'success');
-            setIsMessageToAdminModalOpen(false);
-            setMessageToAdminText('');
-            setMessageToAdminSubject('');
-        } catch (error) {
-            console.error("Error sending message:", error);
-            showNotification("Failed to send message", 'error');
-        }
-    };
-
     const handleSendMessageToProfessor = async () => {
         if (!selectedProfessor || !messageToProfessorText.trim()) {
             showNotification("Please select a professor and enter a message", 'error');
@@ -269,7 +230,7 @@ export default function StudentDashboard() {
                 message: messageToProfessorText.trim(),
                 createdAt: serverTimestamp(),
                 read: false,
-                adminRead: true
+                adminRead: false
             };
 
             await addDoc(collection(db, "messages"), messageData);
@@ -1940,7 +1901,6 @@ useEffect(() => {
                                     <div className="student-messages-stat-label">Your Courses</div>
                                 </div>
                             </div>
-
                             <div className="student-messages-actions-grid">
                              <div className="student-message-action-card" onClick={() => setIsMessageToProfessorModalOpen(true)}>
                                     <div className="student-message-action-icon professor">
@@ -2331,7 +2291,7 @@ useEffect(() => {
                 </div>
             )}
 
-             {isMessageToAdminModalOpen && (
+             {/* {isMessageToAdminModalOpen && (
                 <div className="student-modal-overlay" onClick={() => setIsMessageToAdminModalOpen(false)}>
                     <div className="student-modal-container small" onClick={e => e.stopPropagation()}>
                         <div className="student-modal-header">
@@ -2375,7 +2335,7 @@ useEffect(() => {
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
              {isMessageToProfessorModalOpen && (
                 <div className="student-modal-overlay" onClick={() => setIsMessageToProfessorModalOpen(false)}>
                     <div className="student-modal-container small" onClick={e => e.stopPropagation()}>

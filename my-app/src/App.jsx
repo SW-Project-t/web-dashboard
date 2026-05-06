@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useEffect} from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './login';
 import ForgetPassword from './ForgetPassword';
@@ -12,6 +12,9 @@ import Footer from './Footer';
 import Home from './Home';
 
 function App() {
+  useEffect(() => {
+    document.title = "ابو علاء العالمي واحد بس";
+  }, []);
   return (
     <BrowserRouter>
       <Navbar />

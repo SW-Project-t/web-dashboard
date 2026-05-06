@@ -18,7 +18,7 @@ import {
     where, query, deleteDoc, onSnapshot, orderBy, serverTimestamp 
 } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { attendanceAPI } from './services/api';
+import { attendanceAPI, riskAPI } from './services/api';
 import { subscribeToAllCoursesAttendance } from './services/firebaseAttendanceService';
 
 const STORAGE_KEYS = {
@@ -1337,23 +1337,16 @@ const getFilteredAndSortedStudents = () => {
     setAiResult(null);
 
     try {
-        const response = await fetch(`http://localhost:3001/api/analyze-risk/${studentIdInput}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-
-        const data = await response.json();
+        const data = await riskAPI.analyzeRisk(studentIdInput);
 
         if (data.success) {
             setAiResult(data.analysis);
         } else {
-            alert("Error: " + data.error);
+            alert("Error: " + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error("Error calling AI API:", error);
-        alert("Failed to connect to the server");
+        alert("Error calling AI API: " + (error.message || error));
     } finally {
         setIsAnalyzing(false);
     }

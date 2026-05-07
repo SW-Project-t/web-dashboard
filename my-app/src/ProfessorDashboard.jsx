@@ -116,7 +116,14 @@ export default function ProfessorDashboard() {
     const [studentIdInput, setStudentIdInput] = useState('');
     const [aiResult, setAiResult] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false); 
-
+   
+    // ========== AI Chatbot States ==========
+const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+const [chatMessages, setChatMessages] = useState([
+    { id: 1, text: "Hello! I'm your AI assistant. How can I help you today?", sender: 'bot', time: new Date().toLocaleTimeString() }
+]);
+const [chatInput, setChatInput] = useState('');
+const [isTyping, setIsTyping] = useState(false);
 
     const getAttendanceColor = (rate) => {
         if (rate >= 85) return '#28a745';
@@ -3208,6 +3215,108 @@ const getFilteredAndSortedStudents = () => {
                         </div>
                     </div>
                 )}
+
+                {/* AI Chatbot - Floating Button & Modal */}
+<div className="ai-chatbot-container">
+    {/* Floating Button */}
+    <div 
+        className={`ai-chatbot-fab ${isChatbotOpen ? 'hidden' : ''}`}
+        onClick={() => setIsChatbotOpen(true)}
+    >
+        <div className="ai-chatbot-fab-icon">
+            <MessageSquare size={24} />
+        </div>
+        <div className="ai-chatbot-fab-pulse"></div>
+    </div>
+
+    {/* Chat Modal */}
+    {isChatbotOpen && (
+        <div className="ai-chatbot-modal-overlay" onClick={() => setIsChatbotOpen(false)}>
+            <div className="ai-chatbot-modal" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="ai-chatbot-header">
+                    <div className="ai-chatbot-header-info">
+                        <div className="ai-chatbot-avatar">
+                            <Zap size={20} />
+                        </div>
+                        <div>
+                            <h3>AI Assistant</h3>
+                            <p>Online • Ready to help</p>
+                        </div>
+                    </div>
+                    <button 
+                        className="ai-chatbot-close"
+                        onClick={() => setIsChatbotOpen(false)}
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Messages Area */}
+                <div className="ai-chatbot-messages">
+                    {chatMessages.map(msg => (
+                        <div 
+                            key={msg.id} 
+                            className={`ai-chatbot-message ${msg.sender === 'bot' ? 'bot' : 'user'}`}
+                        >
+                            {msg.sender === 'bot' && (
+                                <div className="ai-chatbot-message-avatar">
+                                    <Zap size={14} />
+                                </div>
+                            )}
+                            <div className="ai-chatbot-message-bubble">
+                                <p>{msg.text}</p>
+                                <span className="ai-chatbot-message-time">{msg.time}</span>
+                            </div>
+                        </div>
+                    ))}
+                    {isTyping && (
+                        <div className="ai-chatbot-message bot">
+                            <div className="ai-chatbot-message-avatar">
+                                <Zap size={14} />
+                            </div>
+                            <div className="ai-chatbot-typing">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Input Area */}                
+                <div className="ai-chatbot-input-area">
+                    <div className="ai-chatbot-input-wrapper">
+                        <input
+                            type="text"
+                            className="ai-chatbot-input"
+                            placeholder="Ask me anything..."
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && setChatInput('')}
+                        />
+                        <button className="ai-chatbot-attach-btn">
+                            <Upload size={18} />
+                        </button>
+                        <button 
+                            className="ai-chatbot-send-btn"
+                            disabled={!chatInput.trim()}
+                        >
+                            <Send size={18} />
+                        </button>
+                    </div>
+                    <div className="ai-chatbot-file-preview">
+                        {selectedFile && (
+                            <div className="ai-chatbot-file-badge">
+                                <FileText size={14} />
+                                <span>{selectedFile.name}</span>
+                                <X size={14} onClick={() => setSelectedFile(null)} />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )}
+</div>
         </div>
     );
 }

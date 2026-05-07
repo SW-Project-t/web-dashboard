@@ -357,11 +357,18 @@ export const subscribeToAllCoursesAttendance = (callback) => {
             }
         }
 
-        // Get enrollment counts for each course
+        // Get enrollment counts for each course and the unique student count across all courses
         const enrollmentsRef = collection(db, ENROLLMENTS_COLLECTION);
+        const uniqueStudentIds = new Set();
         const enrollmentPromises = courseIds.map(async (courseId) => {
             const enrollmentQuery = query(enrollmentsRef, where('courseId', '==', courseId));
             const enrollmentSnapshot = await getDocs(enrollmentQuery);
+            enrollmentSnapshot.forEach((doc) => {
+                const enrollmentData = doc.data();
+                if (enrollmentData?.uid) {
+                    uniqueStudentIds.add(enrollmentData.uid);
+                }
+            });
             return enrollmentSnapshot.size;
         });
 
@@ -379,6 +386,8 @@ export const subscribeToAllCoursesAttendance = (callback) => {
             };
         });
 
+        const totalUniqueStudents = uniqueStudentIds.size;
+
         // Calculate overall statistics
         const totalRecords = coursesWithStats.reduce((sum, c) => sum + c.totalRecords, 0);
         const totalPresent = coursesWithStats.reduce((sum, c) => sum + c.presentCount, 0);
@@ -388,6 +397,7 @@ export const subscribeToAllCoursesAttendance = (callback) => {
             courses: coursesWithStats,
             overallStats: {
                 totalCourses: courses.length,
+                totalStudents: totalUniqueStudents,
                 totalRecords,
                 totalPresent,
                 overallAttendanceRate

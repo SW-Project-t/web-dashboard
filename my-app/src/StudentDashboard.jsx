@@ -14,7 +14,7 @@ import {
 import { auth, db } from './firebase';
 import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, orderBy, onSnapshot, serverTimestamp, addDoc } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { attendanceAPI } from './services/api';
+import { attendanceAPI, aiChatAPI } from './services/api';
 import firebaseAttendanceService, { 
     subscribeToStudentAttendance, 
     getStudentOverallAttendance,
@@ -67,6 +67,57 @@ export default function StudentDashboard() {
     const [chatInput, setChatInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [chatConversation, setChatConversation] = useState([]);
+
+    const handleSendChatMessage = async () => {
+        const message = chatInput.trim();
+        if (!message) return;
+
+        const userMessage = {
+            id: Date.now(),
+            text: message,
+            sender: 'user',
+            time: new Date().toLocaleTimeString()
+        };
+
+        setChatMessages(prev => [...prev, userMessage]);
+        setChatInput('');
+        setIsTyping(true);
+
+        try {
+            // Add user message to conversation
+            const updatedConversation = [...chatConversation, { role: 'user', content: message }];
+            setChatConversation(updatedConversation);
+
+            // Send to AI API
+            const response = await aiChatAPI.sendMessage(message, updatedConversation);
+
+            if (response.success) {
+                const aiMessage = {
+                    id: Date.now() + 1,
+                    text: response.response,
+                    sender: 'bot',
+                    time: new Date().toLocaleTimeString()
+                };
+
+                setChatMessages(prev => [...prev, aiMessage]);
+                setChatConversation(prev => [...prev, { role: 'assistant', content: response.response }]);
+            } else {
+                throw new Error(response.error || 'Failed to get AI response');
+            }
+        } catch (error) {
+            console.error('Chat error:', error);
+            const errorMessage = {
+                id: Date.now() + 1,
+                text: 'Sorry, I encountered an error. Please try again later.',
+                sender: 'bot',
+                time: new Date().toLocaleTimeString()
+            };
+            setChatMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -2590,13 +2641,15 @@ useEffect(() => {
                                         placeholder="Ask me anything..."
                                         value={chatInput}
                                         onChange={(e) => setChatInput(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && setChatInput('')}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSendChatMessage()}
                                     />
-                                    <button className="ai-chatbot-attach-btn">
+                                    <button className="ai-chatbot-attach-btn" type="button">
                                         <Upload size={18} />
                                     </button>
                                     <button 
+                                        type="button"
                                         className="ai-chatbot-send-btn"
+                                        onClick={handleSendChatMessage}
                                         disabled={!chatInput.trim()}
                                     >
                                         <Send size={18} />

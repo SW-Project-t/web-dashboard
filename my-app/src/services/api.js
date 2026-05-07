@@ -227,6 +227,22 @@ export const userAPI = {
     }
 };
 
+// ==================== AI API ====================
+
+export const aiAPI = {
+    /**
+     * Send text to AI chat backend
+     * @param {string} message
+     * @param {Array} conversation
+     */
+    sendChat: async (message, conversation = []) => {
+        return fetchAPI('/api/ai/chat', {
+            method: 'POST',
+            body: { message, conversation }
+        });
+    }
+};
+
 // ==================== COURSE API ====================
 
 export const courseAPI = {
@@ -402,6 +418,23 @@ export const riskAPI = {
     }
 };
 
+// ==================== AI CHAT API ====================
+
+export const aiChatAPI = {
+    /**
+     * Send message to AI assistant
+     * @param {string} message - User message
+     * @param {Array} conversation - Previous conversation messages
+     * @returns {Promise} AI response
+     */
+    sendMessage: async (message, conversation = []) => {
+        return fetchAPI('/api/ai/chat', {
+            method: 'POST',
+            body: { message, conversation }
+        });
+    }
+};
+
 // ==================== AUTH API ====================
 
 export const authAPI = {
@@ -435,6 +468,7 @@ export default {
     user: userAPI,
     course: courseAPI,
     admin: adminAPI,
+    aiChat: aiChatAPI,
     risk: riskAPI,
     auth: authAPI
 };

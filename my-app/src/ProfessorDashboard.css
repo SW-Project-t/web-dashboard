@@ -4253,8 +4253,8 @@ body.digital-id-open .navbar-container {
 }
 
 .ai-chatbot-fab-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 36px !important;
+    height: 36px !important;
 }
 
 .ai-chatbot-fab-pulse {
@@ -4366,8 +4366,8 @@ body.digital-id-open .navbar-container {
 }
 
 .ai-chatbot-avatar svg {
-    width: 20px;
-    height: 20px;
+    width: 24px !important;
+    height: 24px !important;
 }
 
 .ai-chatbot-header-info h3 {
@@ -4449,8 +4449,8 @@ body.digital-id-open .navbar-container {
 }
 
 .ai-chatbot-message-avatar {
-    width: 28px;
-    height: 28px;
+    width: 34px;
+    height: 34px;
     background: linear-gradient(135deg, #4a90e2, #2b6cb0);
     border-radius: 50%;
     display: flex;
@@ -4461,8 +4461,8 @@ body.digital-id-open .navbar-container {
 }
 
 .ai-chatbot-message-avatar svg {
-    width: 14px;
-    height: 14px;
+    width: 24px;
+    height: 24px;
 }
 
 .ai-chatbot-message-bubble {
@@ -4671,7 +4671,45 @@ body.digital-id-open .navbar-container {
     }
     
     .ai-chatbot-fab-icon svg {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
     }
+}
+/* تخلي رسائل المستخدم معكوسة */
+.ai-chatbot-message.user {
+    flex-direction: row-reverse;
+}
+
+/* الأفاتار بتاع المستخدم يظهر على اليمين */
+.ai-chatbot-message.user .ai-chatbot-message-avatar {
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+/* الأفاتار بتاع البوت يظهر على اليسار */
+.ai-chatbot-message.bot .ai-chatbot-message-avatar {
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+/* شكل أفاتار المستخدم مختلف في اللون */
+.ai-chatbot-message-avatar.user-avatar {
+    background: linear-gradient(135deg, #10b981, #059669);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.ai-chatbot-user-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.ai-chatbot-message-avatar.user-avatar {
+    background: linear-gradient(135deg, #10b981, #059669);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

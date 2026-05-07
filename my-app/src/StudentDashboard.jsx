@@ -8,7 +8,7 @@ import {
     Download, Shield, Building, X, Menu, User, Calendar,
     Clock, MapPin, CheckCircle, AlertCircle, AlertTriangle,
     BookPlus, GraduationCap, FileText, Video, MessageSquare, Award, Zap, Upload,
-    Mail, Inbox, UserCheck, Send
+    Mail, Inbox, UserCheck, Send,Bot
 } from 'lucide-react';
 
 import { auth, db } from './firebase';
@@ -49,6 +49,8 @@ const calculateRiskScore = (attendanceRate, grades, gpa, timeliness) => {
     return Math.round(riskScore);
 };
 
+
+
 const getRiskLevel = (score) => {
     if (score < 40) return { level: 'High Risk', color: '#ef4444', icon: '🔴' };
     if (score < 60) return { level: 'Medium Risk', color: '#f59e0b', icon: '🟡' };
@@ -57,6 +59,15 @@ const getRiskLevel = (score) => {
 };
 
 export default function StudentDashboard() {
+    // ========== AI Chatbot States ==========
+    const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+    const [chatMessages, setChatMessages] = useState([
+        { id: 1, text: "Hello! I'm your AI assistant. How can I help you today?", sender: 'bot', time: new Date().toLocaleTimeString() }
+    ]);
+    const [chatInput, setChatInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [activeTab, setActiveTab] = useState('Dashboard');
@@ -2489,6 +2500,122 @@ useEffect(() => {
                     </div>
                 </div>
             )}
+            {/* AI Chatbot - Floating Button & Modal */}
+            <div className="ai-chatbot-container">
+                {/* Floating Button */}
+                <div 
+                    className={`ai-chatbot-fab ${isChatbotOpen ? 'hidden' : ''}`}
+                    onClick={() => setIsChatbotOpen(true)}
+                >
+                    <div className="ai-chatbot-fab-icon">
+                        <Bot size={30} />
+                    </div>
+                    <div className="ai-chatbot-fab-pulse"></div>
+                </div>
+            
+                {/* Chat Modal */}
+                {isChatbotOpen && (
+                    <div className="ai-chatbot-modal-overlay" onClick={() => setIsChatbotOpen(false)}>
+                        <div className="ai-chatbot-modal" onClick={e => e.stopPropagation()}>
+                            {/* Header */}
+                            <div className="ai-chatbot-header">
+                                <div className="ai-chatbot-header-info">
+                                    <div className="ai-chatbot-avatar">
+                                        <Bot size={24} />
+                                    </div>
+                                    <div>
+                                        <h3>AI Assistant</h3>
+                                        <p>Online • Ready to help</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    className="ai-chatbot-close"
+                                    onClick={() => setIsChatbotOpen(false)}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+            
+                            {/* Messages Area */}
+                            <div className="ai-chatbot-messages">
+                                {chatMessages.map(msg => (
+                                    <div 
+                                        key={msg.id} 
+                                        className={`ai-chatbot-message ${msg.sender === 'bot' ? 'bot' : 'user'}`}
+                                    >
+                                        {msg.sender === 'bot' && (
+                                            <div className="ai-chatbot-message-avatar">
+                                                <Bot size={24}/>
+                                            </div>
+                                        )}
+
+                                        {msg.sender === 'user' && (
+                                            <div className="ai-chatbot-message-avatar user-avatar">
+                                                {studentData.profileImage ? (
+                                                    <img
+                                                        src={studentData.profileImage}
+                                                        alt="Profile"
+                                                        className="ai-chatbot-user-avatar-img"
+                                                    />
+                                                ) : (
+                                                    studentData.name?.charAt(0).toUpperCase() || 'S'
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="ai-chatbot-message-bubble">
+                                            <p>{msg.text}</p>
+                                            <span className="ai-chatbot-message-time">{msg.time}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                {isTyping && (
+                                    <div className="ai-chatbot-message bot">
+                                        <div className="ai-chatbot-message-avatar">
+                                            <Bot size={24} />
+                                        </div>
+                                        <div className="ai-chatbot-typing">
+                                            <span></span><span></span><span></span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+            
+                            {/* Input Area */}
+                            <div className="ai-chatbot-input-area">
+                                <div className="ai-chatbot-input-wrapper">
+                                    <input
+                                        type="text"
+                                        className="ai-chatbot-input"
+                                        placeholder="Ask me anything..."
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && setChatInput('')}
+                                    />
+                                    <button className="ai-chatbot-attach-btn">
+                                        <Upload size={18} />
+                                    </button>
+                                    <button 
+                                        className="ai-chatbot-send-btn"
+                                        disabled={!chatInput.trim()}
+                                    >
+                                        <Send size={18} />
+                                    </button>
+                                </div>
+                                <div className="ai-chatbot-file-preview">
+                                    {selectedFile && (
+                                        <div className="ai-chatbot-file-badge">
+                                            <FileText size={14} />
+                                            <span>{selectedFile.name}</span>
+                                            <X size={14} onClick={() => setSelectedFile(null)} />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

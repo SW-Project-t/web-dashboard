@@ -9,7 +9,7 @@ import {
     X, Shield, Building, Eye, GraduationCap, Video, 
     FileText, MessageSquare, Award, Upload, Share2, Zap,
     Filter, UserCheck, UserX, AlertTriangle, Star, Mail, Phone,
-    PieChart, Activity, Inbox, Send
+    PieChart, Activity, Inbox, Send, Bot
 } from 'lucide-react';
 
 import { auth, db } from './firebase'; 
@@ -3238,7 +3238,7 @@ const [isTyping, setIsTyping] = useState(false);
         onClick={() => setIsChatbotOpen(true)}
     >
         <div className="ai-chatbot-fab-icon">
-            <MessageSquare size={24} />
+            <Bot size={30} />
         </div>
         <div className="ai-chatbot-fab-pulse"></div>
     </div>
@@ -3251,7 +3251,7 @@ const [isTyping, setIsTyping] = useState(false);
                 <div className="ai-chatbot-header">
                     <div className="ai-chatbot-header-info">
                         <div className="ai-chatbot-avatar">
-                            <Zap size={20} />
+                            <Bot size={24} />
                         </div>
                         <div>
                             <h3>AI Assistant</h3>
@@ -3275,9 +3275,23 @@ const [isTyping, setIsTyping] = useState(false);
                         >
                             {msg.sender === 'bot' && (
                                 <div className="ai-chatbot-message-avatar">
-                                    <Zap size={14} />
+                                    <Bot size={24}/>
                                 </div>
                             )}
+                            {msg.sender === 'user' && (
+                                <div className="ai-chatbot-message-avatar user-avatar">
+                                    {profileImage ? (
+                                        <img
+                                            src={profileImage}
+                                            alt="Profile"
+                                            className="ai-chatbot-user-avatar-img"
+                                        />
+                                    ) : (
+                                        profData.name?.charAt(0) || 'D'
+                                    )}
+                                </div>
+                            )}
+
                             <div className="ai-chatbot-message-bubble">
                                 <p>{msg.text}</p>
                                 <span className="ai-chatbot-message-time">{msg.time}</span>
@@ -3287,7 +3301,7 @@ const [isTyping, setIsTyping] = useState(false);
                     {isTyping && (
                         <div className="ai-chatbot-message bot">
                             <div className="ai-chatbot-message-avatar">
-                                <Zap size={14} />
+                                <Bot size={24} />
                             </div>
                             <div className="ai-chatbot-typing">
                                 <span></span><span></span><span></span>

@@ -306,6 +306,22 @@ export const courseAPI = {
     }
 };
 
+// ==================== MESSAGE API ====================
+
+export const messageAPI = {
+    /**
+     * Send a single message through the server message endpoint
+     * @param {Object} payload
+     * @returns {Promise}
+     */
+    sendMessage: async (payload) => {
+        return fetchAPI('/api/messages/send', {
+            method: 'POST',
+            body: payload
+        });
+    }
+};
+
 // ==================== ADMIN API ====================
 
 export const adminAPI = {

@@ -18,7 +18,7 @@ import {
     where, query, deleteDoc, onSnapshot, orderBy, serverTimestamp 
 } from 'firebase/firestore';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { attendanceAPI, riskAPI, aiChatAPI } from './services/api';
+import { attendanceAPI, riskAPI, aiChatAPI, messageAPI } from './services/api';
 import { subscribeToAllCoursesAttendance, startLiveAttendanceSession, endLiveAttendanceSession, isSessionActive } from './services/firebaseAttendanceService';
 
 const STORAGE_KEYS = {
@@ -115,7 +115,20 @@ export default function ProfessorDashboard() {
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
     const [studentIdInput, setStudentIdInput] = useState('');
     const [aiResult, setAiResult] = useState(null);
-    const [isAnalyzing, setIsAnalyzing] = useState(false); 
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [aiMode, setAiMode] = useState('studentRisk');
+    const [aiCourseId, setAiCourseId] = useState('');
+    const [aiLectureText, setAiLectureText] = useState('');
+    const [aiDifficulty, setAiDifficulty] = useState('Medium');
+    const [selectedLmsMaterialForAI, setSelectedLmsMaterialForAI] = useState(null);
+    const [generatedQuizText, setGeneratedQuizText] = useState('');
+    const [generatedQuizTitle, setGeneratedQuizTitle] = useState('');
+    const [aiSaveQuizStatus, setAiSaveQuizStatus] = useState('');
+    const [aiResponseText, setAiResponseText] = useState('');
+    const [aiStudentList, setAiStudentList] = useState([]);
+    const [aiSendSubject, setAiSendSubject] = useState('Important update from your professor');
+    const [aiSendBody, setAiSendBody] = useState('');
+    const [aiActionStatus, setAiActionStatus] = useState('');
 
     // ========== AI Chatbot States ==========
 const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -146,8 +159,22 @@ const handleSendChatMessage = async () => {
         const updatedConversation = [...chatConversation, { role: 'user', content: message }];
         setChatConversation(updatedConversation);
 
+        // If the professor asks for a quiz/exam, automatically use LMS material from the selected course
+        const quizTrigger = /quiz|اختبار|امتحان|كويز/i;
+        let prompt = message;
+
+        if (quizTrigger.test(message) && selectedCourseForLMS && lmsMaterials.length > 0) {
+            const selectedMaterial = selectedLmsMaterialForAI || lmsMaterials[0];
+            const materialContent = (selectedMaterial?.description || '').trim() || selectedMaterial?.title || '';
+            if (materialContent.length > 20) {
+                prompt = `You are an exam generator. Use ONLY the following LMS lecture material to create questions. Do not invent questions or include details that are not present in the material. If the material is too short, say you need more lecture text.\n\nCourse: ${selectedCourseForLMS.name}\nMaterial Title: ${selectedMaterial.title}\nMaterial Content:\n${materialContent}\n\nProfessor request: ${message}`;
+            } else {
+                prompt = `Professor request: ${message}. The selected LMS material has very little text, so use only the available lecture material and do not invent from outside sources. If there is not enough text, explain that more lecture content is required.`;
+            }
+        }
+
         // Send to AI API
-        const response = await aiChatAPI.sendMessage(message, updatedConversation);
+        const response = await aiChatAPI.sendMessage(prompt, updatedConversation);
 
         if (response.success) {
             const aiMessage = {
@@ -159,6 +186,16 @@ const handleSendChatMessage = async () => {
 
             setChatMessages(prev => [...prev, aiMessage]);
             setChatConversation(prev => [...prev, { role: 'assistant', content: response.response }]);
+
+            if (quizTrigger.test(message)) {
+                setGeneratedQuizText(response.response);
+                setGeneratedQuizTitle(`Quiz from ${selectedCourseForLMS?.name || 'LMS material'}`);
+                setAiResponseText(response.response);
+
+                if (selectedCourseForLMS && lmsMaterials.length > 0) {
+                    await saveGeneratedQuizToLMS();
+                }
+            }
         } else {
             throw new Error(response.error || 'Failed to get AI response');
         }
@@ -1423,6 +1460,7 @@ const handleSendChatMessage = async () => {
 
         setIsAnalyzing(true);
         setAiResult(null);
+        setAiResponseText('');
 
         try {
             const data = await riskAPI.analyzeRisk(studentIdInput);
@@ -1437,6 +1475,247 @@ const handleSendChatMessage = async () => {
             alert("Error calling AI API: " + (error.message || error));
         } finally {
             setIsAnalyzing(false);
+        }
+    };
+
+    const handleFindAtRiskStudents = async () => {
+        setIsAnalyzing(true);
+        setAiResponseText('');
+        setAiResult(null);
+
+        try {
+            const course = selectedCourseForStudents;
+            if (!course) {
+                setAiResponseText('Please select a course first in the Students tab.');
+                return;
+            }
+
+            const students = enrolledStudents[course.id] || [];
+            const atRiskStudents = students.filter(student => {
+                return student.attendanceRate < 80 || student.riskScore >= 70 || student.riskLevel === 'high';
+            });
+
+            if (atRiskStudents.length === 0) {
+                setAiResponseText('No students with high risk or low attendance were found in the selected course.');
+                return;
+            }
+
+            setAiStudentList(atRiskStudents);
+            setAiResponseText(`Found ${atRiskStudents.length} at-risk students in ${course.name}. You can send them a warning message directly.`);
+        } catch (error) {
+            console.error('Error computing at-risk students:', error);
+            setAiResponseText('Failed to compute at-risk students.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const handleGenerateMCQs = async () => {
+        if (!aiLectureText.trim()) {
+            alert('Please paste lecture text or notes first.');
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setAiResponseText('');
+        setAiResult(null);
+
+        try {
+            const prompt = `Create 5 multiple choice questions from the following lecture content at ${aiDifficulty} difficulty. Include question, 4 options, and correct answer. Lecture content:\n\n${aiLectureText}`;
+            const response = await aiChatAPI.sendMessage(prompt, []);
+
+            if (response.success) {
+                setAiResponseText(response.response);
+            } else {
+                alert('Error: ' + (response.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error generating MCQs:', error);
+            alert('Error generating MCQs: ' + (error.message || error));
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const handleGenerateLectureSummary = async () => {
+        if (!aiLectureText.trim()) {
+            alert('Please paste lecture text or notes first.');
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setAiResponseText('');
+        setAiResult(null);
+
+        try {
+            const prompt = `Summarize this lecture notes in 10 concise points for students to review quickly:\n\n${aiLectureText}`;
+            const response = await aiChatAPI.sendMessage(prompt, []);
+
+            if (response.success) {
+                setAiResponseText(response.response);
+            } else {
+                alert('Error: ' + (response.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error generating summary:', error);
+            alert('Error generating summary: ' + (error.message || error));
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const handleSendWarningToAtRiskStudents = async () => {
+        if (!aiSendBody.trim()) {
+            alert('Please write a warning message body first.');
+            return;
+        }
+
+        if (!selectedCourseForStudents) {
+            alert('Please select a course first.');
+            return;
+        }
+
+        const targetStudents = aiStudentList.length > 0 ? aiStudentList : (enrolledStudents[selectedCourseForStudents.id] || []).filter(student => student.attendanceRate < 80 || student.riskScore >= 70 || student.riskLevel === 'high');
+
+        if (targetStudents.length === 0) {
+            alert('No at-risk students are currently selected for this course.');
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setAiActionStatus(`Sending warning to ${targetStudents.length} students...`);
+
+        try {
+            for (const student of targetStudents) {
+                await messageAPI.sendMessage({
+                    to: 'student',
+                    toId: student.id,
+                    toName: student.studentName,
+                    subject: aiSendSubject,
+                    message: aiSendBody,
+                    fromName: profData.name,
+                    fromRole: 'professor'
+                });
+            }
+
+            setAiActionStatus(`Successfully sent warning message to ${targetStudents.length} students.`);
+        } catch (error) {
+            console.error('Error sending warning messages:', error);
+            setAiActionStatus('Failed to send warning messages.');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const handleGenerateQuizFromMaterial = async () => {
+        if (!selectedCourseForLMS) {
+            alert('Please select a course in the LMS tab first.');
+            return;
+        }
+
+        const selectedMaterial = selectedLmsMaterialForAI || lmsMaterials[0];
+        if (!selectedMaterial) {
+            alert('Please choose an LMS material item first.');
+            return;
+        }
+
+        const content = (selectedMaterial.description || '').trim() || selectedMaterial.title || '';
+        if (!content) {
+            alert('Selected LMS material has no description. Please add lecture notes to the material or choose another item.');
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setAiResponseText('');
+        setAiResult(null);
+
+        try {
+            const prompt = `You are an exam creator. Use ONLY the following LMS material to generate 5 multiple choice questions at ${aiDifficulty} difficulty. Include each question, four answer options, and the correct answer. Do not invent anything outside the provided text. Material title: ${selectedMaterial.title}. Material content:\n\n${content}`;
+            const response = await aiChatAPI.sendMessage(prompt, []);
+
+            if (response.success) {
+                setGeneratedQuizText(response.response);
+                setGeneratedQuizTitle(`Quiz from ${selectedMaterial.title || selectedCourseForLMS.name}`);
+                setAiResponseText(response.response);
+            } else {
+                alert('Error: ' + (response.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error generating quiz from material:', error);
+            alert('Error generating quiz: ' + (error.message || error));
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const saveGeneratedQuizToLMS = async () => {
+        if (!selectedCourseForLMS) {
+            alert('Please select a course in the LMS tab first.');
+            return;
+        }
+
+        const content = generatedQuizText || aiResponseText;
+        if (!content || !content.trim()) {
+            alert('No generated quiz content available to save.');
+            return;
+        }
+
+        setAiSaveQuizStatus('Saving generated quiz to LMS...');
+
+        try {
+            await addDoc(collection(db, 'lms_quizzes'), {
+                courseId: selectedCourseForLMS.id,
+                courseName: selectedCourseForLMS.name,
+                title: generatedQuizTitle || `Generated Quiz ${new Date().toLocaleDateString()}`,
+                content,
+                createdBy: profData.name,
+                createdById: auth.currentUser?.uid,
+                createdAt: new Date().toISOString()
+            });
+            setAiSaveQuizStatus('Quiz saved to LMS successfully.');
+            fetchLMSQuizzes(selectedCourseForLMS.id);
+        } catch (error) {
+            console.error('Error saving quiz to LMS:', error);
+            setAiSaveQuizStatus('Failed to save quiz to LMS.');
+        }
+    };
+
+    const deleteLMSQuiz = async (quizId) => {
+        if (!window.confirm('Delete this quiz?')) return;
+        try {
+            await deleteDoc(doc(db, 'lms_quizzes', quizId));
+            showNotification('Quiz deleted successfully', 'success');
+            if (selectedCourseForLMS) fetchLMSQuizzes(selectedCourseForLMS.id);
+        } catch (error) {
+            console.error('Error deleting quiz:', error);
+            showNotification('Error deleting quiz', 'error');
+        }
+    };
+
+    const handleRunAiAction = async () => {
+        if (aiMode === 'studentRisk') {
+            return handleAnalyzeStudent();
+        }
+
+        if (aiMode === 'findAtRisk') {
+            return handleFindAtRiskStudents();
+        }
+
+        if (aiMode === 'generateMCQs') {
+            return handleGenerateMCQs();
+        }
+
+        if (aiMode === 'generateQuizFromMaterial') {
+            return handleGenerateQuizFromMaterial();
+        }
+
+        if (aiMode === 'lectureSummary') {
+            return handleGenerateLectureSummary();
+        }
+
+        if (aiMode === 'sendWarning') {
+            setAiResponseText('Adjust the subject and body, then click Send Warning.');
+            return;
         }
     };
 
@@ -2400,10 +2679,55 @@ const handleSendChatMessage = async () => {
                                     )}
 
                                     {activeLmsTab === 'quizzes' && (
-                                        <div className="professor-lms-coming-soon">
-                                            <Award size={48} />
-                                            <h3>Quizzes Feature Coming Soon</h3>
-                                            <p>Create interactive quizzes with automatic grading</p>
+                                        <div className="professor-lms-quizzes-section">
+                                            <div className="professor-lms-section-header">
+                                                <div>
+                                                    <h3>Saved Quizzes</h3>
+                                                    <p>Manage generated quizzes and review saved LMS quiz content.</p>
+                                                </div>
+                                            </div>
+
+                                            {lmsQuizzes.length === 0 ? (
+                                                <div className="professor-lms-empty">
+                                                    <p>No quizzes have been created yet. Generate one using the AI assistant, then save it to LMS.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="professor-lms-quizzes-list">
+                                                    {lmsQuizzes.map(quiz => (
+                                                        <div key={quiz.id} className="professor-lms-quiz-card">
+                                                            <div style={{ flex: 1 }}>
+                                                                <h4>{quiz.title}</h4>
+                                                                <p style={{ fontSize: '14px', color: '#4b5563' }}>{quiz.content?.slice(0, 240)}{quiz.content?.length > 240 ? '...' : ''}</p>
+                                                                <div className="professor-lms-assignment-meta">
+                                                                    <span>Course: {quiz.courseName}</span>
+                                                                    <span>Created: {new Date(quiz.createdAt).toLocaleDateString()}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                                <button
+                                                                    className="professor-secondary-button"
+                                                                    onClick={() => {
+                                                                        setGeneratedQuizText(quiz.content || '');
+                                                                        setGeneratedQuizTitle(quiz.title || 'Saved Quiz');
+                                                                        setAiResponseText(quiz.content || '');
+                                                                        setAiMode('generateQuizFromMaterial');
+                                                                        setIsAiModalOpen(true);
+                                                                    }}
+                                                                >
+                                                                    Preview
+                                                                </button>
+                                                                <button
+                                                                    className="professor-icon-button delete"
+                                                                    onClick={() => deleteLMSQuiz(quiz.id)}
+                                                                    title="Delete Quiz"
+                                                                >
+                                                                    <Trash2 size={18} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -3209,38 +3533,182 @@ const handleSendChatMessage = async () => {
 
             {isAiModalOpen && (
                 <div className="professor-modal-overlay">
-                    <div className="professor-modal-container" style={{ maxWidth: '500px' }}>
+                    <div className="professor-modal-container" style={{ maxWidth: '640px' }}>
                         <div className="professor-modal-header">
-                            <h3>AI Student Risk Analysis</h3>
+                            <h3>AI Professor Assistant</h3>
                             <button 
                                 className="professor-modal-close" 
                                 onClick={() => { 
                                     setIsAiModalOpen(false); 
                                     setAiResult(null); 
                                     setStudentIdInput(''); 
+                                    setAiResponseText('');
+                                    setAiActionStatus('');
                                 }}
                             >
                                 <X size={20} />
                             </button>
                         </div>
-                        
+
                         <div className="professor-modal-content">
                             <div className="professor-form-group">
-                                <label>Student ID</label>
-                                <input 
-                                    type="text" 
-                                    className="professor-form-input" 
-                                    placeholder="Enter Student ID here..."
-                                    value={studentIdInput}
-                                    onChange={(e) => setStudentIdInput(e.target.value)}
-                                    disabled={isAnalyzing}
-                                />
+                                <label>AI Action</label>
+                                <select
+                                    className="professor-form-input"
+                                    value={aiMode}
+                                    onChange={(e) => setAiMode(e.target.value)}
+                                >
+                                        <option value="studentRisk">Analyze Student Risk</option>
+                                    <option value="findAtRisk">Find At-Risk Students</option>
+                                    <option value="generateMCQs">Generate MCQs from Lecture</option>
+                                    <option value="generateQuizFromMaterial">Generate Quiz from LMS Material</option>
+                                    <option value="lectureSummary">Generate Lecture Summary</option>
+                                    <option value="sendWarning">Send Warning to At-Risk Students</option>
+                                </select>
                             </div>
+
+                            {aiMode === 'studentRisk' && (
+                                <>
+                                    <div className="professor-form-group">
+                                        <label>Student ID</label>
+                                        <input
+                                            type="text"
+                                            className="professor-form-input"
+                                            placeholder="Enter Student ID here..."
+                                            value={studentIdInput}
+                                            onChange={(e) => setStudentIdInput(e.target.value)}
+                                            disabled={isAnalyzing}
+                                        />
+                                    </div>
+                                    <p className="professor-form-helper">Analyze one student by ID to see their risk score and explanation.</p>
+                                </>
+                            )}
+
+                            {aiMode === 'findAtRisk' && (
+                                <>
+                                    <div className="professor-form-group">
+                                        <label>Selected Course</label>
+                                        <input
+                                            type="text"
+                                            className="professor-form-input"
+                                            value={selectedCourseForStudents?.name || 'Choose a course from the Students tab'}
+                                            disabled
+                                        />
+                                    </div>
+                                    <p className="professor-form-helper">This will scan the selected course for low attendance or high-risk students.</p>
+                                </>
+                            )}
+
+                            {(aiMode === 'generateMCQs' || aiMode === 'lectureSummary') && (
+                                <>
+                                    <div className="professor-form-group">
+                                        <label>Lecture Content</label>
+                                        <textarea
+                                            className="professor-form-input"
+                                            rows={6}
+                                            placeholder="Paste lecture notes or course content here..."
+                                            value={aiLectureText}
+                                            onChange={(e) => setAiLectureText(e.target.value)}
+                                            disabled={isAnalyzing}
+                                        />
+                                    </div>
+                                    {aiMode === 'generateMCQs' && (
+                                        <div className="professor-form-group">
+                                            <label>Difficulty</label>
+                                            <select
+                                                className="professor-form-input"
+                                                value={aiDifficulty}
+                                                onChange={(e) => setAiDifficulty(e.target.value)}
+                                            >
+                                                <option value="easy">Easy</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="hard">Hard</option>
+                                            </select>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {aiMode === 'generateQuizFromMaterial' && (
+                                <>
+                                    <div className="professor-form-group">
+                                        <label>Selected Course</label>
+                                        <input
+                                            type="text"
+                                            className="professor-form-input"
+                                            value={selectedCourseForLMS?.name || 'Choose a course from the LMS tab'}
+                                            disabled
+                                        />
+                                    </div>
+                                    <div className="professor-form-group">
+                                        <label>Choose LMS Material</label>
+                                        <select
+                                            className="professor-form-input"
+                                            value={selectedLmsMaterialForAI?.id || ''}
+                                            onChange={(e) => {
+                                                const material = lmsMaterials.find(item => item.id === e.target.value);
+                                                setSelectedLmsMaterialForAI(material || null);
+                                            }}
+                                        >
+                                            <option value="">Select material</option>
+                                            {lmsMaterials.map(material => (
+                                                <option key={material.id} value={material.id}>{material.title || material.description || 'Untitled Material'}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="professor-form-group">
+                                        <label>Difficulty</label>
+                                        <select
+                                            className="professor-form-input"
+                                            value={aiDifficulty}
+                                            onChange={(e) => setAiDifficulty(e.target.value)}
+                                        >
+                                            <option value="easy">Easy</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="hard">Hard</option>
+                                        </select>
+                                    </div>
+                                </>
+                            )}
+
+                            {aiMode === 'sendWarning' && (
+                                <>
+                                    <div className="professor-form-group">
+                                        <label>Selected Course</label>
+                                        <input
+                                            type="text"
+                                            className="professor-form-input"
+                                            value={selectedCourseForStudents?.name || 'Choose a course from the Students tab'}
+                                            disabled
+                                        />
+                                    </div>
+                                    <div className="professor-form-group">
+                                        <label>Subject</label>
+                                        <input
+                                            type="text"
+                                            className="professor-form-input"
+                                            value={aiSendSubject}
+                                            onChange={(e) => setAiSendSubject(e.target.value)}
+                                            placeholder="Warning subject"
+                                        />
+                                    </div>
+                                    <div className="professor-form-group">
+                                        <label>Message Body</label>
+                                        <textarea
+                                            className="professor-form-input"
+                                            rows={5}
+                                            value={aiSendBody}
+                                            onChange={(e) => setAiSendBody(e.target.value)}
+                                            placeholder="Type a warning message for selected at-risk students"
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             {isAnalyzing && (
                                 <div className="ai-loading-state" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#8e44ad', margin: '20px 0' }}>
                                     <Zap className="ai-spinning-icon" size={24} />
-                                    <p>Analyzing student data...</p>
+                                    <p>Processing your AI request...</p>
                                 </div>
                             )}
 
@@ -3257,30 +3725,85 @@ const handleSendChatMessage = async () => {
                                 </div>
                             )}
 
-                                <div className="professor-modal-actions" style={{ marginTop: '25px' }}>
-                                    <button 
-                                        className="professor-cancel-button" 
-                                        onClick={() => { 
-                                            setIsAiModalOpen(false); 
-                                            setAiResult(null); 
-                                            setStudentIdInput(''); 
-                                        }}
+                            {aiResponseText && (
+                                <div style={{ marginTop: '20px', padding: '18px', borderRadius: '12px', border: '1px solid #d6d3d1', backgroundColor: '#ffffff', color: '#1f2937' }}>
+                                    <h4 style={{ marginBottom: '10px' }}>AI Output</h4>
+                                    <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>{aiResponseText}</pre>
+                                </div>
+                            )}
+
+                            {(aiMode === 'generateQuizFromMaterial' || aiMode === 'generateMCQs' || generatedQuizText) && (
+                                <div style={{ marginTop: '20px', padding: '18px', borderRadius: '12px', border: '1px solid #d6d3d1', backgroundColor: '#f8fafc' }}>
+                                    <div className="professor-form-group">
+                                        <label>Quiz Title</label>
+                                        <input
+                                            type="text"
+                                            className="professor-form-input"
+                                            value={generatedQuizTitle}
+                                            onChange={(e) => setGeneratedQuizTitle(e.target.value)}
+                                            placeholder="Enter a title for the saved quiz"
+                                        />
+                                    </div>
+                                    <div className="professor-form-group">
+                                        <label>Generated Quiz Preview</label>
+                                        <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0, color: '#111827' }}>{generatedQuizText || aiResponseText}</pre>
+                                    </div>
+                                    <button
+                                        className="professor-update-button"
+                                        style={{ marginTop: '12px', backgroundColor: '#2563eb' }}
+                                        onClick={saveGeneratedQuizToLMS}
+                                        disabled={isAnalyzing || !(generatedQuizText || aiResponseText)}
                                     >
-                                        Cancel
+                                        Save Quiz to LMS
                                     </button>
+                                    {aiSaveQuizStatus && (
+                                        <div style={{ marginTop: '10px', color: '#1d4ed8' }}>{aiSaveQuizStatus}</div>
+                                    )}
+                                </div>
+                            )}
+
+                            {aiActionStatus && (
+                                <div style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', backgroundColor: '#eef2ff', color: '#3730a3', border: '1px solid #c7d2fe' }}>
+                                    {aiActionStatus}
+                                </div>
+                            )}
+
+                            <div className="professor-modal-actions" style={{ marginTop: '25px' }}>
+                                <button 
+                                    className="professor-cancel-button" 
+                                    onClick={() => { 
+                                        setIsAiModalOpen(false); 
+                                        setAiResult(null); 
+                                        setStudentIdInput(''); 
+                                        setAiResponseText('');
+                                        setAiActionStatus('');
+                                    }}
+                                >
+                                    Close
+                                </button>
+                                <button 
+                                    className="professor-update-button" 
+                                    style={{ backgroundColor: '#8e44ad' }}
+                                    onClick={handleRunAiAction}
+                                    disabled={isAnalyzing || (aiMode === 'studentRisk' && !studentIdInput.trim()) || ((aiMode === 'generateMCQs' || aiMode === 'lectureSummary') && !aiLectureText.trim()) || (aiMode === 'generateQuizFromMaterial' && !selectedLmsMaterialForAI)}
+                                >
+                                    {isAnalyzing ? 'Running...' : aiMode === 'findAtRisk' ? 'Find Students' : aiMode === 'generateMCQs' ? 'Generate MCQs' : aiMode === 'lectureSummary' ? 'Summarize Lecture' : aiMode === 'studentRisk' ? 'Analyze Risk' : 'Prepare'}
+                                </button>
+                                {aiMode === 'sendWarning' && (
                                     <button 
                                         className="professor-update-button" 
-                                        style={{ backgroundColor: '#8e44ad' }}
-                                        onClick={handleAnalyzeStudent}
-                                        disabled={isAnalyzing || !studentIdInput.trim()}
+                                        style={{ marginLeft: '10px', backgroundColor: '#d97706' }}
+                                        onClick={handleSendWarningToAtRiskStudents}
+                                        disabled={isAnalyzing || !aiSendBody.trim() || !selectedCourseForStudents}
                                     >
-                                        {isAnalyzing ? 'Analyzing...' : 'Analyze Now'}
+                                        Send Warning
                                     </button>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
                 {/* AI Chatbot - Floating Button & Modal */}
 <div className="ai-chatbot-container">
     {/* Floating Button */}

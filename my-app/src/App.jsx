@@ -13,7 +13,7 @@ import Home from './Home';
 
 function App() {
   useEffect(() => {
-    document.title = "ابو علاء العالمي واحد بس";
+    document.title = "YALLA CLASS";
   }, []);
   return (
     <BrowserRouter>

@@ -133,7 +133,7 @@ export default function ProfessorDashboard() {
     const [aiRiskThreshold, setAiRiskThreshold] = useState(70);
     const [aiActionStatus, setAiActionStatus] = useState('');
 
-    // ========== AI Chatbot States ==========
+    
 const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 const [chatMessages, setChatMessages] = useState([
     { id: 1, text: "Hello! I'm your AI assistant. How can I help you today?", sender: 'bot', time: new Date().toLocaleTimeString() }
@@ -158,11 +158,11 @@ const handleSendChatMessage = async () => {
     setIsTyping(true);
 
     try {
-        // Add user message to conversation
+        
         const updatedConversation = [...chatConversation, { role: 'user', content: message }];
         setChatConversation(updatedConversation);
 
-        // If the professor asks for a quiz/exam, automatically use LMS material from the selected course
+        
         const quizTrigger = /quiz|اختبار|امتحان|كويز/i;
         let prompt = message;
 
@@ -176,7 +176,7 @@ const handleSendChatMessage = async () => {
             }
         }
 
-        // Send to AI API
+        
         const response = await aiChatAPI.sendMessage(prompt, updatedConversation);
 
         if (response.success) {

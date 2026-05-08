@@ -64,7 +64,7 @@ const toNumber = (value) => {
 };
 
 export default function StudentDashboard() {
-    // ========== AI Chatbot States ==========
+    
     const [isChatbotOpen, setIsChatbotOpen] = useState(false);
     const [chatMessages, setChatMessages] = useState([
         { id: 1, text: "Hello! I'm your AI assistant. How can I help you today?", sender: 'bot', time: new Date().toLocaleTimeString() }
@@ -90,11 +90,11 @@ export default function StudentDashboard() {
         setIsTyping(true);
 
         try {
-            // Add user message to conversation
+            
             const updatedConversation = [...chatConversation, { role: 'user', content: message }];
             setChatConversation(updatedConversation);
 
-            // Send to AI API
+            
             const response = await aiChatAPI.sendMessage(message, updatedConversation);
 
             if (response.success) {
@@ -141,7 +141,7 @@ export default function StudentDashboard() {
     });
     
    const [courses, setCourses] = useState(() => {
-    // حاول تقرأ الكورسات القديمة من الكاش عشان الصفحة متبقاش فاضية أول ما تفتح
+    
     const saved = localStorage.getItem(STORAGE_KEYS.COURSES);
     return saved ? JSON.parse(saved) : [];
 });
@@ -183,7 +183,7 @@ export default function StudentDashboard() {
         emergencyContact: ''
     });
 
-    // ========== LMS States ==========
+    
     const [lmsMaterials, setLmsMaterials] = useState([]);
     const [lmsAssignments, setLmsAssignments] = useState([]);
     const [lmsQuizzes, setLmsQuizzes] = useState([]);
@@ -198,7 +198,7 @@ export default function StudentDashboard() {
 
     const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-    // ========== جلب الرسائل ==========
+    
     useEffect(() => {
         if (!auth.currentUser) return;
         
@@ -226,31 +226,31 @@ export default function StudentDashboard() {
         return () => unsubscribe();
     }, []);
 
-    // ========== جلب الأساتذة من الكورسات ==========
-  // ========== جلب الأساتذة من الكورسات ==========
+    
+  
     useEffect(() => {
         const fetchProfessors = async () => {
             if (courses.length > 0) {
                 const profsArray = [];
                 for (let course of courses) {
                     if (course.instructor && course.instructor !== 'TBA' && course.instructor !== 'Loading...') {
-                        // بنتأكد إننا مضفناش الكورس ده قبل كده
+                        
                         if (!profsArray.find(p => p.courseId === course.id)) {
-                            let profId = course.id; // حل بديل مؤقت
+                            let profId = course.id; 
                             try {
-                                // بنبحث في جدول الكورسات الخاصة بالدكاترة باستخدام الـ courseId
+                                
                                 const q = query(collection(db, "professorCourses"), where("courseId", "==", course.id));
                                 const querySnapshot = await getDocs(q);
                                 
                                 if (!querySnapshot.empty) {
-                                    // لو لقينا الكورس، بنسحب الـ ID الحقيقي بتاع الدكتور
+                                    
                                     profId = querySnapshot.docs[0].data().professorId; 
                                 }
                             } catch (error) {
                                 console.error("Error fetching professor ID:", error);
                             }
 
-                            // بنمنع تكرار نفس الدكتور في القائمة لو بيدرس كذا كورس للطالب
+                            
                             if (!profsArray.find(p => p.id === profId)) {
                                 profsArray.push({
                                     id: profId,
@@ -269,7 +269,7 @@ export default function StudentDashboard() {
         fetchProfessors();
     }, [courses]);
 
-    // ========== وظائف الرسائل ==========
+    
     const markMessageAsRead = async (messageId) => {
         try {
             const messageRef = doc(db, "messages", messageId);
@@ -324,9 +324,9 @@ export default function StudentDashboard() {
         if (msg.from === 'professor') return `Prof. ${msg.fromName || 'Professor'}`;
         return msg.fromName || 'Unknown';
     };
-    // =================================
+    
 
-    // ========== LMS Functions ==========
+    
     const fetchLMSMaterials = async (courseId) => {
         try {
             const q = query(collection(db, "lms_materials"), where("courseId", "==", courseId));
@@ -474,7 +474,7 @@ export default function StudentDashboard() {
         };
     }, [isDigitalIdModalOpen]);
 
-    // Real-time attendance subscription ref
+    
     const [attendanceUnsubscribe, setAttendanceUnsubscribe] = useState(null);
 
     useEffect(() => {
@@ -503,7 +503,7 @@ export default function StudentDashboard() {
                         await loadStudentCourses(user.uid);
                         await loadAvailableCourses();
                         
-                        // Set up real-time attendance subscription
+                        
                         setupRealTimeAttendance(user.uid);
 
                         const currentRisk = userData.riskLevel || "Low Risk"; 
@@ -518,7 +518,7 @@ export default function StudentDashboard() {
                     console.error("Error fetching student data:", error);
                 }
             } else {
-                // Cleanup attendance subscription on logout
+                
                 if (attendanceUnsubscribe) {
                     attendanceUnsubscribe();
                 }
@@ -528,16 +528,16 @@ export default function StudentDashboard() {
         return () => unsubscribe();
     }, [navigate]);
 
-    // Set up real-time attendance tracking from Firebase
+    
     const setupRealTimeAttendance = (userId) => {
-        // Unsubscribe from previous subscription if exists
+        
         if (attendanceUnsubscribe) {
             attendanceUnsubscribe();
         }
 
         const unsubscribe = subscribeToStudentAttendance(userId, (coursesWithAttendance) => {
             if (coursesWithAttendance.length > 0) {
-                // Update courses with real Firebase attendance data
+                
                 setCourses(prevCourses => {
                     return prevCourses.map(course => {
                         const firebaseCourse = coursesWithAttendance.find(fc => fc.id === course.id);
@@ -557,7 +557,7 @@ export default function StudentDashboard() {
                     });
                 });
 
-                // Update overall attendance from Firebase data
+                
                 const totalPresent = coursesWithAttendance.reduce((sum, c) => sum + c.presentCount, 0);
                 const totalRecords = coursesWithAttendance.reduce((sum, c) => sum + c.totalRecords, 0);
                 const overallRate = totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0;
@@ -571,7 +571,7 @@ export default function StudentDashboard() {
         setAttendanceUnsubscribe(() => unsubscribe);
     };
 
-    // Cleanup subscription on unmount
+    
     useEffect(() => {
         return () => {
             if (attendanceUnsubscribe) {
@@ -579,19 +579,19 @@ export default function StudentDashboard() {
             }
         };
     }, []);
-     // أضف هذا الـ useEffect بعد الـ useEffect الخاص بـ onAuthStateChanged
+     
 useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
 
-    // مراقبة تغييرات user document في Firestore
+    
     const userDocRef = doc(db, "users", user.uid);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
             const userData = docSnap.data();
             const enrolledCourses = userData.enrolledCourses || [];
             
-            // إذا تغير عدد الكورسات، نعيد تحميلها
+            
             if (enrolledCourses.length !== courses.length) {
                 console.log("Courses changed, reloading...");
                 loadStudentCourses(user.uid);
@@ -603,7 +603,7 @@ useEffect(() => {
 }, [auth.currentUser]);
 
 
-    // ========== ATTENDANCE TRACKING FUNCTIONS ==========
+    
     const fetchStudentCoursesWithAttendance = async () => {
         try {
             const user = auth.currentUser;
@@ -660,13 +660,13 @@ useEffect(() => {
             return;
         }
 
-        // جلب بيانات الكورسات
+        
         const coursesRef = collection(db, "courses");
         const enrolledCourses = [];
         
         for (const courseId of enrolledCourseIds) {
             try {
-                // البحث عن الكورس باستخدام courseId
+                
                 const courseQuery = query(coursesRef, where("courseId", "==", courseId));
                 const courseSnap = await getDocs(courseQuery);
                 
@@ -727,14 +727,14 @@ useEffect(() => {
             }
         }
         
-        console.log("Loaded courses:", enrolledCourses); // للتأكد من تحميل الكورسات
+        console.log("Loaded courses:", enrolledCourses); 
         setCourses(enrolledCourses);
         setStudentData(prev => ({
             ...prev,
             enrolledCourses: enrolledCourses.length
         }));
         
-        // تحديث upcoming classes
+        
         const upcomingClasses = enrolledCourses.slice(0, 3).map((c, index) => ({
             id: index + 1,
             name: c.name,
@@ -745,14 +745,14 @@ useEffect(() => {
         }));
         setUpcoming(upcomingClasses);
         
-        // تحديث trend data
+        
         const trendData = enrolledCourses.map((c, idx) => ({
             week: `W${idx + 1}`,
             rate: c.riskScore
         }));
         setTrend(trendData);
         
-        // جلب بيانات الحضور
+        
         await fetchStudentCoursesWithAttendance();
         
     } catch (error) {
@@ -792,7 +792,7 @@ useEffect(() => {
         const user = auth.currentUser;
         if (!user) return;
 
-        // التحقق من العدد والتكرار (نفس كودك الحالي)
+        
         const courseIdentifier = course.courseId || course.id;
         if (courses.some(c => (c.courseId || c.id) === courseIdentifier)) {
             showNotification('You are already enrolled in this course', 'error');
@@ -801,8 +801,8 @@ useEffect(() => {
 
         setLoading(true);
 
-        // 1. جلب بيانات الطالب "الحقيقية" من Firestore لضمان الاسم والكود
-        // هذه الخطوة تضمن عدم استخدام UID في خانة الاسم
+        
+        
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
         
@@ -812,20 +812,20 @@ useEffect(() => {
         
         const officialData = userDocSnap.data();
 
-        // 2. تحديث قائمة كورسات الطالب
+        
         await updateDoc(userDocRef, {
             enrolledCourses: arrayUnion(courseIdentifier)
         });
 
-        // 3. إنشاء سجل الـ enrollment الذي يظهر للدكتور
+        
         const enrollmentData = {
             uid: user.uid, 
             courseId: courseIdentifier,
             
-            // استخدام البيانات الرسمية المستخرجة من الـ Document
+            
             studentName: officialData.fullName || officialData.name || "Unknown Student",
             
-            // استخدام كود الطالب (مثل S-111)
+            
             studentCode: officialData.code || officialData.studentCode || "N/A",
             
             studentEmail: officialData.email || user.email,
@@ -833,10 +833,10 @@ useEffect(() => {
             status: "active"
         };
 
-        // إضافة السجل في كولكشن الـ enrollments
+        
         await addDoc(collection(db, "enrollments"), enrollmentData);
 
-        // 4. تحديث الـ UI (نفس كودك الحالي)
+        
         showNotification(`Successfully enrolled in ${course.courseName || course.name}`, 'success');
         setIsAddCourseModalOpen(false);
 

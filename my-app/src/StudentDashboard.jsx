@@ -58,6 +58,11 @@ const getRiskLevel = (score) => {
     return { level: 'Very Low Risk', color: '#3b82f6', icon: '🔵' };
 };
 
+const toNumber = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+};
+
 export default function StudentDashboard() {
     // ========== AI Chatbot States ==========
     const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -369,7 +374,9 @@ export default function StudentDashboard() {
         try {
             const q = query(collection(db, "lms_quizzes"), where("courseId", "==", courseId));
             const snapshot = await getDocs(q);
-            const quizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const quizzes = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(quiz => quiz.published !== false);
             setLmsQuizzes(quizzes);
         } catch (error) {
             console.error("Error fetching quizzes:", error);
@@ -664,12 +671,28 @@ useEffect(() => {
                 const courseSnap = await getDocs(courseQuery);
                 
                 if (!courseSnap.empty) {
-                    courseSnap.forEach((doc) => {
-                        const courseData = doc.data();
+                    for (const docItem of courseSnap.docs) {
+                        const courseData = docItem.data();
                         
-                        // حساب attendance rate من السجلات الحقيقية
-                        let attendanceRate = 75; // قيمة افتراضية
-                        
+                        const enrollmentQuery = query(
+                            collection(db, "enrollments"),
+                            where("courseId", "==", courseData.courseId),
+                            where("uid", "==", userId)
+                        );
+                        const enrollmentSnap = await getDocs(enrollmentQuery);
+                        const enrollmentData = enrollmentSnap.empty ? null : enrollmentSnap.docs[0].data();
+
+                        const storedAttendanceRate = enrollmentData?.attendanceRate != null ? toNumber(enrollmentData.attendanceRate) : null;
+                        const storedAbsenceRate = enrollmentData?.absenceRate != null ? toNumber(enrollmentData.absenceRate) : null;
+                        const storedPresentCount = toNumber(enrollmentData?.presentCount ?? enrollmentData?.present ?? 0);
+                        const storedAbsentCount = toNumber(enrollmentData?.absentCount ?? enrollmentData?.absent ?? 0);
+                        const storedLateCount = toNumber(enrollmentData?.lateCount ?? enrollmentData?.late ?? 0);
+                        const storedTotalSessions = enrollmentData?.totalSessions != null ? toNumber(enrollmentData.totalSessions) : (storedPresentCount + storedAbsentCount + storedLateCount);
+                        const averageGrade = enrollmentData?.averageGrade != null ? toNumber(enrollmentData.averageGrade) : enrollmentData?.grade != null ? toNumber(enrollmentData.grade) : 0;
+                        const timeliness = enrollmentData?.timeliness != null ? toNumber(enrollmentData.timeliness) : 0;
+                        const riskScore = enrollmentData?.riskScore != null ? toNumber(enrollmentData.riskScore) : calculateRiskScore(storedAttendanceRate ?? 0, averageGrade, userData.gpa || 0, timeliness);
+                        const riskLevel = enrollmentData?.riskLevel || getRiskLevel(riskScore);
+
                         enrolledCourses.push({
                             id: courseData.courseId,
                             courseId: courseData.courseId,
@@ -680,23 +703,22 @@ useEffect(() => {
                             time: courseData.Time || 'TBA',
                             room: courseData.RoomNumber || 'TBA',
                             students: parseInt(courseData.capacity) || 0,
-                            attendanceRate: attendanceRate,
-                            absenceRate: 100 - attendanceRate,
-                            presentCount: 0,
-                            absentCount: 0,
-                            lateCount: 0,
-                            totalSessions: 0,
+                            attendanceRate: storedAttendanceRate ?? 0,
+                            absenceRate: storedAbsenceRate ?? 0,
+                            presentCount: storedPresentCount,
+                            absentCount: storedAbsentCount,
+                            lateCount: storedLateCount,
+                            totalSessions: storedTotalSessions,
                             checkedIn: false,
                             timeRemaining: 0,
-                            grades: Math.floor(Math.random() * 30) + 70,
-                            timeliness: Math.floor(Math.random() * 50) + 50,
-                            riskScore: calculateRiskScore(attendanceRate, 75, userData.gpa || 3.0, 75),
+                            grades: enrollmentData?.grades || {},
+                            averageGrade: averageGrade,
+                            timeliness: timeliness,
+                            totalAbsences: toNumber(enrollmentData?.totalAbsences ?? 0),
+                            riskScore: riskScore,
+                            riskLevel: riskLevel
                         });
-                        
-                        // إضافة riskLevel لكل كورس
-                        enrolledCourses[enrolledCourses.length - 1].riskLevel = 
-                            getRiskLevel(enrolledCourses[enrolledCourses.length - 1].riskScore);
-                    });
+                    }
                 } else {
                     console.warn(`Course ${courseId} not found in courses collection`);
                 }
@@ -1920,10 +1942,28 @@ useEffect(() => {
                                     )}
 
                                     {activeLmsTab === 'quizzes' && (
-                                        <div className="student-lms-coming-soon">
-                                            <Award size={48} />
-                                            <h3>Quizzes & Exams Coming Soon</h3>
-                                            <p>Take online quizzes and view your results instantly.</p>
+                                        <div className="student-lms-quizzes">
+                                            {lmsQuizzes.length === 0 ? (
+                                                <div className="student-lms-empty">
+                                                    <p>No quizzes are available for this course yet.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="student-lms-quizzes-list">
+                                                    {lmsQuizzes.map((quiz) => (
+                                                        <div key={quiz.id} className="student-lms-quiz-card">
+                                                            <div className="student-lms-quiz-header">
+                                                                <h4>{quiz.title}</h4>
+                                                                <span className="student-quiz-badge">{quiz.courseName}</span>
+                                                            </div>
+                                                            <p className="student-lms-quiz-content">{quiz.content}</p>
+                                                            <div className="student-lms-quiz-meta">
+                                                                <span>Published: {quiz.published ? 'Yes' : 'No'}</span>
+                                                                <span>{quiz.createdAt ? new Date(quiz.createdAt).toLocaleDateString() : ''}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 

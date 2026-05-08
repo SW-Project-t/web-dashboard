@@ -58,6 +58,8 @@ export default function ProfessorDashboard() {
     });
     const [attendanceLoading, setAttendanceLoading] = useState(true);
     const [enrolledStudents, setEnrolledStudents] = useState({});
+    const [professorUniqueStudentCount, setProfessorUniqueStudentCount] = useState(0);
+    const [professorCourseStudentCounts, setProfessorCourseStudentCounts] = useState({});
     const [selectedCourseForStudents, setSelectedCourseForStudents] = useState(null);
     const [showStudentsModal, setShowStudentsModal] = useState(false);
     const [isLoadingStudents, setIsLoadingStudents] = useState(false);
@@ -128,6 +130,7 @@ export default function ProfessorDashboard() {
     const [aiStudentList, setAiStudentList] = useState([]);
     const [aiSendSubject, setAiSendSubject] = useState('Important update from your professor');
     const [aiSendBody, setAiSendBody] = useState('');
+    const [aiRiskThreshold, setAiRiskThreshold] = useState(70);
     const [aiActionStatus, setAiActionStatus] = useState('');
 
     // ========== AI Chatbot States ==========
@@ -333,12 +336,15 @@ const handleSendChatMessage = async () => {
             usersSnapshot.forEach(doc => {
                 const userData = doc.data();
                 if (userData.role === 'student') {
+                    const fallbackName = `Student ${doc.id.slice(-4)}`;
+                    const rawName = userData.fullName || userData.name;
+                    const cleanedName = rawName && !/^(Unknown Student|Unknown|N\/A)$/i.test(rawName.trim()) ? rawName.trim() : null;
                     studentsMap.set(doc.id, {
                         id: doc.id,
                         studentId: doc.id,
-                        studentName: userData.fullName || userData.name || "Unknown Student",
+                        studentName: cleanedName || fallbackName,
                         studentCode: userData.code || userData.studentCode || doc.id.substring(0, 5),
-                        studentEmail: userData.email || '',
+                        studentEmail: userData.email || 'N/A',
                         department: userData.department || 'General',
                         gpa: userData.gpa || 0,
                         status: 'active',
@@ -500,6 +506,12 @@ const handleSendChatMessage = async () => {
     }, [courses]);
 
     useEffect(() => {
+        if (!selectedCourseForStudents && courses.length > 0) {
+            setSelectedCourseForStudents(courses[0]);
+        }
+    }, [courses, selectedCourseForStudents]);
+
+    useEffect(() => {
         if (selectedCourseForLMS) {
             fetchLMSMaterials(selectedCourseForLMS.id);
             fetchLMSAssignments(selectedCourseForLMS.id);
@@ -507,6 +519,50 @@ const handleSendChatMessage = async () => {
             fetchLMSDiscussions(selectedCourseForLMS.id);
         }
     }, [selectedCourseForLMS]);
+
+    useEffect(() => {
+        if (courses.length === 0) {
+            setProfessorUniqueStudentCount(0);
+            setProfessorCourseStudentCounts({});
+            return;
+        }
+
+        const fetchProfessorStudentCounts = async () => {
+            try {
+                const courseIds = courses.map(course => course.id).filter(Boolean);
+                if (courseIds.length === 0) return;
+
+                const enrollmentsQuery = query(
+                    collection(db, 'enrollments'),
+                    where('courseId', 'in', courseIds),
+                    where('status', '==', 'active')
+                );
+                const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+
+                const uniqueStudentIds = new Set();
+                const courseCounts = {};
+
+                enrollmentsSnapshot.forEach(doc => {
+                    const enrollment = doc.data();
+                    if (!enrollment || !enrollment.courseId || !enrollment.uid) return;
+                    uniqueStudentIds.add(enrollment.uid);
+                    courseCounts[enrollment.courseId] = (courseCounts[enrollment.courseId] || 0) + 1;
+                });
+
+                setProfessorUniqueStudentCount(uniqueStudentIds.size);
+                setProfessorCourseStudentCounts(courseCounts);
+            } catch (error) {
+                console.error('Error fetching professor student counts:', error);
+            }
+        };
+
+        fetchProfessorStudentCounts();
+    }, [courses]);
+
+    const normalizeNumber = (value) => {
+        const num = Number(value);
+        return Number.isFinite(num) ? num : 0;
+    };
 
     const fetchEnrolledStudents = async (courseId, courseName) => {
         setIsLoadingStudents(true);
@@ -528,80 +584,135 @@ const handleSendChatMessage = async () => {
             
             for (const enrollmentDoc of enrollmentsSnapshot.docs) {
                 const enrollment = enrollmentDoc.data();
-                const studentId = enrollment.uid;
-                
-                if (studentsMap.has(studentId)) {
+                const studentId = enrollment.studentId || enrollment.uid || enrollment.studentUID || enrollment.studentID;
+                const rawEnrollmentName = enrollment.studentName;
+                const cleanedEnrollmentName = rawEnrollmentName && !/^(Unknown Student|Unknown|N\/A)$/i.test(rawEnrollmentName.trim()) ? rawEnrollmentName.trim() : null;
+                const fallbackName = cleanedEnrollmentName || (studentId ? `Student ${studentId.slice(-4)}` : `Student ${enrollmentDoc.id.slice(-4)}`);
+                const uniqueKey = studentId || enrollment.studentCode || enrollment.studentEmail || enrollmentDoc.id;
+
+                if (studentsMap.has(uniqueKey)) {
                     continue;
                 }
                 
-                let studentName = "Unknown Student";
-                let studentCode = "N/A";
-                let studentEmail = "";
+                let studentName = fallbackName;
+                let studentCode = enrollment.studentCode || (studentId ? studentId.substring(0, 5) : "N/A");
+                let studentEmail = enrollment.studentEmail || "N/A";
                 let studentGpa = 0;
-                let studentDepartment = "";
-                let studentAcademicYear = "";
+                let studentDepartment = "General";
+                let studentAcademicYear = "N/A";
                 
                 try {
-                    const userDocRef = doc(db, "users", studentId);
-                    const userDocSnap = await getDoc(userDocRef);
-                    
-                    if (userDocSnap.exists()) {
-                        const userData = userDocSnap.data();
-                        studentName = userData.fullName || userData.name || enrollment.studentName || "Unknown";
-                        studentCode = userData.code || userData.studentCode || enrollment.studentCode || studentId.substring(0, 5);
-                        studentEmail = userData.email || enrollment.studentEmail || "";
-                        studentGpa = userData.gpa || 0;
-                        studentDepartment = userData.department || "General";
-                        studentAcademicYear = userData.academicYear || "N/A";
+                    if (studentId) {
+                        const userDocRef = doc(db, "users", studentId);
+                        const userDocSnap = await getDoc(userDocRef);
+                        
+                        if (userDocSnap.exists()) {
+                            const userData = userDocSnap.data();
+                            studentName = userData.fullName || userData.name || enrollment.studentName || fallbackName;
+                            studentCode = userData.code || userData.studentCode || enrollment.studentCode || (studentId.substring(0, 5) || "N/A");
+                            studentEmail = userData.email || enrollment.studentEmail || "N/A";
+                            studentGpa = normalizeNumber(userData.gpa || userData.GPA || 0);
+                            studentDepartment = userData.department || "General";
+                            studentAcademicYear = userData.academicYear || userData.academic_year || "N/A";
+                        } else {
+                            studentName = enrollment.studentName || fallbackName;
+                            studentCode = enrollment.studentCode || (studentId.substring(0, 5) || "N/A");
+                            studentEmail = enrollment.studentEmail || "N/A";
+                            studentGpa = normalizeNumber(enrollment.gpa || enrollment.GPA || 0);
+                        }
                     } else {
-                        studentName = enrollment.studentName || "Unknown";
-                        studentCode = enrollment.studentCode || studentId.substring(0, 5);
-                        studentEmail = enrollment.studentEmail || "";
+                        studentName = enrollment.studentName || fallbackName;
+                        studentCode = enrollment.studentCode || "N/A";
+                        studentEmail = enrollment.studentEmail || "N/A";
+                        studentGpa = normalizeNumber(enrollment.gpa || enrollment.GPA || 0);
                     }
                 } catch (err) {
                     console.error(`Error fetching user ${studentId}:`, err);
                 }
                 
-                let presentCount = 0, lateCount = 0, absentCount = 0, totalClasses = 0;
-                
-                try {
-                    const attendanceQuery = query(
-                        collection(db, "attendance"),
-                        where("courseId", "==", courseId),
-                        where("studentId", "==", studentId)
-                    );
-                    const attendanceSnapshot = await getDocs(attendanceQuery);
-                    
-                    attendanceSnapshot.forEach(doc => {
-                        const record = doc.data();
-                        totalClasses++;
-                        if (record.status === 'Present') presentCount++;
-                        else if (record.status === 'Late') lateCount++;
-                        else if (record.status === 'Absent') absentCount++;
-                    });
-                } catch (err) {
-                    console.error(`Error fetching attendance:`, err);
+                let attendanceRate = null;
+                if (enrollment.attendanceRate != null) {
+                    attendanceRate = normalizeNumber(enrollment.attendanceRate);
+                } else if (enrollment.attendancePercentage != null) {
+                    attendanceRate = normalizeNumber(enrollment.attendancePercentage);
                 }
                 
-                const attendanceRate = totalClasses > 0 ? Math.round((presentCount / totalClasses) * 100) : 0;
-                const averageGrade = Math.round((studentGpa / 4) * 100);
+                let presentCount = 0;
+                let lateCount = 0;
+                let absentCount = 0;
+                let totalClasses = 0;
                 
-                let riskScore = 0;
-                if (attendanceRate < 50) riskScore += 40;
-                else if (attendanceRate < 70) riskScore += 25;
-                else if (attendanceRate < 85) riskScore += 10;
+                if (attendanceRate === null) {
+                    try {
+                        const attendanceQuery = query(
+                            collection(db, "attendance"),
+                            where("courseId", "==", courseId),
+                            where("studentId", "==", studentId)
+                        );
+                        const attendanceSnapshot = await getDocs(attendanceQuery);
+                        
+                        attendanceSnapshot.forEach(doc => {
+                            const record = doc.data();
+                            totalClasses++;
+                            if (record.status === 'Present') presentCount++;
+                            else if (record.status === 'Late') lateCount++;
+                            else if (record.status === 'Absent') absentCount++;
+                        });
+                    } catch (err) {
+                        console.error(`Error fetching attendance:`, err);
+                    }
+                    attendanceRate = totalClasses > 0 ? Math.round((presentCount / totalClasses) * 100) : 0;
+                } else {
+                    if (enrollment.presentCount != null) presentCount = normalizeNumber(enrollment.presentCount);
+                    if (enrollment.lateCount != null) lateCount = normalizeNumber(enrollment.lateCount);
+                    if (enrollment.absentCount != null) absentCount = normalizeNumber(enrollment.absentCount);
+                    totalClasses = presentCount + lateCount + absentCount;
+                }
                 
-                if (studentGpa < 2.0) riskScore += 40;
-                else if (studentGpa < 2.5) riskScore += 25;
-                else if (studentGpa < 3.0) riskScore += 10;
+                let averageGrade = null;
+                if (enrollment.averageGrade != null) {
+                    averageGrade = normalizeNumber(enrollment.averageGrade);
+                } else if (enrollment.grade != null) {
+                    averageGrade = normalizeNumber(enrollment.grade);
+                } else if (enrollment.grades && typeof enrollment.grades === 'object') {
+                    const gradeValues = Object.values(enrollment.grades).filter(v => typeof v === 'number' && Number.isFinite(v));
+                    if (gradeValues.length > 0) {
+                        averageGrade = normalizeNumber(Math.round(gradeValues.reduce((sum, val) => sum + val, 0) / gradeValues.length));
+                    }
+                }
+                if (averageGrade === null) {
+                    averageGrade = 0;
+                }
                 
-                if (lateCount > 10) riskScore += 20;
-                else if (lateCount > 5) riskScore += 15;
-                else if (lateCount > 2) riskScore += 10;
-                else if (lateCount > 0) riskScore += 5;
+                let riskScore = null;
+                if (enrollment.riskScore != null) {
+                    riskScore = normalizeNumber(enrollment.riskScore);
+                }
                 
-                studentsMap.set(studentId, {
-                    id: studentId,
+                let riskLevel = enrollment.riskLevel || null;
+                
+                if (riskScore === null) {
+                    riskScore = 0;
+                    if (attendanceRate < 50) riskScore += 40;
+                    else if (attendanceRate < 70) riskScore += 25;
+                    else if (attendanceRate < 85) riskScore += 10;
+                    
+                    if (studentGpa < 2.0) riskScore += 40;
+                    else if (studentGpa < 2.5) riskScore += 25;
+                    else if (studentGpa < 3.0) riskScore += 10;
+                    
+                    if (lateCount > 10) riskScore += 20;
+                    else if (lateCount > 5) riskScore += 15;
+                    else if (lateCount > 2) riskScore += 10;
+                    else if (lateCount > 0) riskScore += 5;
+                }
+                
+                if (!riskLevel) {
+                    riskLevel = riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low';
+                }
+                
+                studentsMap.set(uniqueKey, {
+                    id: studentId || uniqueKey,
                     enrollmentId: enrollmentDoc.id,
                     studentName: studentName,
                     studentCode: studentCode,
@@ -615,8 +726,8 @@ const handleSendChatMessage = async () => {
                     absentCount: absentCount,
                     totalClasses: totalClasses,
                     averageGrade: averageGrade,
-                    riskScore: riskScore,
-                    riskLevel: riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low',
+                    riskScore: normalizeNumber(riskScore),
+                    riskLevel: riskLevel,
                     status: enrollment.status || 'active'
                 });
             }
@@ -1426,15 +1537,7 @@ const handleSendChatMessage = async () => {
 
     const totalStudents = courses.reduce((sum, c) => sum + c.students, 0);
     const avgAttendance = Math.round(courses.reduce((sum, c) => sum + c.avgAttendance, 0) / (courses.length || 1));
-    const totalPresent = courses.reduce((sum, c) => sum + c.todayPresent, 0);
-
-    const weeklyData = [
-        { day: 'Mon', value: 92 },
-        { day: 'Tue', value: 88 },
-        { day: 'Wed', value: 95 },
-        { day: 'Thu', value: 89 },
-        { day: 'Fri', value: 93 }
-    ];
+    const totalPresent = cumulativeAttendanceStats.overall.totalPresent || courses.reduce((sum, c) => sum + c.todayPresent, 0);
 
     const openDigitalID = () => {
         setIsDigitalIdModalOpen(true);
@@ -1492,7 +1595,9 @@ const handleSendChatMessage = async () => {
 
             const students = enrolledStudents[course.id] || [];
             const atRiskStudents = students.filter(student => {
-                return student.attendanceRate < 80 || student.riskScore >= 70 || student.riskLevel === 'high';
+                const riskScore = Number(student.riskScore || 0);
+                const isHighRisk = student.riskLevel === 'high' || student.riskLevel === 'High';
+                return riskScore >= aiRiskThreshold || isHighRisk;
             });
 
             if (atRiskStudents.length === 0) {
@@ -1575,7 +1680,12 @@ const handleSendChatMessage = async () => {
             return;
         }
 
-        const targetStudents = aiStudentList.length > 0 ? aiStudentList : (enrolledStudents[selectedCourseForStudents.id] || []).filter(student => student.attendanceRate < 80 || student.riskScore >= 70 || student.riskLevel === 'high');
+        const relevantStudents = aiStudentList.length > 0 ? aiStudentList : (enrolledStudents[selectedCourseForStudents.id] || []);
+        const targetStudents = relevantStudents.filter(student => {
+            const riskScore = Number(student.riskScore || 0);
+            const isHighRisk = student.riskLevel === 'high' || student.riskLevel === 'High';
+            return riskScore >= aiRiskThreshold || isHighRisk;
+        });
 
         if (targetStudents.length === 0) {
             alert('No at-risk students are currently selected for this course.');
@@ -1648,16 +1758,17 @@ const handleSendChatMessage = async () => {
         }
     };
 
+    const normalizeQuizText = (text) => {
+        if (!text) return '';
+        let cleaned = text.replace(/<[^>]+>/g, ' ');
+        cleaned = cleaned.replace(/\r/g, '');
+        cleaned = cleaned.replace(/\s+\n/g, '\n');
+        return cleaned.trim();
+    };
+
     const extractQuizContent = (text) => {
         if (!text) return '';
-        const lines = text.replace(/\r/g, '').split('\n');
-        const startIndex = lines.findIndex(line => /^\s*(\*\*?Question|Question|\d+\.|Q\d+\b)/i.test(line));
-        const relevantLines = startIndex >= 0 ? lines.slice(startIndex) : lines;
-        return relevantLines
-            .map(line => line.trim())
-            .filter(line => !/^\s*(Generated Quiz Preview|AI Output|Quiz Title|AI Output:|AI Output\s*)/i.test(line))
-            .join('\n')
-            .trim();
+        return normalizeQuizText(text);
     };
 
     const saveGeneratedQuizToLMS = async () => {
@@ -1666,9 +1777,14 @@ const handleSendChatMessage = async () => {
             return;
         }
 
-        const rawContent = generatedQuizText || aiResponseText;
+        const rawContent = generatedQuizText?.trim() || aiResponseText?.trim();
+        if (aiMode === 'generateQuizFromMaterial' && !generatedQuizText?.trim()) {
+            alert('Please generate the quiz from LMS material first.');
+            return;
+        }
+
         const content = extractQuizContent(rawContent);
-        if (!content || !content.trim()) {
+        if (!content) {
             alert('No generated quiz content available to save.');
             return;
         }
@@ -1683,13 +1799,29 @@ const handleSendChatMessage = async () => {
                 content,
                 createdBy: profData.name,
                 createdById: auth.currentUser?.uid,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                published: false,
+                publishedAt: null
             });
             setAiSaveQuizStatus('Quiz saved to LMS successfully.');
             fetchLMSQuizzes(selectedCourseForLMS.id);
         } catch (error) {
             console.error('Error saving quiz to LMS:', error);
             setAiSaveQuizStatus('Failed to save quiz to LMS.');
+        }
+    };
+
+    const publishLMSQuiz = async (quizId) => {
+        try {
+            await updateDoc(doc(db, 'lms_quizzes', quizId), {
+                published: true,
+                publishedAt: serverTimestamp()
+            });
+            showNotification('Quiz published to students successfully.', 'success');
+            if (selectedCourseForLMS) fetchLMSQuizzes(selectedCourseForLMS.id);
+        } catch (error) {
+            console.error('Error publishing quiz:', error);
+            showNotification('Error publishing quiz', 'error');
         }
     };
 
@@ -1918,7 +2050,7 @@ const handleSendChatMessage = async () => {
                                     <Users className="professor-stat-icon green" />
                                     <div className="professor-stat-info">
                                         <span className="professor-stat-label">Total Students</span>
-                                        <span className="professor-stat-value">{cumulativeAttendanceStats.overall.totalStudents || 0}</span>
+                                        <span className="professor-stat-value">{professorUniqueStudentCount || cumulativeAttendanceStats.overall.totalStudents || 0}</span>
                                     </div>
                                 </div>
                                 <div className="professor-stat-card">
@@ -2002,24 +2134,6 @@ const handleSendChatMessage = async () => {
                                             </div>
                                         );
                                     })}
-                                </div>
-                            </div>
-                            <div className="professor-chart-card">
-                                <div className="professor-chart-header">
-                                    <h3>Weekly Attendance Overview</h3>
-                                    <span className="professor-chart-badge">Last 5 days</span>
-                                </div>
-                                <div className="professor-chart-bars">
-                                    {weeklyData.map((item, i) => (
-                                        <div key={i} className="professor-bar-item">
-                                            <div 
-                                                className="professor-bar" 
-                                                style={{ height: `${item.value * 2}px` }}
-                                            ></div>
-                                            <span className="professor-bar-day">{item.day}</span>
-                                            <span className="professor-bar-value">{item.value}%</span>
-                                        </div>
-                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -2155,7 +2269,7 @@ const handleSendChatMessage = async () => {
                                                         <strong style={{ color: getAttendanceColor(attendanceRate) }}>{attendanceRate}%</strong>
                                                     </div>
                                                     <span className="professor-student-count">
-                                                        <Users size={14} /> {enrolledStudents[course.id]?.length || 0} Students
+                                                        <Users size={14} /> {enrolledStudents[course.id]?.length ?? professorCourseStudentCounts[course.id] ?? 0} Students
                                                     </span>
                                                 </div>
                                             </div>
@@ -2717,6 +2831,16 @@ const handleSendChatMessage = async () => {
                                                                 </div>
                                                             </div>
                                                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                                    <span style={{ fontSize: '12px', color: quiz.published ? '#16a34a' : '#4b5563', fontWeight: 600 }}>
+                                                                        {quiz.published ? 'Published to students' : 'Draft'}
+                                                                    </span>
+                                                                    {quiz.published && quiz.publishedAt && (
+                                                                        <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                                                                            Published on {new Date(quiz.publishedAt?.seconds ? quiz.publishedAt.toDate() : quiz.publishedAt).toLocaleDateString()}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                                 <button
                                                                     className="professor-secondary-button"
                                                                     onClick={() => {
@@ -2729,6 +2853,15 @@ const handleSendChatMessage = async () => {
                                                                 >
                                                                     Preview
                                                                 </button>
+                                                                {!quiz.published && (
+                                                                    <button
+                                                                        className="professor-secondary-button"
+                                                                        style={{ backgroundColor: '#2563eb', color: '#fff' }}
+                                                                        onClick={() => publishLMSQuiz(quiz.id)}
+                                                                    >
+                                                                        Publish
+                                                                    </button>
+                                                                )}
                                                                 <button
                                                                     className="professor-icon-button delete"
                                                                     onClick={() => deleteLMSQuiz(quiz.id)}
@@ -2780,7 +2913,7 @@ const handleSendChatMessage = async () => {
                                     <div className="stat-icon green"><Users size={24} /></div>
                                     <div className="stat-info">
                                         <span className="stat-label">Total Students</span>
-                                        <span className="stat-value">{cumulativeAttendanceStats.overall.totalStudents}</span>
+                                        <span className="stat-value">{professorUniqueStudentCount || cumulativeAttendanceStats.overall.totalStudents}</span>
                                     </div>
                                 </div>
                                 <div className="analytics-stat-card">
@@ -2819,15 +2952,16 @@ const handleSendChatMessage = async () => {
                                         <tbody>
                                             {attendanceLoading ? (
                                                 <tr><td colSpan="9" className="loading-cell">Loading analytics data...</td></tr>
-                                            ) : cumulativeAttendanceStats.courses.length === 0 ? (
-                                                <tr><td colSpan="9" className="no-data-cell">No attendance data available</td></tr>
+                                            ) : filteredCourses.length === 0 ? (
+                                                <tr><td colSpan="9" className="no-data-cell">No courses found for attendance analytics</td></tr>
                                             ) : (
-                                                cumulativeAttendanceStats.courses.map(course => {
-                                                    const rate = course.attendanceRate;
+                                                filteredCourses.map(course => {
+                                                    const courseStats = cumulativeAttendanceStats.courses.find(c => c.courseId === course.id) || {};
+                                                    const rate = courseStats.attendanceRate || 0;
                                                     return (
-                                                        <tr key={course.courseId}>
-                                                            <td className="course-code">{course.courseCode}</td>
-                                                            <td className="course-name">{course.courseName}</td>
+                                                        <tr key={course.id}>
+                                                            <td className="course-code">{course.id}</td>
+                                                            <td className="course-name">{course.name}</td>
                                                             <td>
                                                                 <div className="attendance-cell">
                                                                     <span className="attendance-rate" style={{ color: getAttendanceColor(rate), fontWeight: 'bold' }}>
@@ -2843,11 +2977,11 @@ const handleSendChatMessage = async () => {
                                                                     {getAttendanceStatus(rate)}
                                                                 </span>
                                                             </td>
-                                                            <td>{course.totalRecords || 0}</td>
-                                                            <td className="present-cell">{course.presentCount || 0}</td>
-                                                            <td className="late-cell">{course.lateCount || 0}</td>
-                                                            <td className="absent-cell">{course.absentCount || 0}</td>
-                                                            <td>{course.totalStudents || 0}</td>
+                                                            <td>{courseStats.totalRecords || 0}</td>
+                                                            <td className="present-cell">{courseStats.presentCount || 0}</td>
+                                                            <td className="late-cell">{courseStats.lateCount || 0}</td>
+                                                            <td className="absent-cell">{courseStats.absentCount || 0}</td>
+                                                            <td>{courseStats.totalStudents || 0}</td>
                                                         </tr>
                                                     );
                                                 })
@@ -3573,9 +3707,7 @@ const handleSendChatMessage = async () => {
                                 >
                                         <option value="studentRisk">Analyze Student Risk</option>
                                     <option value="findAtRisk">Find At-Risk Students</option>
-                                    <option value="generateMCQs">Generate MCQs from Lecture</option>
                                     <option value="generateQuizFromMaterial">Generate Quiz from LMS Material</option>
-                                    <option value="lectureSummary">Generate Lecture Summary</option>
                                     <option value="sendWarning">Send Warning to At-Risk Students</option>
                                 </select>
                             </div>
@@ -3600,15 +3732,40 @@ const handleSendChatMessage = async () => {
                             {aiMode === 'findAtRisk' && (
                                 <>
                                     <div className="professor-form-group">
-                                        <label>Selected Course</label>
-                                        <input
-                                            type="text"
+                                        <label>Select Course</label>
+                                        <select
                                             className="professor-form-input"
-                                            value={selectedCourseForStudents?.name || 'Choose a course from the Students tab'}
-                                            disabled
-                                        />
+                                            value={selectedCourseForStudents?.id || ''}
+                                            onChange={(e) => {
+                                                const course = courses.find(c => c.id === e.target.value);
+                                                setSelectedCourseForStudents(course || null);
+                                            }}
+                                        >
+                                            <option value="">Choose a registered course</option>
+                                            {courses.map(course => (
+                                                <option key={course.id} value={course.id}>{course.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
-                                    <p className="professor-form-helper">This will scan the selected course for low attendance or high-risk students.</p>
+                                    <div className="professor-form-group">
+                                        <label>Risk Score Threshold</label>
+                                        <select
+                                            className="professor-form-input"
+                                            value={aiRiskThreshold}
+                                            onChange={(e) => setAiRiskThreshold(Number(e.target.value))}
+                                        >
+                                            <option value={10}>10+</option>
+                                            <option value={20}>20+</option>
+                                            <option value={30}>30+</option>
+                                            <option value={40}>40+</option>   
+                                            <option value={50}>50+</option>
+                                            <option value={60}>60+</option>
+                                            <option value={70}>70+</option>
+                                            <option value={80}>80+</option>
+                                            <option value={90}>90+</option>
+                                        </select>
+                                    </div>
+                                    <p className="professor-form-helper">This will scan the selected course for students with the chosen risk score and attendance warning criteria.</p>
                                 </>
                             )}
 
@@ -3687,13 +3844,34 @@ const handleSendChatMessage = async () => {
                             {aiMode === 'sendWarning' && (
                                 <>
                                     <div className="professor-form-group">
-                                        <label>Selected Course</label>
-                                        <input
-                                            type="text"
+                                        <label>Select Course</label>
+                                        <select
                                             className="professor-form-input"
-                                            value={selectedCourseForStudents?.name || 'Choose a course from the Students tab'}
-                                            disabled
-                                        />
+                                            value={selectedCourseForStudents?.id || ''}
+                                            onChange={(e) => {
+                                                const course = courses.find(c => c.id === e.target.value);
+                                                setSelectedCourseForStudents(course || null);
+                                            }}
+                                        >
+                                            <option value="">Choose a registered course</option>
+                                            {courses.map(course => (
+                                                <option key={course.id} value={course.id}>{course.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="professor-form-group">
+                                        <label>Risk Score Threshold</label>
+                                        <select
+                                            className="professor-form-input"
+                                            value={aiRiskThreshold}
+                                            onChange={(e) => setAiRiskThreshold(Number(e.target.value))}
+                                        >
+                                            <option value={50}>50+</option>
+                                            <option value={60}>60+</option>
+                                            <option value={70}>70+</option>
+                                            <option value={80}>80+</option>
+                                            <option value={90}>90+</option>
+                                        </select>
                                     </div>
                                     <div className="professor-form-group">
                                         <label>Subject</label>
@@ -3798,7 +3976,7 @@ const handleSendChatMessage = async () => {
                                     className="professor-update-button" 
                                     style={{ backgroundColor: '#8e44ad' }}
                                     onClick={handleRunAiAction}
-                                    disabled={isAnalyzing || (aiMode === 'studentRisk' && !studentIdInput.trim()) || ((aiMode === 'generateMCQs' || aiMode === 'lectureSummary') && !aiLectureText.trim()) || (aiMode === 'generateQuizFromMaterial' && !selectedLmsMaterialForAI)}
+                                    disabled={isAnalyzing || (aiMode === 'studentRisk' && !studentIdInput.trim()) || ((aiMode === 'generateMCQs' || aiMode === 'lectureSummary') && !aiLectureText.trim()) || (aiMode === 'generateQuizFromMaterial' && !selectedLmsMaterialForAI) || ((aiMode === 'findAtRisk' || aiMode === 'sendWarning') && !selectedCourseForStudents)}
                                 >
                                     {isAnalyzing ? 'Running...' : aiMode === 'findAtRisk' ? 'Find Students' : aiMode === 'generateMCQs' ? 'Generate MCQs' : aiMode === 'lectureSummary' ? 'Summarize Lecture' : aiMode === 'studentRisk' ? 'Analyze Risk' : 'Prepare'}
                                 </button>

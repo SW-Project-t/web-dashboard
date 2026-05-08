@@ -1084,17 +1084,43 @@ body {
 
 .professor-modal-container {
     background: white;
-    width: 90%;
-    max-width: 600px;
+    width: min(96vw, 640px);
+    max-width: 640px;
+    max-height: 90vh;
     border-radius: 30px;
-    padding: 30px;
+    padding: 20px 28px;
     box-shadow: 0 40px 60px -20px rgba(74, 144, 226, 0.4);
     animation: professorSlideUp 0.4s;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .professor-modal-container.small {
     max-width: 450px;
+}
+
+.professor-modal-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-right: 4px;
+}
+
+.generated-quiz-preview {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 48vh;
+    overflow-y: auto;
+    margin: 0;
+    padding: 14px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
 }
 
 @keyframes professorSlideUp {
@@ -4301,6 +4327,7 @@ body.digital-id-open .navbar-container {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 16px;
     animation: aiChatbotFadeIn 0.2s ease;
 }
 
@@ -4315,8 +4342,9 @@ body.digital-id-open .navbar-container {
 
 /* Modal Container */
 .ai-chatbot-modal {
-    width: 420px;
-    height: 580px;
+    width: min(95vw, 760px);
+    max-width: 760px;
+    max-height: 90vh;
     background: white;
     border-radius: 24px;
     display: flex;
@@ -4324,6 +4352,15 @@ body.digital-id-open .navbar-container {
     overflow: hidden;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     animation: aiChatbotSlideUp 0.3s ease;
+}
+
+@media (max-width: 640px) {
+    .ai-chatbot-modal {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
 }
 
 @keyframes aiChatbotSlideUp {
@@ -4411,6 +4448,7 @@ body.digital-id-open .navbar-container {
 /* Messages Area */
 .ai-chatbot-messages {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 16px;
     display: flex;
@@ -4489,6 +4527,8 @@ body.digital-id-open .navbar-container {
     margin: 0;
     font-size: 14px;
     line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .ai-chatbot-message-time {

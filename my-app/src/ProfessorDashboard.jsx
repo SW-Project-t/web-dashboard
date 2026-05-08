@@ -1648,13 +1648,26 @@ const handleSendChatMessage = async () => {
         }
     };
 
+    const extractQuizContent = (text) => {
+        if (!text) return '';
+        const lines = text.replace(/\r/g, '').split('\n');
+        const startIndex = lines.findIndex(line => /^\s*(\*\*?Question|Question|\d+\.|Q\d+\b)/i.test(line));
+        const relevantLines = startIndex >= 0 ? lines.slice(startIndex) : lines;
+        return relevantLines
+            .map(line => line.trim())
+            .filter(line => !/^\s*(Generated Quiz Preview|AI Output|Quiz Title|AI Output:|AI Output\s*)/i.test(line))
+            .join('\n')
+            .trim();
+    };
+
     const saveGeneratedQuizToLMS = async () => {
         if (!selectedCourseForLMS) {
             alert('Please select a course in the LMS tab first.');
             return;
         }
 
-        const content = generatedQuizText || aiResponseText;
+        const rawContent = generatedQuizText || aiResponseText;
+        const content = extractQuizContent(rawContent);
         if (!content || !content.trim()) {
             alert('No generated quiz content available to save.');
             return;
@@ -3746,7 +3759,7 @@ const handleSendChatMessage = async () => {
                                     </div>
                                     <div className="professor-form-group">
                                         <label>Generated Quiz Preview</label>
-                                        <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0, color: '#111827' }}>{generatedQuizText || aiResponseText}</pre>
+                                        <pre className="generated-quiz-preview" style={{ color: '#111827' }}>{generatedQuizText || aiResponseText}</pre>
                                     </div>
                                     <button
                                         className="professor-update-button"

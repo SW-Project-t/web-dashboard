@@ -4090,9 +4090,6 @@ const handleSendChatMessage = async () => {
                             onChange={(e) => setChatInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendChatMessage()}
                         />
-                        <button className="ai-chatbot-attach-btn" type="button">
-                            <Upload size={18} />
-                        </button>
                         <button 
                             type="button"
                             className="ai-chatbot-send-btn"
